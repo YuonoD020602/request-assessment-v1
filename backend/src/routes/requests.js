@@ -36,12 +36,10 @@ router.post('/submit', async (req, res) => {
     masa_kerja, tujuan_ac, jenis_assessment, terakhir_assessment, email_peserta
   } = req.body;
 
-  // Validasi field wajib
   if (!nama_perusahaan || !pic_hc || !email_pic_hc || !nama_peserta || !jenis_assessment) {
     return res.status(400).json({ error: 'Field wajib belum lengkap' });
   }
 
-  // Cek kuota
   const { data: cfgData } = await supabase.from('konfigurasi').select('key, value');
   const config = Object.fromEntries(cfgData.map(c => [c.key, c.value]));
   const kuotaMaks = parseInt(config.kuota_maks || '8');
@@ -56,7 +54,6 @@ router.post('/submit', async (req, res) => {
     .neq('status', 'Rejected');
 
   if (count >= kuotaMaks) {
-    // Simpan tapi tandai kuota penuh
     const idRequest = await generateIdRequest();
     await supabase.from('requests').insert({
       ...req.body,
@@ -74,11 +71,10 @@ router.post('/submit', async (req, res) => {
       success: true,
       idRequest,
       status: 'kuota_penuh',
-      message: 'Pengajuan diterima namun kuota bulan ini sudah penuh. Anda akan dihubungi untuk penjadwalan ulang.'
+      message: 'Pengajuan diterima namun kuota bulan ini sudah penuh.'
     });
   }
 
-  // Simpan request
   const idRequest = await generateIdRequest();
   const { error } = await supabase.from('requests').insert({
     nama_perusahaan, pic_hc, email_pic_hc, user_atasan, email_user,
@@ -91,7 +87,6 @@ router.post('/submit', async (req, res) => {
 
   if (error) return res.status(500).json({ error: 'Gagal menyimpan pengajuan' });
 
-  // Generate token approve & reject untuk setiap approver
   const approvers = [
     { nama: config.approver_1_nama, email: config.approver_1_email },
     { nama: config.approver_2_nama, email: config.approver_2_email }
@@ -170,6 +165,9 @@ router.get('/:idRequest', authMiddleware, picOnly, async (req, res) => {
 // GET /api/requests/status/:idRequest - Cek status (publik, untuk HC)
 // ============================================================
 router.get('/status/:idRequest', async (req, res) => {
+  const { data: cfgData } = await supabase.from('konfigurasi').select('key, value');
+  const config = Object.fromEntries((cfgData || []).map(c => [c.key, c.value]));
+
   const { data, error } = await supabase
     .from('requests')
     .select('id_request, status, nama_peserta, nama_perusahaan, created_at, catatan_reject')
@@ -177,7 +175,14 @@ router.get('/status/:idRequest', async (req, res) => {
     .single();
 
   if (error || !data) return res.status(404).json({ error: 'ID Request tidak ditemukan' });
-  res.json({ data });
+
+  res.json({
+    data: {
+      ...data,
+      url_zip_dokumen: config.url_zip_dokumen || null,
+      url_form_dokumen: `${process.env.FRONTEND_URL}/form-dokumen?id=${data.id_request}`
+    }
+  });
 });
 
 module.exports = router;
