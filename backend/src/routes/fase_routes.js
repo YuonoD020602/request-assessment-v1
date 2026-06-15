@@ -7,6 +7,9 @@ const {
   kirimUndanganPresentasi, kirimLaporan
 } = require('../services/emailService');
 
+// Helper: jeda antar email agar tidak kena rate limit
+const delay = (ms) => new Promise(r => setTimeout(r, ms));
+
 // ============================================================
 // FASE 3 ROUTER
 // ============================================================
@@ -29,7 +32,6 @@ fase3Router.post('/jadwal-gr', authMiddleware, picOnly, async (req, res) => {
     status: 'Menunggu GR'
   }).eq('id_request', id_request);
 
-  // Kirim undangan ke HC dan User/Atasan
   const penerima = [
     { nama: request.pic_hc, email: request.email_pic_hc },
     request.email_user ? { nama: request.user_atasan, email: request.email_user } : null
@@ -42,6 +44,7 @@ fase3Router.post('/jadwal-gr', authMiddleware, picOnly, async (req, res) => {
       jamGR: jam_gr, lokasiGR: lokasi_gr,
       namaPeserta: request.nama_peserta
     });
+    await delay(400);
   }
 
   await supabase.from('log_aktivitas').insert({ id_request, aktivitas: 'Jadwal GR Dikirim', detail: `${tanggal_gr} ${jam_gr} di ${lokasi_gr}` });
@@ -61,10 +64,9 @@ fase3Router.post('/input-mom', authMiddleware, picOnly, async (req, res) => {
   const { data: cfgData } = await supabase.from('konfigurasi').select('key, value');
   const config = Object.fromEntries(cfgData.map(c => [c.key, c.value]));
 
-  // Kirim MOM ke HC
   await kirimEmailMOM({ namaTo: request.pic_hc, emailTo: request.email_pic_hc, idRequest: id_request, namaPeserta: request.nama_peserta, momText: mom_gr, isTimPelaksana: false });
+  await delay(400);
 
-  // Notifikasi ke Tim Pelaksana
   const tim = [
     config.assessor_1_email ? { nama: config.assessor_1_nama, email: config.assessor_1_email } : null,
     config.assessor_2_email ? { nama: config.assessor_2_nama, email: config.assessor_2_email } : null,
@@ -74,6 +76,7 @@ fase3Router.post('/input-mom', authMiddleware, picOnly, async (req, res) => {
 
   for (const t of tim) {
     await kirimEmailMOM({ namaTo: t.nama, emailTo: t.email, idRequest: id_request, namaPeserta: request.nama_peserta, momText: mom_gr, isTimPelaksana: true });
+    await delay(400);
   }
 
   await supabase.from('log_aktivitas').insert({ id_request, aktivitas: 'MOM GR Dikirim', detail: 'MOM dikirim ke HC dan Tim Pelaksana' });
@@ -87,7 +90,7 @@ const fase4Router = express.Router();
 
 // POST /api/fase4/dokumen - HC submit dokumen lanjutan
 fase4Router.post('/dokumen', async (req, res) => {
-  const { id_request, link_form_potrev, link_data_karyawan, link_form_star, email_hc } = req.body;
+  const { id_request, link_form_potrev, link_data_karyawan, link_form_star } = req.body;
   if (!id_request || !link_form_potrev || !link_data_karyawan || !link_form_star) {
     return res.status(400).json({ error: 'Semua link dokumen wajib diisi' });
   }
@@ -104,7 +107,6 @@ fase4Router.post('/dokumen', async (req, res) => {
   const { data: cfgData } = await supabase.from('konfigurasi').select('key, value');
   const config = Object.fromEntries(cfgData.map(c => [c.key, c.value]));
 
-  // Kirim 3 email terpisah ke tim pelaksana
   const dokumen = [
     { jenis: 'Form Potential Review', link: link_form_potrev },
     { jenis: 'Data Karyawan', link: link_data_karyawan },
@@ -120,7 +122,12 @@ fase4Router.post('/dokumen', async (req, res) => {
 
   for (const t of tim) {
     for (const dok of dokumen) {
-      await kirimNotifikasiDokumenDiterima({ namaTo: t.nama, emailTo: t.email, idRequest: id_request, namaPeserta: request.nama_peserta, linkDokumen: dok.link, jenisDokumen: dok.jenis });
+      await kirimNotifikasiDokumenDiterima({
+        namaTo: t.nama, emailTo: t.email,
+        idRequest: id_request, namaPeserta: request.nama_peserta,
+        linkDokumen: dok.link, jenisDokumen: dok.jenis
+      });
+      await delay(400);
     }
   }
 
@@ -143,14 +150,19 @@ fase4Router.post('/psikotes', authMiddleware, picOnly, async (req, res) => {
 
   await supabase.from('requests').update({ tanggal_psikotes, jam_psikotes, link_platform_psikotes }).eq('id_request', id_request);
 
-  // Kirim ke Administrator dan peserta
   const penerima = [
     config.admin_ac_1_email ? { nama: config.admin_ac_1_nama, email: config.admin_ac_1_email } : null,
     request.email_peserta ? { nama: request.nama_peserta, email: request.email_peserta } : null
   ].filter(Boolean);
 
   for (const p of penerima) {
-    await kirimJadwalPsikotes({ namaTo: p.nama, emailTo: p.email, idRequest: id_request, namaPeserta: request.nama_peserta, tanggal: tanggal_psikotes, jam: jam_psikotes, linkPlatform: link_platform_psikotes, isReminder: false });
+    await kirimJadwalPsikotes({
+      namaTo: p.nama, emailTo: p.email,
+      idRequest: id_request, namaPeserta: request.nama_peserta,
+      tanggal: tanggal_psikotes, jam: jam_psikotes,
+      linkPlatform: link_platform_psikotes, isReminder: false
+    });
+    await delay(400);
   }
 
   await supabase.from('log_aktivitas').insert({ id_request, aktivitas: 'Jadwal Psikotes Dikirim', detail: `${tanggal_psikotes} ${jam_psikotes}` });
@@ -183,7 +195,12 @@ fase6Router.post('/jadwal-presentasi', authMiddleware, picOnly, async (req, res)
   ].filter(Boolean);
 
   for (const p of penerima) {
-    await kirimUndanganPresentasi({ namaTo: p.nama, emailTo: p.email, idRequest: id_request, namaPeserta: request.nama_peserta, tanggal: tanggal_presentasi, jam: jam_presentasi, lokasi: lokasi_presentasi });
+    await kirimUndanganPresentasi({
+      namaTo: p.nama, emailTo: p.email,
+      idRequest: id_request, namaPeserta: request.nama_peserta,
+      tanggal: tanggal_presentasi, jam: jam_presentasi, lokasi: lokasi_presentasi
+    });
+    await delay(400);
   }
 
   await supabase.from('log_aktivitas').insert({ id_request, aktivitas: 'Jadwal Presentasi Dikirim', detail: `${tanggal_presentasi} ${jam_presentasi} di ${lokasi_presentasi}` });
@@ -198,7 +215,6 @@ fase6Router.post('/kirim-laporan', authMiddleware, picOnly, async (req, res) => 
   const { data: request } = await supabase.from('requests').select('*').eq('id_request', id_request).single();
   if (!request) return res.status(404).json({ error: 'Request tidak ditemukan' });
 
-  // Download PDF dari Supabase Storage
   const { data: fileData, error: fileError } = await supabase.storage.from('laporan-pdf').download(path_laporan);
   if (fileError) return res.status(404).json({ error: 'File PDF tidak ditemukan di storage' });
 
@@ -211,7 +227,12 @@ fase6Router.post('/kirim-laporan', authMiddleware, picOnly, async (req, res) => 
   ].filter(Boolean);
 
   for (const p of penerima) {
-    await kirimLaporan({ namaTo: p.nama, emailTo: p.email, idRequest: id_request, namaPeserta: request.nama_peserta, pdfBuffer, namaPDF });
+    await kirimLaporan({
+      namaTo: p.nama, emailTo: p.email,
+      idRequest: id_request, namaPeserta: request.nama_peserta,
+      pdfBuffer, namaPDF
+    });
+    await delay(400);
   }
 
   await supabase.from('requests').update({ status_laporan: 'Laporan Dikirim', path_laporan, status: 'Selesai' }).eq('id_request', id_request);
