@@ -42,9 +42,7 @@ export function FormDokumen() {
   };
 
   useEffect(() => {
-    if (submitted) {
-      fetchJadwal();
-    }
+    if (submitted) fetchJadwal();
   }, [submitted]);
 
   return (
@@ -60,15 +58,9 @@ export function FormDokumen() {
 
         {!submitted ? (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            {!idRequest && (
-              <div className="mb-4 p-3 bg-red-50 rounded-lg text-sm text-red-600">
-                ID Request tidak ditemukan. Pastikan Anda membuka link yang benar.
-              </div>
-            )}
             <div className="mb-4 p-3 bg-blue-50 rounded-lg text-sm text-blue-700">
               <p className="font-medium">ID Request: <span className="font-mono">{idRequest}</span></p>
             </div>
-
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="form-label">Link Google Drive – Form Potential Review *</label>
@@ -85,9 +77,7 @@ export function FormDokumen() {
                 <input className="form-input" placeholder="https://drive.google.com/..." required
                   value={form.link_form_star} onChange={e => setForm({...form, link_form_star: e.target.value})} />
               </div>
-
               {error && <div className="p-3 bg-red-50 rounded-lg text-sm text-red-600">{error}</div>}
-
               <button type="submit" className="btn-primary w-full" disabled={loading || !idRequest}>
                 {loading ? 'Mengirim...' : 'Kirim Dokumen'}
               </button>
@@ -101,16 +91,27 @@ export function FormDokumen() {
                 <span className="text-3xl">✅</span>
               </div>
               <h2 className="text-xl font-bold text-gray-900 mb-2">Dokumen Terkirim!</h2>
-              <p className="text-gray-500 text-sm">Tim RACD AIHO akan segera memproses dokumen Anda.</p>
+              <p className="text-gray-500 text-sm mb-4">Tim RACD AIHO akan segera memproses dokumen Anda.</p>
+
+              {/* Tombol Cek Jadwal */}
+              <div className="p-3 bg-blue-50 rounded-lg text-sm text-blue-700 mb-3">
+                <p className="font-medium mb-1">📌 Simpan ID Request Anda:</p>
+                <p className="font-mono text-lg font-bold text-blue-800">{idRequest}</p>
+              </div>
+              <a href={`/cek-status?id=${idRequest}`}
+                className="inline-block w-full text-center bg-blue-700 text-white py-3 rounded-lg font-medium hover:bg-blue-800 transition-colors">
+                🔍 Cek Jadwal Kapan Saja →
+              </a>
+              <p className="text-xs text-gray-400 mt-2">Bookmark halaman tersebut untuk pantau jadwal Anda</p>
             </div>
 
-            {/* Jadwal */}
+            {/* Jadwal Preview */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-gray-900">📅 Jadwal Selanjutnya</h3>
                 <button onClick={fetchJadwal} disabled={loadingJadwal}
                   className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1 border border-blue-200 rounded-lg px-3 py-1">
-                  {loadingJadwal ? '⏳ Memuat...' : '🔄 Refresh Jadwal'}
+                  {loadingJadwal ? '⏳ Memuat...' : '🔄 Refresh'}
                 </button>
               </div>
 
@@ -118,7 +119,6 @@ export function FormDokumen() {
                 <div className="text-center py-4 text-gray-400 text-sm">Memuat jadwal...</div>
               ) : jadwal ? (
                 <div className="space-y-3">
-                  {/* Jadwal Psikotes */}
                   <div className={`p-3 rounded-lg border ${jadwal.tanggal_psikotes ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'}`}>
                     <p className="text-xs font-semibold text-gray-500 mb-1">📝 JADWAL PSIKOTES</p>
                     {jadwal.tanggal_psikotes ? (
@@ -136,7 +136,6 @@ export function FormDokumen() {
                     )}
                   </div>
 
-                  {/* Jadwal AC */}
                   <div className={`p-3 rounded-lg border ${jadwal.tanggal_ac && jadwal.jam_ac ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
                     <p className="text-xs font-semibold text-gray-500 mb-1">🏢 JADWAL ASSESSMENT CENTER</p>
                     {jadwal.tanggal_ac && jadwal.jam_ac ? (
@@ -156,7 +155,7 @@ export function FormDokumen() {
               )}
 
               <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-yellow-700">
-                💡 Jadwal akan diupdate oleh PIC Asesmen. Klik <strong>Refresh Jadwal</strong> untuk cek terbaru, atau pantau email Anda.
+                💡 Klik <strong>Refresh</strong> untuk cek jadwal terbaru, atau buka halaman <strong>Cek Jadwal</strong> kapan saja menggunakan ID Request Anda.
               </div>
             </div>
           </div>
