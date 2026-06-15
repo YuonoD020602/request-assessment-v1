@@ -179,7 +179,7 @@ router.get('/status/:idRequest', async (req, res) => {
   res.json({
     data: {
       ...data,
-      url_zip_dokumen: config.url_zip_dokumen || null,
+      url_zip_dokumen: config.file_zip_dokumen_url || null,
       url_form_dokumen: `${process.env.FRONTEND_URL}/form-dokumen?id=${data.id_request}`
     }
   });
