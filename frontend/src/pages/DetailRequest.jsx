@@ -13,10 +13,10 @@ export default function DetailRequest() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('info');
 
-  // Forms
   const [grForm, setGrForm] = useState({ tanggal_gr: '', jam_gr: '', lokasi_gr: '', tanggal_ac: '', lokasi_ac: '' });
   const [momForm, setMomForm] = useState({ mom_gr: '' });
   const [psikotesForm, setPsikotesForm] = useState({ tanggal_psikotes: '', jam_psikotes: '', link_platform_psikotes: '' });
+  const [jadwalAcForm, setJadwalAcForm] = useState({ tanggal_ac: '', jam_ac: '', lokasi_ac: '' });
   const [presentasiForm, setPresentasiForm] = useState({ tanggal_presentasi: '', jam_presentasi: '', lokasi_presentasi: '' });
   const [pathLaporan, setPathLaporan] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -58,6 +58,15 @@ export default function DetailRequest() {
     finally { setSubmitting(false); }
   };
 
+  const submitJadwalAC = async (e) => {
+    e.preventDefault(); setSubmitting(true);
+    try {
+      await api.post('/api/fase4/jadwal-ac', { id_request: idRequest, ...jadwalAcForm });
+      toast.success('Jadwal AC berhasil disimpan!'); fetchRequest();
+    } catch (err) { toast.error(err.response?.data?.error || 'Gagal'); }
+    finally { setSubmitting(false); }
+  };
+
   const submitPresentasi = async (e) => {
     e.preventDefault(); setSubmitting(true);
     try {
@@ -89,7 +98,6 @@ export default function DetailRequest() {
   return (
     <Layout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center gap-4">
           <button onClick={() => navigate('/dashboard')} className="text-gray-400 hover:text-gray-600">←</button>
           <div>
@@ -99,7 +107,6 @@ export default function DetailRequest() {
           <span className="ml-auto text-xs font-medium px-3 py-1 rounded-full bg-blue-100 text-blue-700">{request.status}</span>
         </div>
 
-        {/* Tabs */}
         <div className="flex gap-2 border-b border-gray-200">
           {tabs.map(t => (
             <button key={t.id} onClick={() => setActiveTab(t.id)}
@@ -137,7 +144,6 @@ export default function DetailRequest() {
         {/* Tab: Fase 3 */}
         {activeTab === 'fase3' && user?.role === 'pic_asesmen' && (
           <div className="space-y-6">
-            {/* Input Jadwal GR */}
             <div className="card">
               <h3 className="font-semibold text-gray-900 mb-4">Input Jadwal Getting Requirement</h3>
               {request.tanggal_gr && (
@@ -155,7 +161,6 @@ export default function DetailRequest() {
               </form>
             </div>
 
-            {/* Input MOM */}
             <div className="card">
               <h3 className="font-semibold text-gray-900 mb-4">Input Minutes of Meeting GR</h3>
               {request.mom_gr && (
@@ -200,6 +205,21 @@ export default function DetailRequest() {
                 <div><label className="form-label">Jam *</label><input type="time" className="form-input" required onChange={e => setPsikotesForm({...psikotesForm, jam_psikotes: e.target.value})} /></div>
                 <div className="col-span-2"><label className="form-label">Link Platform *</label><input className="form-input" required onChange={e => setPsikotesForm({...psikotesForm, link_platform_psikotes: e.target.value})} /></div>
                 <div className="col-span-2"><button type="submit" className="btn-primary" disabled={submitting}>{submitting ? '...' : 'Kirim Jadwal Psikotes'}</button></div>
+              </form>
+            </div>
+
+            <div className="card">
+              <h3 className="font-semibold text-gray-900 mb-4">Input Jadwal Assessment Center</h3>
+              {request.tanggal_ac && request.jam_ac && (
+                <div className="mb-4 p-3 bg-green-50 rounded-lg text-sm text-green-700">
+                  ✓ Jadwal AC: {request.tanggal_ac} {request.jam_ac} – {request.lokasi_ac}
+                </div>
+              )}
+              <form onSubmit={submitJadwalAC} className="grid grid-cols-2 gap-4">
+                <div><label className="form-label">Tanggal AC *</label><input type="date" className="form-input" required onChange={e => setJadwalAcForm({...jadwalAcForm, tanggal_ac: e.target.value})} /></div>
+                <div><label className="form-label">Jam AC *</label><input type="time" className="form-input" required onChange={e => setJadwalAcForm({...jadwalAcForm, jam_ac: e.target.value})} /></div>
+                <div className="col-span-2"><label className="form-label">Lokasi / Link AC *</label><input className="form-input" required onChange={e => setJadwalAcForm({...jadwalAcForm, lokasi_ac: e.target.value})} /></div>
+                <div className="col-span-2"><button type="submit" className="btn-primary" disabled={submitting}>{submitting ? '...' : 'Simpan Jadwal AC'}</button></div>
               </form>
             </div>
           </div>
