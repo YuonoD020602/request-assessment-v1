@@ -7,7 +7,6 @@ const {
   kirimUndanganPresentasi, kirimLaporan
 } = require('../services/emailService');
 
-// Helper: jeda antar email agar tidak kena rate limit
 const delay = (ms) => new Promise(r => setTimeout(r, ms));
 
 // ============================================================
@@ -15,7 +14,6 @@ const delay = (ms) => new Promise(r => setTimeout(r, ms));
 // ============================================================
 const fase3Router = express.Router();
 
-// POST /api/fase3/jadwal-gr - Input jadwal GR
 fase3Router.post('/jadwal-gr', authMiddleware, picOnly, async (req, res) => {
   const { id_request, tanggal_gr, jam_gr, lokasi_gr, tanggal_ac, lokasi_ac } = req.body;
   if (!id_request || !tanggal_gr || !jam_gr || !lokasi_gr) {
@@ -51,7 +49,6 @@ fase3Router.post('/jadwal-gr', authMiddleware, picOnly, async (req, res) => {
   res.json({ success: true, message: 'Jadwal GR berhasil dikirim' });
 });
 
-// POST /api/fase3/input-mom - Input MOM GR
 fase3Router.post('/input-mom', authMiddleware, picOnly, async (req, res) => {
   const { id_request, mom_gr } = req.body;
   if (!id_request || !mom_gr) return res.status(400).json({ error: 'Field wajib belum lengkap' });
@@ -88,7 +85,6 @@ fase3Router.post('/input-mom', authMiddleware, picOnly, async (req, res) => {
 // ============================================================
 const fase4Router = express.Router();
 
-// POST /api/fase4/dokumen - HC submit dokumen lanjutan
 fase4Router.post('/dokumen', async (req, res) => {
   const { id_request, link_form_potrev, link_data_karyawan, link_form_star } = req.body;
   if (!id_request || !link_form_potrev || !link_data_karyawan || !link_form_star) {
@@ -135,7 +131,6 @@ fase4Router.post('/dokumen', async (req, res) => {
   res.json({ success: true, message: 'Dokumen berhasil diterima dan dikirim ke tim pelaksana' });
 });
 
-// POST /api/fase4/psikotes - Input jadwal psikotes
 fase4Router.post('/psikotes', authMiddleware, picOnly, async (req, res) => {
   const { id_request, tanggal_psikotes, jam_psikotes, link_platform_psikotes } = req.body;
   if (!id_request || !tanggal_psikotes || !jam_psikotes || !link_platform_psikotes) {
@@ -169,12 +164,27 @@ fase4Router.post('/psikotes', authMiddleware, picOnly, async (req, res) => {
   res.json({ success: true, message: 'Jadwal psikotes berhasil dikirim' });
 });
 
+// POST /api/fase4/jadwal-ac - Input jadwal AC
+fase4Router.post('/jadwal-ac', authMiddleware, picOnly, async (req, res) => {
+  const { id_request, tanggal_ac, jam_ac, lokasi_ac } = req.body;
+  if (!id_request || !tanggal_ac || !jam_ac || !lokasi_ac) {
+    return res.status(400).json({ error: 'Field wajib belum lengkap' });
+  }
+
+  const { data: request } = await supabase.from('requests').select('*').eq('id_request', id_request).single();
+  if (!request) return res.status(404).json({ error: 'Request tidak ditemukan' });
+
+  await supabase.from('requests').update({ tanggal_ac, jam_ac, lokasi_ac }).eq('id_request', id_request);
+
+  await supabase.from('log_aktivitas').insert({ id_request, aktivitas: 'Jadwal AC Diinput', detail: `${tanggal_ac} ${jam_ac} di ${lokasi_ac}` });
+  res.json({ success: true, message: 'Jadwal AC berhasil disimpan' });
+});
+
 // ============================================================
 // FASE 6 ROUTER
 // ============================================================
 const fase6Router = express.Router();
 
-// POST /api/fase6/jadwal-presentasi - Input jadwal presentasi
 fase6Router.post('/jadwal-presentasi', authMiddleware, picOnly, async (req, res) => {
   const { id_request, tanggal_presentasi, jam_presentasi, lokasi_presentasi } = req.body;
   if (!id_request || !tanggal_presentasi || !jam_presentasi || !lokasi_presentasi) {
@@ -207,7 +217,6 @@ fase6Router.post('/jadwal-presentasi', authMiddleware, picOnly, async (req, res)
   res.json({ success: true, message: 'Undangan presentasi berhasil dikirim' });
 });
 
-// POST /api/fase6/kirim-laporan - Upload PDF dan kirim laporan
 fase6Router.post('/kirim-laporan', authMiddleware, picOnly, async (req, res) => {
   const { id_request, path_laporan } = req.body;
   if (!id_request || !path_laporan) return res.status(400).json({ error: 'ID Request dan path laporan wajib diisi' });
@@ -241,7 +250,6 @@ fase6Router.post('/kirim-laporan', authMiddleware, picOnly, async (req, res) => 
   res.json({ success: true, message: 'Laporan berhasil dikirim' });
 });
 
-// GET /api/fase6/cek-file/:idRequest - Cek file PDF tersedia di storage
 fase6Router.get('/cek-file/:idRequest', authMiddleware, picOnly, async (req, res) => {
   const idRequest = req.params.idRequest;
   const { data: files } = await supabase.storage.from('laporan-pdf').list('', { search: idRequest });
