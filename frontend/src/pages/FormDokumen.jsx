@@ -1,77 +1,166 @@
-// FormDokumen.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../utils/api';
-import toast from 'react-hot-toast';
 
 export function FormDokumen() {
-  const [params] = useSearchParams();
-  const [form, setForm] = useState({
-    id_request: params.get('id') || '',
-    link_form_potrev: '',
-    link_data_karyawan: '',
-    link_form_star: ''
-  });
-  const [loading, setLoading] = useState(false);
+  const [searchParams] = useSearchParams();
+  const idRequest = searchParams.get('id');
+
+  const [form, setForm] = useState({ link_form_potrev: '', link_data_karyawan: '', link_form_star: '' });
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [jadwal, setJadwal] = useState(null);
+  const [loadingJadwal, setLoadingJadwal] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
     try {
-      await api.post('/api/fase4/dokumen', form);
+      await api.post('/api/fase4/dokumen', { id_request: idRequest, ...form });
       setSubmitted(true);
-      toast.success('Dokumen berhasil dikirim!');
+      fetchJadwal();
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Gagal mengirim dokumen');
+      setError(err.response?.data?.error || 'Gagal mengirim dokumen. Periksa ID Request dan coba lagi.');
     } finally {
       setLoading(false);
     }
   };
 
-  if (submitted) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-sm p-8 text-center max-w-md w-full">
-        <div className="text-5xl mb-4">✅</div>
-        <h2 className="text-xl font-bold text-gray-900 mb-2">Dokumen Terkirim!</h2>
-        <p className="text-gray-500">Tim RACD AIHO akan segera memproses dokumen Anda.</p>
-      </div>
-    </div>
-  );
+  const fetchJadwal = async () => {
+    if (!idRequest) return;
+    setLoadingJadwal(true);
+    try {
+      const res = await api.get(`/api/requests/status/${idRequest}`);
+      setJadwal(res.data.data);
+    } catch {
+      // jadwal belum tersedia
+    } finally {
+      setLoadingJadwal(false);
+    }
+  };
+
+  useEffect(() => {
+    if (submitted) {
+      fetchJadwal();
+    }
+  }, [submitted]);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-lg mx-auto">
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-start pt-16 px-4">
+      <div className="w-full max-w-lg">
         <div className="text-center mb-8">
-          <div className="w-12 h-12 bg-blue-800 rounded-xl flex items-center justify-center mx-auto mb-3">
-            <span className="text-white font-bold">RA</span>
+          <div className="w-14 h-14 bg-blue-700 rounded-xl flex items-center justify-center mx-auto mb-4">
+            <span className="text-white font-bold text-xl">RA</span>
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Upload Dokumen Lanjutan</h1>
-          <p className="text-gray-500 text-sm mt-1">RACD AIHO – PT Astra International</p>
+          <p className="text-sm text-gray-500 mt-1">RACD AIHO – PT Astra International</p>
         </div>
-        <div className="card">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="form-label">ID Request <span className="text-red-500">*</span></label>
-              <input className="form-input" value={form.id_request} onChange={e => setForm({...form, id_request: e.target.value})} required />
+
+        {!submitted ? (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            {!idRequest && (
+              <div className="mb-4 p-3 bg-red-50 rounded-lg text-sm text-red-600">
+                ID Request tidak ditemukan. Pastikan Anda membuka link yang benar.
+              </div>
+            )}
+            <div className="mb-4 p-3 bg-blue-50 rounded-lg text-sm text-blue-700">
+              <p className="font-medium">ID Request: <span className="font-mono">{idRequest}</span></p>
             </div>
-            <div>
-              <label className="form-label">Link Google Drive – Form Potential Review <span className="text-red-500">*</span></label>
-              <input className="form-input" placeholder="https://drive.google.com/..." value={form.link_form_potrev} onChange={e => setForm({...form, link_form_potrev: e.target.value})} required />
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="form-label">Link Google Drive – Form Potential Review *</label>
+                <input className="form-input" placeholder="https://drive.google.com/..." required
+                  value={form.link_form_potrev} onChange={e => setForm({...form, link_form_potrev: e.target.value})} />
+              </div>
+              <div>
+                <label className="form-label">Link Google Drive – Data Karyawan *</label>
+                <input className="form-input" placeholder="https://drive.google.com/..." required
+                  value={form.link_data_karyawan} onChange={e => setForm({...form, link_data_karyawan: e.target.value})} />
+              </div>
+              <div>
+                <label className="form-label">Link Google Drive – Form STAR *</label>
+                <input className="form-input" placeholder="https://drive.google.com/..." required
+                  value={form.link_form_star} onChange={e => setForm({...form, link_form_star: e.target.value})} />
+              </div>
+
+              {error && <div className="p-3 bg-red-50 rounded-lg text-sm text-red-600">{error}</div>}
+
+              <button type="submit" className="btn-primary w-full" disabled={loading || !idRequest}>
+                {loading ? 'Mengirim...' : 'Kirim Dokumen'}
+              </button>
+            </form>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {/* Sukses */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-3xl">✅</span>
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 mb-2">Dokumen Terkirim!</h2>
+              <p className="text-gray-500 text-sm">Tim RACD AIHO akan segera memproses dokumen Anda.</p>
             </div>
-            <div>
-              <label className="form-label">Link Google Drive – Data Karyawan <span className="text-red-500">*</span></label>
-              <input className="form-input" placeholder="https://drive.google.com/..." value={form.link_data_karyawan} onChange={e => setForm({...form, link_data_karyawan: e.target.value})} required />
+
+            {/* Jadwal */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-900">📅 Jadwal Selanjutnya</h3>
+                <button onClick={fetchJadwal} disabled={loadingJadwal}
+                  className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1 border border-blue-200 rounded-lg px-3 py-1">
+                  {loadingJadwal ? '⏳ Memuat...' : '🔄 Refresh Jadwal'}
+                </button>
+              </div>
+
+              {loadingJadwal ? (
+                <div className="text-center py-4 text-gray-400 text-sm">Memuat jadwal...</div>
+              ) : jadwal ? (
+                <div className="space-y-3">
+                  {/* Jadwal Psikotes */}
+                  <div className={`p-3 rounded-lg border ${jadwal.tanggal_psikotes ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'}`}>
+                    <p className="text-xs font-semibold text-gray-500 mb-1">📝 JADWAL PSIKOTES</p>
+                    {jadwal.tanggal_psikotes ? (
+                      <div className="space-y-1 text-sm">
+                        <p className="font-medium text-gray-900">📅 {jadwal.tanggal_psikotes} pukul {jadwal.jam_psikotes} WIB</p>
+                        {jadwal.link_platform_psikotes && (
+                          <a href={jadwal.link_platform_psikotes} target="_blank"
+                            className="text-blue-600 hover:underline text-xs block">
+                            🔗 Buka Link Platform Psikotes
+                          </a>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-400 italic">Belum dijadwalkan</p>
+                    )}
+                  </div>
+
+                  {/* Jadwal AC */}
+                  <div className={`p-3 rounded-lg border ${jadwal.tanggal_ac && jadwal.jam_ac ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
+                    <p className="text-xs font-semibold text-gray-500 mb-1">🏢 JADWAL ASSESSMENT CENTER</p>
+                    {jadwal.tanggal_ac && jadwal.jam_ac ? (
+                      <div className="space-y-1 text-sm">
+                        <p className="font-medium text-gray-900">📅 {jadwal.tanggal_ac} pukul {jadwal.jam_ac} WIB</p>
+                        {jadwal.lokasi_ac && (
+                          <p className="text-gray-600 text-xs">📍 {jadwal.lokasi_ac}</p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-400 italic">Belum dijadwalkan</p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-4 text-gray-400 text-sm">Gagal memuat jadwal</div>
+              )}
+
+              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-yellow-700">
+                💡 Jadwal akan diupdate oleh PIC Asesmen. Klik <strong>Refresh Jadwal</strong> untuk cek terbaru, atau pantau email Anda.
+              </div>
             </div>
-            <div>
-              <label className="form-label">Link Google Drive – Form STAR <span className="text-red-500">*</span></label>
-              <input className="form-input" placeholder="https://drive.google.com/..." value={form.link_form_star} onChange={e => setForm({...form, link_form_star: e.target.value})} required />
-            </div>
-            <button type="submit" className="btn-primary w-full py-3" disabled={loading}>
-              {loading ? 'Mengirim...' : 'Kirim Dokumen'}
-            </button>
-          </form>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
