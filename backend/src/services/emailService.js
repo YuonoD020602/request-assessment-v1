@@ -6,9 +6,13 @@ const FROM_EMAIL = 'noreply@lyraac.site';
 const sendEmail = async ({ to, subject, html }) => {
   const { error } = await resend.emails.send({
     from: `RACD AIHO Assessment Center <${FROM_EMAIL}>`,
+    reply_to: FROM_EMAIL,
     to,
     subject,
-    html
+    html,
+    headers: {
+      'X-Entity-Ref-ID': `racd-aiho-${Date.now()}`
+    }
   });
   if (error) throw new Error(error.message);
 };
@@ -220,10 +224,14 @@ const kirimUndanganPresentasi = async ({ namaTo, emailTo, idRequest, namaPeserta
 const kirimLaporan = async ({ namaTo, emailTo, idRequest, namaPeserta, pdfBuffer, namaPDF }) => {
   await resend.emails.send({
     from: `RACD AIHO Assessment Center <${FROM_EMAIL}>`,
+    reply_to: FROM_EMAIL,
     to: emailTo,
     subject: `[RACD AIHO] Laporan Assessment Center – ${namaPeserta} – ${idRequest}`,
     html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;"><p>Kepada Yth. Bapak/Ibu ${namaTo}</p><p>Terlampir laporan hasil <strong>Assessment Center</strong> untuk <strong>${namaPeserta}</strong> (${idRequest}).</p><p>Hormat kami,<br/><strong>PIC Asesmen RACD AIHO</strong><br/>PT Astra International</p></div>`,
-    attachments: [{ filename: namaPDF, content: pdfBuffer }]
+    attachments: [{ filename: namaPDF, content: pdfBuffer }],
+    headers: {
+      'X-Entity-Ref-ID': `racd-aiho-${Date.now()}`
+    }
   });
 };
 
