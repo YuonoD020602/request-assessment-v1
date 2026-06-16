@@ -4,7 +4,7 @@ const { authMiddleware, picOnly } = require('../middleware/auth');
 const {
   kirimEmailUndanganGR, kirimEmailMOM,
   kirimNotifikasiDokumenDiterima, kirimJadwalPsikotes,
-  kirimUndanganPresentasi, kirimLaporan
+  kirimUndanganPresentasi, kirimLaporan, kirimReminderAC
 } = require('../services/emailService');
 
 const delay = (ms) => new Promise(r => setTimeout(r, ms));
@@ -145,9 +145,11 @@ fase4Router.post('/psikotes', authMiddleware, picOnly, async (req, res) => {
 
   await supabase.from('requests').update({ tanggal_psikotes, jam_psikotes, link_platform_psikotes }).eq('id_request', id_request);
 
+  // Kirim ke HC, User/Atasan, dan Admin AC
   const penerima = [
+    { nama: request.pic_hc, email: request.email_pic_hc },
+    request.email_user ? { nama: request.user_atasan, email: request.email_user } : null,
     config.admin_ac_1_email ? { nama: config.admin_ac_1_nama, email: config.admin_ac_1_email } : null,
-    request.email_peserta ? { nama: request.nama_peserta, email: request.email_peserta } : null
   ].filter(Boolean);
 
   for (const p of penerima) {
@@ -164,7 +166,6 @@ fase4Router.post('/psikotes', authMiddleware, picOnly, async (req, res) => {
   res.json({ success: true, message: 'Jadwal psikotes berhasil dikirim' });
 });
 
-// POST /api/fase4/jadwal-ac - Input jadwal AC
 fase4Router.post('/jadwal-ac', authMiddleware, picOnly, async (req, res) => {
   const { id_request, tanggal_ac, jam_ac, lokasi_ac } = req.body;
   if (!id_request || !tanggal_ac || !jam_ac || !lokasi_ac) {
@@ -174,10 +175,33 @@ fase4Router.post('/jadwal-ac', authMiddleware, picOnly, async (req, res) => {
   const { data: request } = await supabase.from('requests').select('*').eq('id_request', id_request).single();
   if (!request) return res.status(404).json({ error: 'Request tidak ditemukan' });
 
+  const { data: cfgData } = await supabase.from('konfigurasi').select('key, value');
+  const config = Object.fromEntries(cfgData.map(c => [c.key, c.value]));
+
   await supabase.from('requests').update({ tanggal_ac, jam_ac, lokasi_ac }).eq('id_request', id_request);
 
+  // Kirim notifikasi jadwal AC ke HC, User/Atasan, dan seluruh tim pelaksana
+  const penerima = [
+    { nama: request.pic_hc, email: request.email_pic_hc },
+    request.email_user ? { nama: request.user_atasan, email: request.email_user } : null,
+    config.assessor_1_email ? { nama: config.assessor_1_nama, email: config.assessor_1_email } : null,
+    config.assessor_2_email ? { nama: config.assessor_2_nama, email: config.assessor_2_email } : null,
+    config.admin_ac_1_email ? { nama: config.admin_ac_1_nama, email: config.admin_ac_1_email } : null,
+    config.roleplayer_1_email ? { nama: config.roleplayer_1_nama, email: config.roleplayer_1_email } : null,
+  ].filter(Boolean);
+
+  for (const p of penerima) {
+    await kirimReminderAC({
+      namaTo: p.nama, emailTo: p.email,
+      idRequest: id_request, namaPeserta: request.nama_peserta,
+      tanggalAC: tanggal_ac, lokasiAC: `${lokasi_ac} pukul ${jam_ac} WIB`,
+      isHariH: false
+    });
+    await delay(400);
+  }
+
   await supabase.from('log_aktivitas').insert({ id_request, aktivitas: 'Jadwal AC Diinput', detail: `${tanggal_ac} ${jam_ac} di ${lokasi_ac}` });
-  res.json({ success: true, message: 'Jadwal AC berhasil disimpan' });
+  res.json({ success: true, message: 'Jadwal AC berhasil disimpan dan notifikasi dikirim' });
 });
 
 // ============================================================
