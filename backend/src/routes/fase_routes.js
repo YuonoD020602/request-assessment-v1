@@ -9,7 +9,7 @@ const {
 
 const delay = (ms) => new Promise(r => setTimeout(r, ms));
 
-// Helper: ambil semua assessor dan roleplayer dari config secara dinamis
+// Helper: ambil semua tim pelaksana dari config secara dinamis
 const getTimPelaksana = (config) => {
   const assessors = [];
   let i = 1;
@@ -18,18 +18,32 @@ const getTimPelaksana = (config) => {
     i++;
   }
 
-  const roleplayers = [];
+  const admins = [];
   let j = 1;
-  while (config[`roleplayer_${j}_email`]) {
-    roleplayers.push({ nama: config[`roleplayer_${j}_nama`], email: config[`roleplayer_${j}_email`] });
+  while (config[`admin_ac_${j}_email`]) {
+    admins.push({ nama: config[`admin_ac_${j}_nama`], email: config[`admin_ac_${j}_email`] });
     j++;
   }
 
-  const admin = config.admin_ac_1_email
-    ? [{ nama: config.admin_ac_1_nama, email: config.admin_ac_1_email }]
-    : [];
+  const roleplayers = [];
+  let k = 1;
+  while (config[`roleplayer_${k}_email`]) {
+    roleplayers.push({ nama: config[`roleplayer_${k}_nama`], email: config[`roleplayer_${k}_email`] });
+    k++;
+  }
 
-  return [...assessors, ...admin, ...roleplayers];
+  return [...assessors, ...admins, ...roleplayers];
+};
+
+// Helper: ambil semua admin dari config secara dinamis
+const getAdmins = (config) => {
+  const admins = [];
+  let i = 1;
+  while (config[`admin_ac_${i}_email`]) {
+    admins.push({ nama: config[`admin_ac_${i}_nama`], email: config[`admin_ac_${i}_email`] });
+    i++;
+  }
+  return admins;
 };
 
 // ============================================================
@@ -156,11 +170,12 @@ fase4Router.post('/psikotes', authMiddleware, picOnly, async (req, res) => {
 
   await supabase.from('requests').update({ tanggal_psikotes, jam_psikotes, link_platform_psikotes }).eq('id_request', id_request);
 
-  // Kirim ke HC, User/Atasan, dan Admin AC
+  // Kirim ke HC, User/Atasan, dan semua Admin AC
+  const admins = getAdmins(config);
   const penerima = [
     { nama: request.pic_hc, email: request.email_pic_hc },
     request.email_user ? { nama: request.user_atasan, email: request.email_user } : null,
-    config.admin_ac_1_email ? { nama: config.admin_ac_1_nama, email: config.admin_ac_1_email } : null,
+    ...admins
   ].filter(Boolean);
 
   for (const p of penerima) {
