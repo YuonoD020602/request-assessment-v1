@@ -34,9 +34,9 @@ export default function Konfigurasi() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Dynamic rows untuk assessor dan roleplayer
   const [assessors, setAssessors] = useState([{ nama: '', email: '' }]);
   const [roleplayers, setRoleplayers] = useState([{ nama: '', email: '' }]);
+  const [admins, setAdmins] = useState([{ nama: '', email: '' }]);
 
   useEffect(() => {
     api.get('/api/config')
@@ -61,6 +61,15 @@ export default function Konfigurasi() {
           j++;
         }
         if (loadedRoleplayers.length > 0) setRoleplayers(loadedRoleplayers);
+
+        // Bangun array admin dari config
+        const loadedAdmins = [];
+        let k = 1;
+        while (data[`admin_ac_${k}_nama`] || data[`admin_ac_${k}_email`]) {
+          loadedAdmins.push({ nama: data[`admin_ac_${k}_nama`] || '', email: data[`admin_ac_${k}_email`] || '' });
+          k++;
+        }
+        if (loadedAdmins.length > 0) setAdmins(loadedAdmins);
       })
       .catch(() => toast.error('Gagal memuat konfigurasi'))
       .finally(() => setLoading(false));
@@ -69,27 +78,33 @@ export default function Konfigurasi() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      // Bangun config tim pelaksana dari array dynamic
       const timConfig = {};
 
       assessors.forEach((a, idx) => {
         timConfig[`assessor_${idx + 1}_nama`] = a.nama;
         timConfig[`assessor_${idx + 1}_email`] = a.email;
       });
+      for (let i = assessors.length + 1; i <= 10; i++) {
+        timConfig[`assessor_${i}_nama`] = '';
+        timConfig[`assessor_${i}_email`] = '';
+      }
 
       roleplayers.forEach((r, idx) => {
         timConfig[`roleplayer_${idx + 1}_nama`] = r.nama;
         timConfig[`roleplayer_${idx + 1}_email`] = r.email;
       });
-
-      // Hapus key lama yang mungkin melebihi jumlah saat ini
-      for (let i = assessors.length + 1; i <= 10; i++) {
-        timConfig[`assessor_${i}_nama`] = '';
-        timConfig[`assessor_${i}_email`] = '';
-      }
       for (let i = roleplayers.length + 1; i <= 10; i++) {
         timConfig[`roleplayer_${i}_nama`] = '';
         timConfig[`roleplayer_${i}_email`] = '';
+      }
+
+      admins.forEach((a, idx) => {
+        timConfig[`admin_ac_${idx + 1}_nama`] = a.nama;
+        timConfig[`admin_ac_${idx + 1}_email`] = a.email;
+      });
+      for (let i = admins.length + 1; i <= 10; i++) {
+        timConfig[`admin_ac_${i}_nama`] = '';
+        timConfig[`admin_ac_${i}_email`] = '';
       }
 
       await api.put('/api/config', { ...config, ...timConfig });
@@ -123,6 +138,18 @@ export default function Konfigurasi() {
     const updated = [...roleplayers];
     updated[idx][field] = value;
     setRoleplayers(updated);
+  };
+
+  // Handler admin
+  const addAdmin = () => setAdmins([...admins, { nama: '', email: '' }]);
+  const removeAdmin = (idx) => {
+    if (admins.length === 1) return toast.error('Minimal 1 administrator');
+    setAdmins(admins.filter((_, i) => i !== idx));
+  };
+  const updateAdmin = (idx, field, value) => {
+    const updated = [...admins];
+    updated[idx][field] = value;
+    setAdmins(updated);
   };
 
   if (loading) return <Layout><div className="text-center py-20 text-gray-400">Memuat...</div></Layout>;
@@ -161,22 +188,32 @@ export default function Konfigurasi() {
         <div className="card">
           <h3 className="font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-100">Tim Pelaksana</h3>
 
-          {/* Admin AC - tetap statis */}
+          {/* Administrator - Dynamic */}
           <div className="mb-6">
-            <p className="text-sm font-medium text-gray-700 mb-3">Administrator AC</p>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="form-label">Nama Administrator</label>
-                <input type="text" className="form-input"
-                  value={config['admin_ac_1_nama'] || ''}
-                  onChange={e => setConfig({ ...config, admin_ac_1_nama: e.target.value })} />
-              </div>
-              <div>
-                <label className="form-label">Email Administrator</label>
-                <input type="email" className="form-input"
-                  value={config['admin_ac_1_email'] || ''}
-                  onChange={e => setConfig({ ...config, admin_ac_1_email: e.target.value })} />
-              </div>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm font-medium text-gray-700">Administrator AC</p>
+              <button onClick={addAdmin}
+                className="text-sm text-blue-600 hover:text-blue-800 border border-blue-200 rounded-lg px-3 py-1 hover:bg-blue-50 transition-colors">
+                + Tambah Administrator
+              </button>
+            </div>
+            <div className="space-y-3">
+              {admins.map((a, idx) => (
+                <div key={idx} className="flex items-center gap-3">
+                  <span className="text-xs text-gray-400 w-6 text-right">{idx + 1}</span>
+                  <input type="text" placeholder="Nama Administrator" className="form-input flex-1"
+                    value={a.nama}
+                    onChange={e => updateAdmin(idx, 'nama', e.target.value)} />
+                  <input type="email" placeholder="Email Administrator" className="form-input flex-1"
+                    value={a.email}
+                    onChange={e => updateAdmin(idx, 'email', e.target.value)} />
+                  <button onClick={() => removeAdmin(idx)}
+                    className="text-red-400 hover:text-red-600 text-sm px-2 py-1 rounded hover:bg-red-50 transition-colors"
+                    title="Hapus administrator ini">
+                    Hapus
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
 
