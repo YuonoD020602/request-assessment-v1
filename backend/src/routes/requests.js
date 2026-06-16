@@ -3,6 +3,7 @@ const { v4: uuidv4 } = require('uuid');
 const supabase = require('../supabase');
 const { authMiddleware, picOnly } = require('../middleware/auth');
 const { kirimEmailApprover } = require('../services/emailService');
+const { generatePDFPengajuan } = require('../services/pdfService');
 
 const router = express.Router();
 
@@ -28,7 +29,7 @@ router.post('/submit', async (req, res) => {
 
   for (const p of peserta) {
     if (!p.nama_peserta || !p.jenis_assessment) {
-      return res.status(400).json({ error: `Nama peserta dan jenis assessment wajib diisi untuk semua peserta` });
+      return res.status(400).json({ error: 'Nama peserta dan jenis assessment wajib diisi untuk semua peserta' });
     }
   }
 
@@ -45,6 +46,8 @@ router.post('/submit', async (req, res) => {
     { nama: config.approver_2_nama, email: config.approver_2_email }
   ].filter(a => a.email);
 
+  const dataHC = { nama_perusahaan, pic_hc, email_pic_hc, user_atasan, email_user };
+
   const idRequests = [];
   const statusList = [];
 
@@ -54,7 +57,7 @@ router.post('/submit', async (req, res) => {
 
     if (sisaKuota <= 0) {
       await supabase.from('requests').insert({
-        nama_perusahaan, pic_hc, email_pic_hc, user_atasan, email_user,
+        ...dataHC,
         nama_peserta: p.nama_peserta, email_peserta: p.email_peserta,
         posisi_current: p.posisi_current, dept: p.dept, div: p.div,
         gol_current: p.gol_current, posisi_target: p.posisi_target,
@@ -71,7 +74,7 @@ router.post('/submit', async (req, res) => {
     }
 
     const { error } = await supabase.from('requests').insert({
-      nama_perusahaan, pic_hc, email_pic_hc, user_atasan, email_user,
+      ...dataHC,
       nama_peserta: p.nama_peserta, email_peserta: p.email_peserta,
       posisi_current: p.posisi_current, dept: p.dept, div: p.div,
       gol_current: p.gol_current, posisi_target: p.posisi_target,
@@ -85,6 +88,10 @@ router.post('/submit', async (req, res) => {
     if (error) {
       return res.status(500).json({ error: `Gagal menyimpan pengajuan untuk ${p.nama_peserta}` });
     }
+
+    // Generate PDF untuk peserta ini
+    const pdfBuffer = await generatePDFPengajuan(dataHC, p, idRequest);
+    const namaPDF = `Pengajuan_AC_${p.nama_peserta.replace(/\s/g, '_')}_${idRequest}.pdf`;
 
     const dataPeserta = {
       nama_perusahaan, pic_hc,
@@ -102,7 +109,13 @@ router.post('/submit', async (req, res) => {
         { id_request: idRequest, token: tokenApprove, action: 'approve', approver_nama: approver.nama, approver_email: approver.email },
         { id_request: idRequest, token: tokenReject, action: 'reject', approver_nama: approver.nama, approver_email: approver.email }
       ]);
-      await kirimEmailApprover({ namaApprover: approver.nama, emailApprover: approver.email, idRequest, dataPeserta, tokenApprove, tokenReject });
+      await kirimEmailApprover({
+        namaApprover: approver.nama,
+        emailApprover: approver.email,
+        idRequest, dataPeserta,
+        tokenApprove, tokenReject,
+        pdfBuffer, namaPDF
+      });
     }
 
     await supabase.from('log_aktivitas').insert({ id_request: idRequest, aktivitas: 'Pengajuan Masuk', detail: `Request dari ${pic_hc} (${nama_perusahaan}) untuk ${p.nama_peserta}` });
