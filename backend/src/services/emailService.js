@@ -1,7 +1,7 @@
 const { Resend } = require('resend');
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM_EMAIL = 'onboarding@resend.dev';
+const FROM_EMAIL = 'noreply@lyraac.site';
 
 const sendEmail = async ({ to, subject, html }) => {
   const { error } = await resend.emails.send({
