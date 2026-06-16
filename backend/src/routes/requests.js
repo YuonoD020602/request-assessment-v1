@@ -16,10 +16,20 @@ const generateIdRequest = async () => {
 
 // POST /api/requests/submit
 router.post('/submit', async (req, res) => {
-  const { nama_perusahaan, pic_hc, email_pic_hc, user_atasan, email_user, nama_peserta, posisi_current, dept, div, gol_current, posisi_target, gol_target, jumlah_bawahan, jumlah_peers, masa_kerja, tujuan_ac, jenis_assessment, terakhir_assessment, email_peserta } = req.body;
+  const { nama_perusahaan, pic_hc, email_pic_hc, user_atasan, email_user, peserta } = req.body;
 
-  if (!nama_perusahaan || !pic_hc || !email_pic_hc || !nama_peserta || !jenis_assessment) {
-    return res.status(400).json({ error: 'Field wajib belum lengkap' });
+  if (!nama_perusahaan || !pic_hc || !email_pic_hc) {
+    return res.status(400).json({ error: 'Field wajib HC belum lengkap' });
+  }
+
+  if (!peserta || !Array.isArray(peserta) || peserta.length === 0) {
+    return res.status(400).json({ error: 'Minimal 1 peserta harus diisi' });
+  }
+
+  for (const p of peserta) {
+    if (!p.nama_peserta || !p.jenis_assessment) {
+      return res.status(400).json({ error: `Nama peserta dan jenis assessment wajib diisi untuk semua peserta` });
+    }
   }
 
   const { data: cfgData } = await supabase.from('konfigurasi').select('key, value');
@@ -30,43 +40,87 @@ router.post('/submit', async (req, res) => {
   const prefixBulan = `REQ-${bulanIni.getFullYear()}${String(bulanIni.getMonth() + 1).padStart(2, '0')}`;
   const { count } = await supabase.from('requests').select('*', { count: 'exact', head: true }).like('id_request', `${prefixBulan}-%`).neq('status', 'Rejected');
 
-  if (count >= kuotaMaks) {
-    const idRequest = await generateIdRequest();
-    await supabase.from('requests').insert({ ...req.body, id_request: idRequest, status: 'Ditunda - Kuota Penuh' });
-    await supabase.from('log_aktivitas').insert({ id_request: idRequest, aktivitas: 'Pengajuan Ditunda', detail: 'Kuota bulan ini sudah penuh' });
-    return res.json({ success: true, idRequest, status: 'kuota_penuh', message: 'Pengajuan diterima namun kuota bulan ini sudah penuh.' });
-  }
-
-  const idRequest = await generateIdRequest();
-  const { error } = await supabase.from('requests').insert({
-    nama_perusahaan, pic_hc, email_pic_hc, user_atasan, email_user,
-    nama_peserta, posisi_current, dept, div, gol_current,
-    posisi_target, gol_target, jumlah_bawahan, jumlah_peers,
-    masa_kerja, tujuan_ac, jenis_assessment, terakhir_assessment, email_peserta,
-    id_request: idRequest, status: 'Pending - Menunggu Review'
-  });
-
-  if (error) return res.status(500).json({ error: 'Gagal menyimpan pengajuan' });
-
   const approvers = [
     { nama: config.approver_1_nama, email: config.approver_1_email },
     { nama: config.approver_2_nama, email: config.approver_2_email }
   ].filter(a => a.email);
 
-  const dataPeserta = { nama_perusahaan, pic_hc, nama_peserta, posisi_current, posisi_target, jenis_assessment, tujuan_ac };
+  const idRequests = [];
+  const statusList = [];
 
-  for (const approver of approvers) {
-    const tokenApprove = uuidv4();
-    const tokenReject = uuidv4();
-    await supabase.from('token_approval').insert([
-      { id_request: idRequest, token: tokenApprove, action: 'approve', approver_nama: approver.nama, approver_email: approver.email },
-      { id_request: idRequest, token: tokenReject, action: 'reject', approver_nama: approver.nama, approver_email: approver.email }
-    ]);
-    await kirimEmailApprover({ namaApprover: approver.nama, emailApprover: approver.email, idRequest, dataPeserta, tokenApprove, tokenReject });
+  for (const p of peserta) {
+    const sisaKuota = kuotaMaks - (count + idRequests.length);
+    const idRequest = await generateIdRequest();
+
+    if (sisaKuota <= 0) {
+      await supabase.from('requests').insert({
+        nama_perusahaan, pic_hc, email_pic_hc, user_atasan, email_user,
+        nama_peserta: p.nama_peserta, email_peserta: p.email_peserta,
+        posisi_current: p.posisi_current, dept: p.dept, div: p.div,
+        gol_current: p.gol_current, posisi_target: p.posisi_target,
+        gol_target: p.gol_target, jumlah_bawahan: p.jumlah_bawahan,
+        jumlah_peers: p.jumlah_peers, masa_kerja: p.masa_kerja,
+        tujuan_ac: p.tujuan_ac, jenis_assessment: p.jenis_assessment,
+        terakhir_assessment: p.terakhir_assessment,
+        id_request: idRequest, status: 'Ditunda - Kuota Penuh'
+      });
+      await supabase.from('log_aktivitas').insert({ id_request: idRequest, aktivitas: 'Pengajuan Ditunda', detail: 'Kuota bulan ini sudah penuh' });
+      idRequests.push(idRequest);
+      statusList.push('kuota_penuh');
+      continue;
+    }
+
+    const { error } = await supabase.from('requests').insert({
+      nama_perusahaan, pic_hc, email_pic_hc, user_atasan, email_user,
+      nama_peserta: p.nama_peserta, email_peserta: p.email_peserta,
+      posisi_current: p.posisi_current, dept: p.dept, div: p.div,
+      gol_current: p.gol_current, posisi_target: p.posisi_target,
+      gol_target: p.gol_target, jumlah_bawahan: p.jumlah_bawahan,
+      jumlah_peers: p.jumlah_peers, masa_kerja: p.masa_kerja,
+      tujuan_ac: p.tujuan_ac, jenis_assessment: p.jenis_assessment,
+      terakhir_assessment: p.terakhir_assessment,
+      id_request: idRequest, status: 'Pending - Menunggu Review'
+    });
+
+    if (error) {
+      return res.status(500).json({ error: `Gagal menyimpan pengajuan untuk ${p.nama_peserta}` });
+    }
+
+    const dataPeserta = {
+      nama_perusahaan, pic_hc,
+      nama_peserta: p.nama_peserta,
+      posisi_current: p.posisi_current,
+      posisi_target: p.posisi_target,
+      jenis_assessment: p.jenis_assessment,
+      tujuan_ac: p.tujuan_ac
+    };
+
+    for (const approver of approvers) {
+      const tokenApprove = uuidv4();
+      const tokenReject = uuidv4();
+      await supabase.from('token_approval').insert([
+        { id_request: idRequest, token: tokenApprove, action: 'approve', approver_nama: approver.nama, approver_email: approver.email },
+        { id_request: idRequest, token: tokenReject, action: 'reject', approver_nama: approver.nama, approver_email: approver.email }
+      ]);
+      await kirimEmailApprover({ namaApprover: approver.nama, emailApprover: approver.email, idRequest, dataPeserta, tokenApprove, tokenReject });
+    }
+
+    await supabase.from('log_aktivitas').insert({ id_request: idRequest, aktivitas: 'Pengajuan Masuk', detail: `Request dari ${pic_hc} (${nama_perusahaan}) untuk ${p.nama_peserta}` });
+    idRequests.push(idRequest);
+    statusList.push('pending');
   }
 
-  await supabase.from('log_aktivitas').insert({ id_request: idRequest, aktivitas: 'Pengajuan Masuk', detail: `Request dari ${pic_hc} (${nama_perusahaan}) untuk ${nama_peserta}` });
-  res.json({ success: true, idRequest, status: 'pending', message: 'Pengajuan berhasil dikirim.' });
+  const adaKuotaPenuh = statusList.includes('kuota_penuh');
+  const semuaPending = statusList.every(s => s === 'pending');
+
+  res.json({
+    success: true,
+    idRequests,
+    status: semuaPending ? 'pending' : adaKuotaPenuh ? 'sebagian_kuota_penuh' : 'kuota_penuh',
+    message: semuaPending
+      ? `${idRequests.length} pengajuan berhasil dikirim dan menunggu review.`
+      : `${statusList.filter(s => s === 'pending').length} pengajuan berhasil, ${statusList.filter(s => s === 'kuota_penuh').length} ditunda karena kuota penuh.`
+  });
 });
 
 // GET /api/requests - Daftar semua request (PIC only)
