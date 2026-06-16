@@ -3,13 +3,14 @@ const { Resend } = require('resend');
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL = 'noreply@lyraac.site';
 
-const sendEmail = async ({ to, subject, html }) => {
+const sendEmail = async ({ to, subject, html, attachments = [] }) => {
   const { error } = await resend.emails.send({
     from: `RACD AIHO Assessment Center <${FROM_EMAIL}>`,
     reply_to: FROM_EMAIL,
     to,
     subject,
     html,
+    attachments,
     headers: {
       'X-Entity-Ref-ID': `racd-aiho-${Date.now()}`
     }
@@ -43,18 +44,24 @@ const kirimEmailPembukaan = async ({ namaHC, emailHC, tanggalAC, tenggat, kuota 
 };
 
 // ============================================================
-// FASE 2: Email ke Approver
+// FASE 2: Email ke Approver (dengan PDF terlampir)
 // ============================================================
-const kirimEmailApprover = async ({ namaApprover, emailApprover, idRequest, dataPeserta, tokenApprove, tokenReject }) => {
+const kirimEmailApprover = async ({ namaApprover, emailApprover, idRequest, dataPeserta, tokenApprove, tokenReject, pdfBuffer, namaPDF }) => {
   const urlApprove = `${process.env.FRONTEND_URL}/approval?token=${tokenApprove}&action=approve`;
   const urlReject = `${process.env.FRONTEND_URL}/approval?token=${tokenReject}&action=reject`;
+
+  const attachments = pdfBuffer && namaPDF
+    ? [{ filename: namaPDF, content: pdfBuffer }]
+    : [];
+
   await sendEmail({
     to: emailApprover,
     subject: `[RACD AIHO] Review Pengajuan Assessment – ${idRequest}`,
+    attachments,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <p>Kepada Yth.<br/>Bapak/Ibu ${namaApprover}</p>
-        <p>Terdapat pengajuan Assessment Center yang memerlukan review Anda:</p>
+        <p>Terdapat pengajuan Assessment Center yang memerlukan review Anda. Detail lengkap terlampir dalam file PDF.</p>
         <table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
           <tr><td style="padding: 8px; border: 1px solid #ddd; background: #f5f5f5;" colspan="2"><strong>ID Request: ${idRequest}</strong></td></tr>
           <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Perusahaan</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${dataPeserta.nama_perusahaan}</td></tr>
