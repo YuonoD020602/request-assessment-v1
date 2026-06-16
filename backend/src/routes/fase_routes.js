@@ -9,6 +9,29 @@ const {
 
 const delay = (ms) => new Promise(r => setTimeout(r, ms));
 
+// Helper: ambil semua assessor dan roleplayer dari config secara dinamis
+const getTimPelaksana = (config) => {
+  const assessors = [];
+  let i = 1;
+  while (config[`assessor_${i}_email`]) {
+    assessors.push({ nama: config[`assessor_${i}_nama`], email: config[`assessor_${i}_email`] });
+    i++;
+  }
+
+  const roleplayers = [];
+  let j = 1;
+  while (config[`roleplayer_${j}_email`]) {
+    roleplayers.push({ nama: config[`roleplayer_${j}_nama`], email: config[`roleplayer_${j}_email`] });
+    j++;
+  }
+
+  const admin = config.admin_ac_1_email
+    ? [{ nama: config.admin_ac_1_nama, email: config.admin_ac_1_email }]
+    : [];
+
+  return [...assessors, ...admin, ...roleplayers];
+};
+
 // ============================================================
 // FASE 3 ROUTER
 // ============================================================
@@ -64,13 +87,7 @@ fase3Router.post('/input-mom', authMiddleware, picOnly, async (req, res) => {
   await kirimEmailMOM({ namaTo: request.pic_hc, emailTo: request.email_pic_hc, idRequest: id_request, namaPeserta: request.nama_peserta, momText: mom_gr, isTimPelaksana: false });
   await delay(400);
 
-  const tim = [
-    config.assessor_1_email ? { nama: config.assessor_1_nama, email: config.assessor_1_email } : null,
-    config.assessor_2_email ? { nama: config.assessor_2_nama, email: config.assessor_2_email } : null,
-    config.admin_ac_1_email ? { nama: config.admin_ac_1_nama, email: config.admin_ac_1_email } : null,
-    config.roleplayer_1_email ? { nama: config.roleplayer_1_nama, email: config.roleplayer_1_email } : null,
-  ].filter(Boolean);
-
+  const tim = getTimPelaksana(config);
   for (const t of tim) {
     await kirimEmailMOM({ namaTo: t.nama, emailTo: t.email, idRequest: id_request, namaPeserta: request.nama_peserta, momText: mom_gr, isTimPelaksana: true });
     await delay(400);
@@ -109,13 +126,7 @@ fase4Router.post('/dokumen', async (req, res) => {
     { jenis: 'Form STAR', link: link_form_star }
   ];
 
-  const tim = [
-    config.assessor_1_email ? { nama: config.assessor_1_nama, email: config.assessor_1_email } : null,
-    config.assessor_2_email ? { nama: config.assessor_2_nama, email: config.assessor_2_email } : null,
-    config.admin_ac_1_email ? { nama: config.admin_ac_1_nama, email: config.admin_ac_1_email } : null,
-    config.roleplayer_1_email ? { nama: config.roleplayer_1_nama, email: config.roleplayer_1_email } : null,
-  ].filter(Boolean);
-
+  const tim = getTimPelaksana(config);
   for (const t of tim) {
     for (const dok of dokumen) {
       await kirimNotifikasiDokumenDiterima({
@@ -181,13 +192,11 @@ fase4Router.post('/jadwal-ac', authMiddleware, picOnly, async (req, res) => {
   await supabase.from('requests').update({ tanggal_ac, jam_ac, lokasi_ac }).eq('id_request', id_request);
 
   // Kirim notifikasi jadwal AC ke HC, User/Atasan, dan seluruh tim pelaksana
+  const tim = getTimPelaksana(config);
   const penerima = [
     { nama: request.pic_hc, email: request.email_pic_hc },
     request.email_user ? { nama: request.user_atasan, email: request.email_user } : null,
-    config.assessor_1_email ? { nama: config.assessor_1_nama, email: config.assessor_1_email } : null,
-    config.assessor_2_email ? { nama: config.assessor_2_nama, email: config.assessor_2_email } : null,
-    config.admin_ac_1_email ? { nama: config.admin_ac_1_nama, email: config.admin_ac_1_email } : null,
-    config.roleplayer_1_email ? { nama: config.roleplayer_1_nama, email: config.roleplayer_1_email } : null,
+    ...tim
   ].filter(Boolean);
 
   for (const p of penerima) {
