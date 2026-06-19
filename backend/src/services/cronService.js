@@ -5,6 +5,36 @@ const {
   kirimJadwalPsikotes
 } = require('./emailService');
 
+const getTimPelaksana = (config) => {
+  const result = [];
+  let i = 1;
+  while (config[`assessor_${i}_email`]) {
+    result.push({ nama: config[`assessor_${i}_nama`], email: config[`assessor_${i}_email`] });
+    i++;
+  }
+  let j = 1;
+  while (config[`admin_ac_${j}_email`]) {
+    result.push({ nama: config[`admin_ac_${j}_nama`], email: config[`admin_ac_${j}_email`] });
+    j++;
+  }
+  let k = 1;
+  while (config[`roleplayer_${k}_email`]) {
+    result.push({ nama: config[`roleplayer_${k}_nama`], email: config[`roleplayer_${k}_email`] });
+    k++;
+  }
+  return result;
+};
+
+const getAdmins = (config) => {
+  const admins = [];
+  let i = 1;
+  while (config[`admin_ac_${i}_email`]) {
+    admins.push({ nama: config[`admin_ac_${i}_nama`], email: config[`admin_ac_${i}_email`] });
+    i++;
+  }
+  return admins;
+};
+
 const runDailyReminders = async () => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -53,16 +83,13 @@ const runDailyReminders = async () => {
       const { data: cfg } = await supabase.from('konfigurasi').select('key, value');
       const config = Object.fromEntries(cfg.map(c => [c.key, c.value]));
 
-      if (config.admin_ac_1_email) {
+      const admins = getAdmins(config);
+      for (const admin of admins) {
         await kirimJadwalPsikotes({
-          namaTo: config.admin_ac_1_nama,
-          emailTo: config.admin_ac_1_email,
-          idRequest: req.id_request,
-          namaPeserta: req.nama_peserta,
-          tanggal: req.tanggal_psikotes,
-          jam: req.jam_psikotes,
-          linkPlatform: req.link_platform_psikotes,
-          isReminder: true
+          namaTo: admin.nama, emailTo: admin.email,
+          idRequest: req.id_request, namaPeserta: req.nama_peserta,
+          tanggal: req.tanggal_psikotes, jam: req.jam_psikotes,
+          linkPlatform: req.link_platform_psikotes, isReminder: true
         });
       }
 
@@ -98,11 +125,8 @@ const runDailyReminders = async () => {
 
       const penerima = [
         { nama: req.pic_hc, email: req.email_pic_hc },
-        config.assessor_1_email ? { nama: config.assessor_1_nama, email: config.assessor_1_email } : null,
-        config.assessor_2_email ? { nama: config.assessor_2_nama, email: config.assessor_2_email } : null,
-        config.admin_ac_1_email ? { nama: config.admin_ac_1_nama, email: config.admin_ac_1_email } : null,
-        config.roleplayer_1_email ? { nama: config.roleplayer_1_nama, email: config.roleplayer_1_email } : null,
-      ].filter(Boolean);
+        ...getTimPelaksana(config)
+      ];
 
       for (const p of penerima) {
         if (p.email) {
@@ -133,12 +157,7 @@ const runDailyReminders = async () => {
       const { data: cfg } = await supabase.from('konfigurasi').select('key, value');
       const config = Object.fromEntries(cfg.map(c => [c.key, c.value]));
 
-      const timPelaksana = [
-        config.assessor_1_email ? { nama: config.assessor_1_nama, email: config.assessor_1_email } : null,
-        config.assessor_2_email ? { nama: config.assessor_2_nama, email: config.assessor_2_email } : null,
-        config.admin_ac_1_email ? { nama: config.admin_ac_1_nama, email: config.admin_ac_1_email } : null,
-        config.roleplayer_1_email ? { nama: config.roleplayer_1_nama, email: config.roleplayer_1_email } : null,
-      ].filter(Boolean);
+      const timPelaksana = getTimPelaksana(config);
 
       for (const p of timPelaksana) {
         if (p.email) {
