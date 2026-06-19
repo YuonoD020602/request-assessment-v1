@@ -34,8 +34,8 @@ router.post('/kirim-pembukaan', authMiddleware, picOnly, async (req, res) => {
   }
   const config = Object.fromEntries(cfgData.map(c => [c.key, c.value]));
 
-  if (!config.tanggal_ac || !config.tenggat_pendaftaran) {
-    return res.status(400).json({ error: 'Tanggal AC dan Tenggat Pendaftaran belum diisi di konfigurasi' });
+  if (!config.periode_ac && !config.tanggal_ac) {
+    return res.status(400).json({ error: 'Periode AC belum diisi di konfigurasi' });
   }
 
   let berhasil = 0;
@@ -51,7 +51,9 @@ router.post('/kirim-pembukaan', authMiddleware, picOnly, async (req, res) => {
         namaHC: hc.nama_hc,
         emailHC: hc.email_hc,
         periodeAC: config.periode_ac || config.tanggal_ac,
-        tenggat: config.tenggat_pendaftaran,
+        tenggat: config.tanggal_tutup
+          ? new Date(config.tanggal_tutup).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+          : '-',
         kuota: config.kuota_maks || '8'
       });
       berhasil++;

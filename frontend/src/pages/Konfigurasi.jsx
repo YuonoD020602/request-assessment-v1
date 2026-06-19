@@ -8,9 +8,8 @@ const CONFIG_GROUPS_STATIC = [
     title: 'Jadwal AC',
     keys: [
       { key: 'periode_ac', label: 'Periode AC (contoh: Juli 2026)', type: 'text' },
-      { key: 'tenggat_pendaftaran', label: 'Tenggat Pendaftaran', type: 'date' },
       { key: 'tanggal_buka', label: 'Tanggal Buka Pendaftaran', type: 'date' },
-      { key: 'tanggal_tutup', label: 'Tanggal Tutup Pendaftaran', type: 'date' },
+      { key: 'tanggal_tutup', label: 'Tanggal Tutup Pendaftaran (dipakai validasi + email info)', type: 'date' },
       { key: 'kuota_maks', label: 'Kuota Maksimal Peserta (acuan saja, tidak membatasi pendaftaran)', type: 'number' },
     ]
   },
