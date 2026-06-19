@@ -58,10 +58,12 @@ export function CekStatus() {
     if (status === 'Approved') return 'text-green-600 bg-green-50 border-green-200';
     if (status === 'Rejected') return 'text-red-600 bg-red-50 border-red-200';
     if (status === 'Selesai') return 'text-blue-600 bg-blue-50 border-blue-200';
+    if (status === 'Menunggu GR') return 'text-orange-600 bg-orange-50 border-orange-200';
+    if (status === 'GR Selesai - Menunggu Dokumen') return 'text-amber-600 bg-amber-50 border-amber-200';
+    if (status === 'Dokumen Diterima') return 'text-teal-600 bg-teal-50 border-teal-200';
     if (status === 'Psikotes Dijadwalkan') return 'text-violet-600 bg-violet-50 border-violet-200';
     if (status === 'AC Dijadwalkan') return 'text-sky-600 bg-sky-50 border-sky-200';
     if (status === 'Menunggu Presentasi') return 'text-indigo-600 bg-indigo-50 border-indigo-200';
-    if (status === 'Dokumen Diterima') return 'text-teal-600 bg-teal-50 border-teal-200';
     return 'text-yellow-600 bg-yellow-50 border-yellow-200';
   };
 

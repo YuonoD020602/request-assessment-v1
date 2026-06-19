@@ -56,7 +56,13 @@ export function FormDokumen() {
           <p className="text-sm text-gray-500 mt-1">RACD AIHO – PT Astra International</p>
         </div>
 
-        {!submitted ? (
+        {!idRequest ? (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center text-red-600 text-sm">
+            <p className="font-semibold mb-1">Link tidak valid</p>
+            <p>ID Request tidak ditemukan. Pastikan Anda membuka link yang dikirim melalui email approval.</p>
+            <a href="/cek-status" className="mt-3 inline-block text-blue-600 hover:underline text-xs">← Cek Status Request</a>
+          </div>
+        ) : !submitted ? (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="mb-4 p-3 bg-blue-50 rounded-lg text-sm text-blue-700">
               <p className="font-medium">ID Request: <span className="font-mono">{idRequest}</span></p>
