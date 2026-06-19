@@ -5,17 +5,6 @@ import Layout from '../components/Layout';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 
-const STATUS_BADGE = {
-  'Pending - Menunggu Review': 'badge-pending',
-  'Approved': 'badge-approved',
-  'Rejected': 'badge-rejected',
-  'Menunggu GR': 'badge-process',
-  'GR Selesai - Menunggu Dokumen': 'badge-process',
-  'Dokumen Diterima': 'badge-process',
-  'Menunggu Presentasi': 'badge-process',
-  'Laporan Dikirim': 'badge-approved',
-  'Selesai': 'badge-done',
-};
 
 const STATUS_COLOR = {
   'Pending - Menunggu Review': 'bg-yellow-100 text-yellow-800',

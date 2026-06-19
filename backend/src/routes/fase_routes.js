@@ -327,8 +327,8 @@ fase6Router.post('/kirim-laporan', authMiddleware, picOnly, upload.single('pdf')
 
 fase6Router.get('/cek-file/:idRequest', authMiddleware, picOnly, async (req, res) => {
   const idRequest = req.params.idRequest;
-  const { data: files } = await supabase.storage.from('laporan-pdf').list('', { search: idRequest });
-  const found = files?.filter(f => f.name.includes(idRequest)) || [];
+  const { data: files } = await supabase.storage.from('laporan-pdf').list(idRequest);
+  const found = (files || []).filter(f => f.name && !f.name.includes('.emptyFolderPlaceholder'));
   res.json({ found: found.length > 0, files: found });
 });
 

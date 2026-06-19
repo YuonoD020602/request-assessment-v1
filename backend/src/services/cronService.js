@@ -125,7 +125,8 @@ const runDailyReminders = async () => {
       .from('requests')
       .select('*')
       .eq('tanggal_ac', fmt(h1))
-      .not('tanggal_ac', 'is', null);
+      .not('tanggal_ac', 'is', null)
+      .not('status', 'in', '("Rejected","Selesai","Pending")');
 
     for (const req of acH1 || []) {
       const { data: cfg } = await supabase.from('konfigurasi').select('key, value');
@@ -160,7 +161,8 @@ const runDailyReminders = async () => {
       .from('requests')
       .select('*')
       .eq('tanggal_ac', fmt(today))
-      .not('tanggal_ac', 'is', null);
+      .not('tanggal_ac', 'is', null)
+      .not('status', 'in', '("Rejected","Selesai","Pending")');
 
     for (const req of acHariH || []) {
       const { data: cfg } = await supabase.from('konfigurasi').select('key, value');

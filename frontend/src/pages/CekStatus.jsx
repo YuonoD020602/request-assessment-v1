@@ -13,20 +13,24 @@ export function CekStatus() {
   const [emailHC, setEmailHC] = useState('');
   const [resultList, setResultList] = useState([]); // untuk hasil by-email
 
-  const handleCek = async (e) => {
-    e?.preventDefault();
-    if (!idRequest) return;
+  const handleCekById = async (id) => {
+    if (!id) return;
     setLoading(true);
     setError('');
     setResult(null);
     try {
-      const res = await api.get(`/api/requests/status/${idRequest}`);
+      const res = await api.get(`/api/requests/status/${id}`);
       setResult(res.data.data);
     } catch {
       setError('ID Request tidak ditemukan. Periksa kembali ID yang Anda masukkan.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCek = async (e) => {
+    e?.preventDefault();
+    await handleCekById(idRequest);
   };
 
   const handleCekEmail = async (e) => {
@@ -54,6 +58,10 @@ export function CekStatus() {
     if (status === 'Approved') return 'text-green-600 bg-green-50 border-green-200';
     if (status === 'Rejected') return 'text-red-600 bg-red-50 border-red-200';
     if (status === 'Selesai') return 'text-blue-600 bg-blue-50 border-blue-200';
+    if (status === 'Psikotes Dijadwalkan') return 'text-violet-600 bg-violet-50 border-violet-200';
+    if (status === 'AC Dijadwalkan') return 'text-sky-600 bg-sky-50 border-sky-200';
+    if (status === 'Menunggu Presentasi') return 'text-indigo-600 bg-indigo-50 border-indigo-200';
+    if (status === 'Dokumen Diterima') return 'text-teal-600 bg-teal-50 border-teal-200';
     return 'text-yellow-600 bg-yellow-50 border-yellow-200';
   };
 
@@ -149,7 +157,7 @@ export function CekStatus() {
                       </td>
                       <td className="py-2 px-3">
                         <button
-                          onClick={() => { setMode('id'); setIdRequest(r.id_request); setTimeout(() => handleCek(), 100); }}
+                          onClick={() => { setMode('id'); setIdRequest(r.id_request); handleCekById(r.id_request); }}
                           className="text-blue-600 hover:text-blue-800 text-xs font-medium">
                           Detail →
                         </button>

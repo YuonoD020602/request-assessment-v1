@@ -279,14 +279,16 @@ export default function DetailRequest() {
               {request.status_laporan === 'Laporan Dikirim' && (
                 <div className="mb-4 p-3 bg-green-50 rounded-lg text-sm text-green-700">✓ Laporan sudah dikirim</div>
               )}
-              <form onSubmit={submitLaporan} className="space-y-4">
-                <div>
-                  <label className="form-label">Upload File PDF *</label>
-                  <input type="file" accept=".pdf" className="form-input"
-                    onChange={e => setFileLaporan(e.target.files[0])} />
-                </div>
-                <button type="submit" className="btn-primary" disabled={submitting}>{submitting ? '...' : 'Kirim Laporan ke HC & User'}</button>
-              </form>
+              {request.status_laporan !== 'Laporan Dikirim' && (
+                <form onSubmit={submitLaporan} className="space-y-4">
+                  <div>
+                    <label className="form-label">Upload File PDF *</label>
+                    <input type="file" accept=".pdf" className="form-input"
+                      onChange={e => setFileLaporan(e.target.files[0])} />
+                  </div>
+                  <button type="submit" className="btn-primary" disabled={submitting}>{submitting ? '...' : 'Kirim Laporan ke HC & User'}</button>
+                </form>
+              )}
             </div>
           </div>
         )}

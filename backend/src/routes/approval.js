@@ -59,8 +59,8 @@ router.post('/approve', async (req, res) => {
     return res.status(400).json({ error: 'Link approval sudah kadaluarsa' });
   }
 
-  // Tandai token sudah digunakan
-  await supabase.from('token_approval').update({ sudah_digunakan: true }).eq('token', token);
+  // Invalidasi semua token untuk request ini (approve & reject)
+  await supabase.from('token_approval').update({ sudah_digunakan: true }).eq('id_request', tokenData.id_request);
 
   // Update status request
   await supabase.from('requests')
@@ -116,8 +116,8 @@ router.post('/reject', async (req, res) => {
     return res.status(400).json({ error: 'Link approval sudah kadaluarsa' });
   }
 
-  // Tandai token sudah digunakan
-  await supabase.from('token_approval').update({ sudah_digunakan: true }).eq('token', token);
+  // Invalidasi semua token untuk request ini (approve & reject)
+  await supabase.from('token_approval').update({ sudah_digunakan: true }).eq('id_request', tokenData.id_request);
 
   // Update status
   await supabase.from('requests')
