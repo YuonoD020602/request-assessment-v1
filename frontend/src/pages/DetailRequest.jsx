@@ -21,11 +21,20 @@ export default function DetailRequest() {
   const [formsReady, setFormsReady] = useState(false);
   const [fileLaporan, setFileLaporan] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [logList, setLogList] = useState([]);
 
   useEffect(() => {
     fetchRequest();
+    fetchLog();
     api.get('/api/config').then(res => setConfig(res.data.data || {})).catch(() => {});
   }, [idRequest]);
+
+  const fetchLog = async () => {
+    try {
+      const res = await api.get(`/api/requests/${idRequest}/log`);
+      setLogList(res.data.data || []);
+    } catch { }
+  };
 
   const fetchRequest = async () => {
     try {
@@ -42,11 +51,13 @@ export default function DetailRequest() {
     finally { setLoading(false); }
   };
 
+  const refresh = () => { fetchRequest(); fetchLog(); };
+
   const submitGR = async (e) => {
     e.preventDefault(); setSubmitting(true);
     try {
       await api.post('/api/fase3/jadwal-gr', { id_request: idRequest, ...grForm });
-      toast.success('Jadwal GR berhasil dikirim!'); fetchRequest();
+      toast.success('Jadwal GR berhasil dikirim!'); refresh();
     } catch (err) { toast.error(err.response?.data?.error || 'Gagal'); }
     finally { setSubmitting(false); }
   };
@@ -55,7 +66,7 @@ export default function DetailRequest() {
     e.preventDefault(); setSubmitting(true);
     try {
       await api.post('/api/fase3/input-mom', { id_request: idRequest, ...momForm });
-      toast.success('MOM berhasil dikirim!'); fetchRequest();
+      toast.success('MOM berhasil dikirim!'); refresh();
     } catch (err) { toast.error(err.response?.data?.error || 'Gagal'); }
     finally { setSubmitting(false); }
   };
@@ -64,7 +75,7 @@ export default function DetailRequest() {
     e.preventDefault(); setSubmitting(true);
     try {
       await api.post('/api/fase4/psikotes', { id_request: idRequest, ...psikotesForm });
-      toast.success('Jadwal psikotes berhasil dikirim!'); fetchRequest();
+      toast.success('Jadwal psikotes berhasil dikirim!'); refresh();
     } catch (err) { toast.error(err.response?.data?.error || 'Gagal'); }
     finally { setSubmitting(false); }
   };
@@ -73,7 +84,7 @@ export default function DetailRequest() {
     e.preventDefault(); setSubmitting(true);
     try {
       await api.post('/api/fase4/jadwal-ac', { id_request: idRequest, ...jadwalAcForm });
-      toast.success('Jadwal AC berhasil disimpan!'); fetchRequest();
+      toast.success('Jadwal AC berhasil disimpan!'); refresh();
     } catch (err) { toast.error(err.response?.data?.error || 'Gagal'); }
     finally { setSubmitting(false); }
   };
@@ -90,7 +101,7 @@ export default function DetailRequest() {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       toast.success('Laporan berhasil dikirim!');
-      fetchRequest();
+      refresh();
     } catch (err) { toast.error(err.response?.data?.error || 'Gagal'); }
     finally { setSubmitting(false); }
   };
@@ -103,6 +114,7 @@ export default function DetailRequest() {
     { id: 'fase3', label: 'Fase 3 – GR' },
     { id: 'fase4', label: 'Fase 4 – Persiapan' },
     { id: 'fase6', label: 'Fase 6 – Laporan' },
+    { id: 'riwayat', label: `Riwayat (${logList.length})` },
   ];
 
   return (
@@ -298,6 +310,44 @@ export default function DetailRequest() {
                 </form>
               )}
             </div>
+          </div>
+        )}
+        {/* Tab: Riwayat */}
+        {activeTab === 'riwayat' && (
+          <div className="card">
+            <h3 className="font-semibold text-gray-900 mb-4">Riwayat Aktivitas & Email</h3>
+            {logList.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-6">Belum ada aktivitas tercatat</p>
+            ) : (
+              <div className="relative">
+                <div className="absolute left-3 top-0 bottom-0 w-px bg-gray-200" />
+                <div className="space-y-4">
+                  {logList.map((log) => {
+                    const tgl = new Date(log.created_at);
+                    const label = tgl.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+                    const jam = tgl.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Asia/Jakarta' });
+                    const isEmail = log.aktivitas === 'Email Terkirim';
+                    return (
+                      <div key={log.id} className="flex gap-4 pl-8 relative">
+                        <div className={`absolute left-1.5 top-1 w-3 h-3 rounded-full border-2 border-white ${isEmail ? 'bg-blue-500' : 'bg-green-500'}`} />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${isEmail ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
+                              {log.aktivitas}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600 mt-1">{log.detail}</p>
+                        </div>
+                        <div className="text-xs text-gray-400 flex-shrink-0 text-right whitespace-nowrap">
+                          <p>{label}</p>
+                          <p>{jam} WIB</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -207,6 +207,17 @@ router.get('/status/:idRequest', async (req, res) => {
   });
 });
 
+// GET /api/requests/:idRequest/log - Riwayat aktivitas satu request (PIC only)
+router.get('/:idRequest/log', authMiddleware, picOnly, async (req, res) => {
+  const { data, error } = await supabase
+    .from('log_aktivitas')
+    .select('id, aktivitas, detail, created_at')
+    .eq('id_request', req.params.idRequest)
+    .order('created_at', { ascending: false });
+  if (error) return res.status(500).json({ error: 'Gagal ambil log' });
+  res.json({ data: data || [] });
+});
+
 // GET /api/requests/:idRequest - Detail satu request (PIC only)
 router.get('/:idRequest', authMiddleware, picOnly, async (req, res) => {
   const { data, error } = await supabase.from('requests').select('*').eq('id_request', req.params.idRequest).single();
