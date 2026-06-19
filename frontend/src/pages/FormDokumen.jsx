@@ -124,12 +124,7 @@ export function FormDokumen() {
                     {jadwal.tanggal_psikotes ? (
                       <div className="space-y-1 text-sm">
                         <p className="font-medium text-gray-900">📅 {jadwal.tanggal_psikotes} pukul {jadwal.jam_psikotes} WIB</p>
-                        {jadwal.link_platform_psikotes && (
-                          <a href={jadwal.link_platform_psikotes} target="_blank"
-                            className="text-blue-600 hover:underline text-xs block">
-                            🔗 Buka Link Platform Psikotes
-                          </a>
-                        )}
+                        <p className="text-blue-600 text-xs">Cek email dari astra.recruitment@ai.astra.co.id</p>
                       </div>
                     ) : (
                       <p className="text-sm text-gray-400 italic">Belum dijadwalkan</p>

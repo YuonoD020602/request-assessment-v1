@@ -9,7 +9,9 @@ const CONFIG_GROUPS_STATIC = [
     keys: [
       { key: 'tanggal_ac', label: 'Tanggal Pelaksanaan AC', type: 'date' },
       { key: 'tenggat_pendaftaran', label: 'Tenggat Pendaftaran', type: 'date' },
-      { key: 'kuota_maks', label: 'Kuota Maksimal Peserta', type: 'number' },
+      { key: 'tanggal_buka', label: 'Tanggal Buka Pendaftaran', type: 'date' },
+      { key: 'tanggal_tutup', label: 'Tanggal Tutup Pendaftaran', type: 'date' },
+      { key: 'kuota_maks', label: 'Kuota Maksimal Peserta (acuan saja, tidak membatasi pendaftaran)', type: 'number' },
     ]
   },
   {
