@@ -1,18 +1,7 @@
 const { Resend } = require('resend');
-const supabase = require('../supabase');
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL = 'noreply@lyraac.site';
-
-const logEmail = async (id_request, tujuan, fungsi) => {
-  try {
-    await supabase.from('log_aktivitas').insert({
-      id_request,
-      aktivitas: 'Email Terkirim',
-      detail: `${fungsi} → ${tujuan} pada ${new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}`
-    });
-  } catch (_) {}
-};
 
 const sendEmail = async ({ to, subject, html, attachments = [] }) => {
   const { error } = await resend.emails.send({
@@ -52,7 +41,6 @@ const kirimEmailPembukaan = async ({ namaHC, emailHC, tanggalAC, tenggat, kuota 
       </div>
     `
   });
-  await logEmail(null, emailHC, 'Email Pembukaan');
 };
 
 // ============================================================
@@ -93,7 +81,6 @@ const kirimEmailApprover = async ({ namaApprover, emailApprover, idRequest, data
       </div>
     `
   });
-  await logEmail(idRequest, emailApprover, 'Email Approver');
 };
 
 // ============================================================
@@ -116,7 +103,6 @@ const kirimEmailApprovedHC = async ({ namaHC, emailHC, idRequest, urlZip, urlFor
       </div>
     `
   });
-  await logEmail(idRequest, emailHC, 'Email Approved HC');
 };
 
 // ============================================================
@@ -137,7 +123,6 @@ const kirimEmailRejectedHC = async ({ namaHC, emailHC, idRequest, catatanReject 
       </div>
     `
   });
-  await logEmail(idRequest, emailHC, 'Email Rejected HC');
 };
 
 // ============================================================
@@ -160,7 +145,6 @@ const kirimEmailUndanganGR = async ({ namaTo, emailTo, idRequest, tanggalGR, jam
       </div>
     `
   });
-  await logEmail(idRequest, emailTo, 'Email Undangan GR');
 };
 
 // ============================================================
@@ -177,7 +161,6 @@ const kirimEmailMOM = async ({ namaTo, emailTo, idRequest, namaPeserta, momText,
     to: emailTo, subject,
     html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;"><p>Kepada Yth. Bapak/Ibu ${namaTo}</p>${body}<p>Hormat kami,<br/><strong>PIC Asesmen RACD AIHO</strong></p></div>`
   });
-  await logEmail(idRequest, emailTo, 'Email MOM GR');
 };
 
 // ============================================================
@@ -196,7 +179,6 @@ const kirimReminderDokumen = async ({ namaHC, emailHC, idRequest, namaPeserta, u
       </div>
     `
   });
-  await logEmail(idRequest, emailHC, 'Reminder Dokumen H-3');
 };
 
 // ============================================================
@@ -208,7 +190,6 @@ const kirimNotifikasiDokumenDiterima = async ({ namaTo, emailTo, idRequest, nama
     subject: `[RACD AIHO] Dokumen AC Tersedia – ${idRequest}`,
     html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;"><p>Kepada Yth. Bapak/Ibu ${namaTo}</p><p>Dokumen <strong>${jenisDokumen}</strong> untuk <strong>${namaPeserta}</strong> (${idRequest}) tersedia.</p><p><a href="${linkDokumen}">Klik di sini untuk mengakses</a></p><p>Hormat kami,<br/><strong>PIC Asesmen RACD AIHO</strong></p></div>`
   });
-  await logEmail(idRequest, emailTo, 'Notifikasi Dokumen Diterima');
 };
 
 // ============================================================
@@ -218,9 +199,8 @@ const kirimJadwalPsikotes = async ({ namaTo, emailTo, idRequest, namaPeserta, ta
   await sendEmail({
     to: emailTo,
     subject: isReminder ? `[RACD AIHO] Reminder Besok: Psikotes – ${idRequest}` : `[RACD AIHO] Jadwal Psikotes – ${idRequest}`,
-    html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;"><p>Kepada Yth. Bapak/Ibu ${namaTo}</p><p>${isReminder ? 'Reminder' : 'Jadwal'} Psikotes untuk <strong>${namaPeserta}</strong>:</p><table style="border-collapse:collapse;width:100%;"><tr><td style="padding:8px;border:1px solid #ddd;"><strong>Tanggal</strong></td><td style="padding:8px;border:1px solid #ddd;">${tanggal}</td></tr><tr><td style="padding:8px;border:1px solid #ddd;"><strong>Pukul</strong></td><td style="padding:8px;border:1px solid #ddd;">${jam} WIB</td></tr><tr><td style="padding:8px;border:1px solid #ddd;"><strong>Platform</strong></td><td style="padding:8px;border:1px solid #ddd;">Cek email dari astra.recruitment@ai.astra.co.id</td></tr></table><p>Hormat kami,<br/><strong>PIC Asesmen RACD AIHO</strong></p></div>`
+    html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;"><p>Kepada Yth. Bapak/Ibu ${namaTo}</p><p>${isReminder ? 'Reminder' : 'Jadwal'} Psikotes untuk <strong>${namaPeserta}</strong>:</p><table style="border-collapse:collapse;width:100%;"><tr><td style="padding:8px;border:1px solid #ddd;"><strong>Tanggal</strong></td><td style="padding:8px;border:1px solid #ddd;">${tanggal}</td></tr><tr><td style="padding:8px;border:1px solid #ddd;"><strong>Pukul</strong></td><td style="padding:8px;border:1px solid #ddd;">${jam} WIB</td></tr><tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Platform</strong></td><td style="padding: 8px; border: 1px solid #ddd;">Cek email dari astra.recruitment@ai.astra.co.id</td></tr></table><p>Hormat kami,<br/><strong>PIC Asesmen RACD AIHO</strong></p></div>`
   });
-  await logEmail(idRequest, emailTo, isReminder ? 'Reminder Psikotes H-1' : 'Jadwal Psikotes');
 };
 
 // ============================================================
@@ -232,7 +212,6 @@ const kirimReminderAC = async ({ namaTo, emailTo, idRequest, namaPeserta, tangga
     subject: isHariH ? `[RACD AIHO] Hari Ini: Pelaksanaan AC – ${idRequest}` : `[RACD AIHO] Reminder Besok: Pelaksanaan AC – ${idRequest}`,
     html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;"><p>Kepada Yth. Bapak/Ibu ${namaTo}</p><p>${isHariH ? 'Hari ini' : 'Besok'} adalah pelaksanaan <strong>Assessment Center</strong> untuk <strong>${namaPeserta}</strong>.</p><table style="border-collapse:collapse;width:100%;"><tr><td style="padding:8px;border:1px solid #ddd;"><strong>Tanggal</strong></td><td style="padding:8px;border:1px solid #ddd;">${tanggalAC}</td></tr><tr><td style="padding:8px;border:1px solid #ddd;"><strong>Lokasi</strong></td><td style="padding:8px;border:1px solid #ddd;">${lokasiAC}</td></tr></table><p>Hormat kami,<br/><strong>PIC Asesmen RACD AIHO</strong></p></div>`
   });
-  await logEmail(idRequest, emailTo, isHariH ? 'Reminder AC Hari H' : 'Reminder AC H-1');
 };
 
 // ============================================================
@@ -244,7 +223,6 @@ const kirimUndanganPresentasi = async ({ namaTo, emailTo, idRequest, namaPeserta
     subject: `[RACD AIHO] Undangan Presentasi Hasil AC – ${idRequest}`,
     html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;"><p>Kepada Yth. Bapak/Ibu ${namaTo}</p><p>Undangan <strong>Presentasi Hasil Assessment Center</strong> untuk <strong>${namaPeserta}</strong>:</p><table style="border-collapse:collapse;width:100%;"><tr><td style="padding:8px;border:1px solid #ddd;"><strong>Tanggal</strong></td><td style="padding:8px;border:1px solid #ddd;">${tanggal}</td></tr><tr><td style="padding:8px;border:1px solid #ddd;"><strong>Pukul</strong></td><td style="padding:8px;border:1px solid #ddd;">${jam} WIB</td></tr><tr><td style="padding:8px;border:1px solid #ddd;"><strong>Lokasi / Link</strong></td><td style="padding:8px;border:1px solid #ddd;">${lokasi}</td></tr></table><p>Hormat kami,<br/><strong>PIC Asesmen RACD AIHO</strong></p></div>`
   });
-  await logEmail(idRequest, emailTo, 'Undangan Presentasi');
 };
 
 // ============================================================
@@ -262,7 +240,6 @@ const kirimLaporan = async ({ namaTo, emailTo, idRequest, namaPeserta, pdfBuffer
       'X-Entity-Ref-ID': `racd-aiho-${Date.now()}`
     }
   });
-  await logEmail(idRequest, emailTo, 'Laporan PDF');
 };
 
 module.exports = {

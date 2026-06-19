@@ -7,17 +7,12 @@ const { generatePDFPengajuan } = require('../services/pdfService');
 
 const router = express.Router();
 
-const generateIdRequests = async (jumlah) => {
+const generateIdRequest = async () => {
   const now = new Date();
   const prefix = `REQ-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`;
   const { data } = await supabase.from('requests').select('id_request').like('id_request', `${prefix}-%`).order('id_request', { ascending: false }).limit(1);
-  let lastNum = data?.[0]?.id_request ? parseInt(data[0].id_request.split('-')[2]) : 0;
-  const ids = [];
-  for (let i = 0; i < jumlah; i++) {
-    lastNum++;
-    ids.push(`${prefix}-${String(lastNum).padStart(3, '0')}`);
-  }
-  return ids;
+  const lastNum = data?.[0]?.id_request ? parseInt(data[0].id_request.split('-')[2]) + 1 : 1;
+  return `${prefix}-${String(lastNum).padStart(3, '0')}`;
 };
 
 // POST /api/requests/submit
@@ -60,13 +55,11 @@ router.post('/submit', async (req, res) => {
 
   const dataHC = { nama_perusahaan, pic_hc, email_pic_hc, user_atasan, email_user };
 
-  const resultIds = [];
+  const idRequests = [];
   const statusList = [];
-  const generatedIds = await generateIdRequests(peserta.length);
 
-  for (let idx = 0; idx < peserta.length; idx++) {
-    const p = peserta[idx];
-    const idRequest = generatedIds[idx];
+  for (const p of peserta) {
+    const idRequest = await generateIdRequest();
 
     const { error } = await supabase.from('requests').insert({
       ...dataHC,
@@ -114,20 +107,15 @@ router.post('/submit', async (req, res) => {
     }
 
     await supabase.from('log_aktivitas').insert({ id_request: idRequest, aktivitas: 'Pengajuan Masuk', detail: `Request dari ${pic_hc} (${nama_perusahaan}) untuk ${p.nama_peserta}` });
-    resultIds.push(idRequest);
+    idRequests.push(idRequest);
     statusList.push('pending');
   }
 
-  const adaKuotaPenuh = statusList.includes('kuota_penuh');
-  const semuaPending = statusList.every(s => s === 'pending');
-
   res.json({
     success: true,
-    idRequests: resultIds,
-    status: semuaPending ? 'pending' : adaKuotaPenuh ? 'sebagian_kuota_penuh' : 'kuota_penuh',
-    message: semuaPending
-      ? `${resultIds.length} pengajuan berhasil dikirim dan menunggu review.`
-      : `${statusList.filter(s => s === 'pending').length} pengajuan berhasil, ${statusList.filter(s => s === 'kuota_penuh').length} ditunda karena kuota penuh.`
+    idRequests,
+    status: 'pending',
+    message: `${idRequests.length} pengajuan berhasil dikirim dan menunggu review.`
   });
 });
 
@@ -139,13 +127,6 @@ router.get('/', authMiddleware, picOnly, async (req, res) => {
   if (bulan) query = query.like('id_request', `REQ-${bulan}-%`);
   const { data, error } = await query;
   if (error) return res.status(500).json({ error: 'Gagal mengambil data' });
-  res.json({ data });
-});
-
-// GET /api/requests/:idRequest - Detail satu request (PIC only)
-router.get('/:idRequest', authMiddleware, picOnly, async (req, res) => {
-  const { data, error } = await supabase.from('requests').select('*').eq('id_request', req.params.idRequest).single();
-  if (error || !data) return res.status(404).json({ error: 'Request tidak ditemukan' });
   res.json({ data });
 });
 
@@ -171,7 +152,7 @@ router.get('/status/:idRequest', async (req, res) => {
     .from('requests')
     .select(`
       id_request, status, nama_peserta, nama_perusahaan, created_at, catatan_reject,
-      tanggal_psikotes, jam_psikotes, link_platform_psikotes,
+      tanggal_psikotes, jam_psikotes,
       tanggal_ac, jam_ac, lokasi_ac
     `)
     .eq('id_request', req.params.idRequest)
@@ -188,13 +169,11 @@ router.get('/status/:idRequest', async (req, res) => {
   });
 });
 
-// DELETE /api/requests/:idRequest - Hapus request (PIC only)
-router.delete('/:idRequest', authMiddleware, picOnly, async (req, res) => {
-  const { idRequest } = req.params;
-  const { error } = await supabase.from('requests').delete().eq('id_request', idRequest);
-  if (error) return res.status(500).json({ error: 'Gagal menghapus request' });
-  await supabase.from('log_aktivitas').insert({ id_request: idRequest, aktivitas: 'Request Dihapus', detail: `Request ${idRequest} dihapus oleh PIC` });
-  res.json({ success: true, message: 'Request berhasil dihapus' });
+// GET /api/requests/:idRequest - Detail satu request (PIC only)
+router.get('/:idRequest', authMiddleware, picOnly, async (req, res) => {
+  const { data, error } = await supabase.from('requests').select('*').eq('id_request', req.params.idRequest).single();
+  if (error || !data) return res.status(404).json({ error: 'Request tidak ditemukan' });
+  res.json({ data });
 });
 
 module.exports = router;

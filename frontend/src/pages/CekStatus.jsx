@@ -9,6 +9,10 @@ export function CekStatus() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const [mode, setMode] = useState('id'); // 'id' atau 'email'
+  const [emailHC, setEmailHC] = useState('');
+  const [resultList, setResultList] = useState([]); // untuk hasil by-email
+
   const handleCek = async (e) => {
     e?.preventDefault();
     if (!idRequest) return;
@@ -20,6 +24,22 @@ export function CekStatus() {
       setResult(res.data.data);
     } catch {
       setError('ID Request tidak ditemukan. Periksa kembali ID yang Anda masukkan.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCekEmail = async (e) => {
+    e?.preventDefault();
+    if (!emailHC) return;
+    setLoading(true);
+    setError('');
+    setResultList([]);
+    try {
+      const res = await api.get(`/api/requests/status/by-email/${encodeURIComponent(emailHC)}`);
+      setResultList(res.data.data || []);
+    } catch {
+      setError('Email tidak ditemukan atau belum ada request yang didaftarkan.');
     } finally {
       setLoading(false);
     }
@@ -48,24 +68,97 @@ export function CekStatus() {
           <p className="text-gray-500 text-sm mt-1">Masukkan ID Request yang Anda terima</p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-4">
-          <form onSubmit={handleCek} className="flex gap-3">
-            <input
-              className="form-input flex-1"
-              placeholder="Contoh: REQ-202506-001"
-              value={idRequest}
-              onChange={e => setIdRequest(e.target.value.toUpperCase())}
-              required
-            />
-            <button type="submit" className="btn-primary px-6" disabled={loading}>
-              {loading ? '...' : 'Cek'}
-            </button>
-          </form>
+        {/* Mode toggle */}
+        <div className="flex rounded-lg border border-gray-200 overflow-hidden mb-4">
+          <button
+            onClick={() => { setMode('id'); setResult(null); setResultList([]); setError(''); }}
+            className={`flex-1 py-2 text-sm font-medium transition-colors ${mode === 'id' ? 'bg-blue-700 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>
+            Cari by ID Request
+          </button>
+          <button
+            onClick={() => { setMode('email'); setResult(null); setResultList([]); setError(''); }}
+            className={`flex-1 py-2 text-sm font-medium transition-colors ${mode === 'email' ? 'bg-blue-700 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>
+            Cari by Email HC
+          </button>
         </div>
+
+        {mode === 'id' && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-4">
+            <form onSubmit={handleCek} className="flex gap-3">
+              <input
+                className="form-input flex-1"
+                placeholder="Contoh: REQ-202506-001"
+                value={idRequest}
+                onChange={e => setIdRequest(e.target.value.toUpperCase())}
+                required
+              />
+              <button type="submit" className="btn-primary px-6" disabled={loading}>
+                {loading ? '...' : 'Cek'}
+              </button>
+            </form>
+          </div>
+        )}
+
+        {mode === 'email' && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-4">
+            <form onSubmit={handleCekEmail} className="flex gap-3">
+              <input
+                className="form-input flex-1"
+                placeholder="Email HC Anda"
+                type="email"
+                value={emailHC}
+                onChange={e => setEmailHC(e.target.value)}
+                required
+              />
+              <button type="submit" className="btn-primary px-6" disabled={loading}>
+                {loading ? '...' : 'Cek'}
+              </button>
+            </form>
+          </div>
+        )}
 
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-600 text-sm text-center mb-4">
             {error}
+          </div>
+        )}
+
+        {mode === 'email' && resultList.length > 0 && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 className="font-semibold text-gray-900 mb-4">Daftar Request Anda</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-100">
+                    <th className="text-left py-2 px-3 text-gray-500 font-medium">Peserta</th>
+                    <th className="text-left py-2 px-3 text-gray-500 font-medium">Jenis</th>
+                    <th className="text-left py-2 px-3 text-gray-500 font-medium">Status</th>
+                    <th className="text-left py-2 px-3 text-gray-500 font-medium">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {resultList.map((r) => (
+                    <tr key={r.id_request} className="border-b border-gray-50 hover:bg-gray-50">
+                      <td className="py-2 px-3">
+                        <p className="font-medium text-gray-900">{r.nama_peserta}</p>
+                        <p className="text-xs text-gray-400 font-mono">{r.id_request}</p>
+                      </td>
+                      <td className="py-2 px-3 text-gray-500 text-xs">{r.jenis_assessment}</td>
+                      <td className="py-2 px-3">
+                        <span className="text-xs font-medium">{r.status}</span>
+                      </td>
+                      <td className="py-2 px-3">
+                        <button
+                          onClick={() => { setMode('id'); setIdRequest(r.id_request); setTimeout(() => handleCek(), 100); }}
+                          className="text-blue-600 hover:text-blue-800 text-xs font-medium">
+                          Detail →
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
@@ -113,12 +206,7 @@ export function CekStatus() {
                     {result.tanggal_psikotes ? (
                       <div className="space-y-1 text-sm">
                         <p className="font-medium text-gray-900">📅 {result.tanggal_psikotes} pukul {result.jam_psikotes} WIB</p>
-                        {result.link_platform_psikotes && (
-                          <a href={result.link_platform_psikotes} target="_blank"
-                            className="text-blue-600 hover:underline text-xs block">
-                            🔗 Buka Link Platform Psikotes
-                          </a>
-                        )}
+                        <p className="text-blue-600 text-xs">Cek email dari astra.recruitment@ai.astra.co.id</p>
                       </div>
                     ) : (
                       <p className="text-sm text-gray-400 italic">Belum dijadwalkan</p>

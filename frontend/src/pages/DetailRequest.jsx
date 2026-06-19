@@ -200,12 +200,10 @@ export default function DetailRequest() {
                   ✓ Jadwal psikotes: {request.tanggal_psikotes} {request.jam_psikotes}
                 </div>
               )}
-              <div className="mb-4 p-3 bg-blue-50 rounded-lg text-sm text-blue-700">
-                Peserta akan diarahkan untuk cek email dari <strong>astra.recruitment@ai.astra.co.id</strong>
-              </div>
               <form onSubmit={submitPsikotes} className="grid grid-cols-2 gap-4">
                 <div><label className="form-label">Tanggal *</label><input type="date" className="form-input" required onChange={e => setPsikotesForm({...psikotesForm, tanggal_psikotes: e.target.value})} /></div>
-                <div><label className="form-label">Rentang Jam *</label><input className="form-input" placeholder="contoh: 08.00–10.00" required onChange={e => setPsikotesForm({...psikotesForm, jam_psikotes: e.target.value})} /></div>
+                <div><label className="form-label">Rentang Jam Psikotes *</label><input className="form-input" required placeholder="contoh: 08.00–10.00" onChange={e => setPsikotesForm({...psikotesForm, jam_psikotes: e.target.value})} /></div>
+                <div className="col-span-2 p-3 bg-blue-50 rounded-lg text-sm text-blue-700">Peserta akan diarahkan cek email dari astra.recruitment@ai.astra.co.id</div>
                 <div className="col-span-2"><button type="submit" className="btn-primary" disabled={submitting}>{submitting ? '...' : 'Kirim Jadwal Psikotes'}</button></div>
               </form>
             </div>
