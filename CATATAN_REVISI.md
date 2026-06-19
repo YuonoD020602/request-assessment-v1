@@ -1,6 +1,6 @@
 # CATATAN REVISI — Request Assessment V1
 **Project:** RACD AIHO – PT Astra International  
-**Terakhir diperbarui:** 19 Juni 2026
+**Terakhir diperbarui:** 19 Juni 2026 (Batch 8)
 
 ---
 
@@ -27,7 +27,8 @@
 | 14 | Hapus field redundant `tenggat_pendaftaran`, gabung ke `tanggal_tutup` | ✅ Selesai | Batch 7 |
 | 15 | Token approval: validasi `expired_at` + invalidasi semua token setelah digunakan | ✅ Selesai | Audit |
 | 16 | Audit & fix menyeluruh sistem (11 bug dari 2 putaran audit) | ✅ Selesai | Audit |
-| 17 | Export PDF laporan per periode | 📋 Backlog | - |
+| 17 | Upload dokumen PDF per peserta di Form Pengajuan + link template via email pembukaan | ✅ Selesai | Batch 8 |
+| 18 | Export PDF laporan per periode | 📋 Backlog | - |
 
 ---
 
@@ -233,7 +234,37 @@
 
 ---
 
-### 📋 17. Export PDF Laporan per Periode
+### ✅ 17. Upload Dokumen PDF Per Peserta di Form Pengajuan
+**Deskripsi:**  
+Fitur pengumpulan dokumen "Form Pengajuan Potential Review & Profiling" langsung di form pengajuan online.
+
+**Alur lengkap:**
+1. PIC mengisi field `link_form_pengajuan` di Konfigurasi → link Google Docs/Drive template form pengajuan
+2. Saat blast email pembukaan ke HC, link template disertakan dalam email (box biru dengan instruksi)
+3. HC mengunduh template, mengisi, menyimpan sebagai PDF
+4. Saat submit form pengajuan, HC **wajib** upload 1 PDF per peserta — tidak bisa submit tanpa file
+5. Backend upload PDF ke Supabase Storage bucket `dokumen-peserta`, path: `{id_request}/Form_Pengajuan_{Nama}_{id_request}.pdf`
+6. URL publik disimpan ke kolom `dokumen_peserta_url` di tabel `requests`
+7. Email ke approver menyertakan **2 attachment**: (1) PDF ringkasan data peserta yang digenerate otomatis, (2) PDF Form Pengajuan yang diupload HC
+8. PIC RACD bisa download dokumen dari tab Info di halaman Detail Request
+
+**Perubahan teknis:**
+- Endpoint `POST /api/requests/submit` berubah dari JSON ke `multipart/form-data` (Multer `upload.any()`)
+- Field file per peserta: `dokumen_pdf_0`, `dokumen_pdf_1`, dst
+- Field `peserta` di-JSON.parse dari `req.body.peserta` (string JSON)
+- Validasi: jika ada peserta yang tidak punya file → tolak seluruh submit dengan pesan error per peserta
+
+**DB:**
+- Kolom baru: `ALTER TABLE requests ADD COLUMN IF NOT EXISTS dokumen_peserta_url text null;`
+- Bucket baru: `dokumen-peserta` (Supabase Storage, public)
+- Policy: `CREATE POLICY "Allow service role full access on dokumen-peserta" ON storage.objects FOR ALL TO service_role ...`
+
+**File:** `frontend/src/pages/FormPengajuan.jsx`, `frontend/src/pages/Konfigurasi.jsx`, `frontend/src/pages/DetailRequest.jsx`, `backend/src/routes/requests.js`, `backend/src/routes/hc.js`, `backend/src/services/emailService.js`  
+**Selesai:** Batch 8
+
+---
+
+### 📋 18. Export PDF Laporan per Periode
 **Deskripsi:** Export data request per periode menjadi PDF laporan yang rapi (header logo, tabel, summary).  
 **Status:** Backlog — dikerjakan setelah Batch 6  
 **File:** TBD
@@ -250,7 +281,9 @@
 - **Constraint `jenis_assessment`:** Sudah diupdate, hanya "Potential Review" dan "Profiling" ✅
 - **Kolom `link_platform_psikotes`:** Masih ada di DB (data lama aman), tidak dipakai lagi
 - **Supabase Storage:** Bucket `laporan-pdf` (public), path format: `{id_request}/laporan_{timestamp}.pdf`
-- **Storage Policy:** Row-level security policy dibuat via SQL Editor untuk allow upload dari service role
+- **Supabase Storage:** Bucket `dokumen-peserta` (public), path format: `{id_request}/Form_Pengajuan_{Nama}_{id_request}.pdf`
+- **Storage Policy:** Row-level security policy dibuat via SQL Editor untuk allow upload dari service role (kedua bucket)
+- **Kolom `dokumen_peserta_url`:** Ditambahkan ke tabel `requests` (type: text, nullable)
 
 ### Infrastruktur
 - **Frontend:** React + Vite + TailwindCSS → Vercel (auto-deploy dari branch `main`)
