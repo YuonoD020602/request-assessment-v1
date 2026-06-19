@@ -11,6 +11,7 @@ const hcRoutes = require('./routes/hc');
 const fase3Routes = require('./routes/fase3');
 const fase4Routes = require('./routes/fase4');
 const fase6Routes = require('./routes/fase6');
+const slotRoutes = require('./routes/slots');
 const { runDailyReminders } = require('./services/cronService');
 
 const app = express();
@@ -49,6 +50,7 @@ app.use('/api/hc', hcRoutes);
 app.use('/api/fase3', fase3Routes);
 app.use('/api/fase4', fase4Routes);
 app.use('/api/fase6', fase6Routes);
+app.use('/api/slots', slotRoutes);
 
 // ============================================================
 // CRON JOB - Jalankan setiap hari pukul 06.00 WIB (UTC+7 = 23.00 UTC)

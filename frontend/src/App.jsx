@@ -11,6 +11,8 @@ import { DaftarHC } from './pages/DaftarHC';
 import Konfigurasi from './pages/Konfigurasi';
 import DetailRequest from './pages/DetailRequest';
 import SetupPassword from './pages/SetupPassword';
+import SlotPresentasi from './pages/SlotPresentasi';
+import PilihSlot from './pages/PilihSlot';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -33,12 +35,14 @@ export default function App() {
       <Route path="/approval" element={<ApprovalPage />} />
       <Route path="/cek-status" element={<CekStatus />} />
       <Route path="/setup-password" element={<SetupPassword />} />
+      <Route path="/pilih-slot" element={<PilihSlot />} />
 
       {/* Private */}
       <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
       <Route path="/request/:idRequest" element={<PrivateRoute><DetailRequest /></PrivateRoute>} />
       <Route path="/daftar-hc" element={<PrivateRoute><PICRoute><DaftarHC /></PICRoute></PrivateRoute>} />
       <Route path="/konfigurasi" element={<PrivateRoute><PICRoute><Konfigurasi /></PICRoute></PrivateRoute>} />
+      <Route path="/slot-presentasi" element={<PrivateRoute><PICRoute><SlotPresentasi /></PICRoute></PrivateRoute>} />
 
       {/* Default */}
       <Route path="/" element={<Navigate to="/dashboard" />} />
