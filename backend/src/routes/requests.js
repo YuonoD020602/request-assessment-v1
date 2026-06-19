@@ -187,9 +187,15 @@ router.get('/:idRequest', authMiddleware, picOnly, async (req, res) => {
 // DELETE /api/requests/:idRequest - Hapus request (PIC only)
 router.delete('/:idRequest', authMiddleware, picOnly, async (req, res) => {
   const { idRequest } = req.params;
+
+  // Cascade delete tabel terkait sebelum hapus request utama
+  await supabase.from('token_approval').delete().eq('id_request', idRequest);
+  await supabase.from('slot_presentasi').update({ status: 'Tersedia', id_request: null }).eq('id_request', idRequest);
+  await supabase.from('log_aktivitas').delete().eq('id_request', idRequest);
+
   const { error } = await supabase.from('requests').delete().eq('id_request', idRequest);
   if (error) return res.status(500).json({ error: 'Gagal menghapus request' });
-  await supabase.from('log_aktivitas').insert({ id_request: idRequest, aktivitas: 'Request Dihapus', detail: `Request ${idRequest} dihapus oleh PIC` });
+
   res.json({ success: true, message: 'Request berhasil dihapus' });
 });
 
