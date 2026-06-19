@@ -27,6 +27,7 @@ const CONFIG_GROUPS_STATIC = [
     title: 'URL & Link',
     keys: [
       { key: 'file_zip_dokumen_url', label: 'URL ZIP Dokumen Lanjutan', type: 'url' },
+      { key: 'link_keperluan_asesmen', label: 'Link Keperluan Asesmen (dikirim ke Tim Pelaksana)', type: 'url' },
     ]
   }
 ];

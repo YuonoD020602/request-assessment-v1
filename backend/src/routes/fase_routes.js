@@ -103,7 +103,7 @@ fase3Router.post('/input-mom', authMiddleware, picOnly, async (req, res) => {
 
   const tim = getTimPelaksana(config);
   for (const t of tim) {
-    await kirimEmailMOM({ namaTo: t.nama, emailTo: t.email, idRequest: id_request, namaPeserta: request.nama_peserta, momText: mom_gr, isTimPelaksana: true });
+    await kirimEmailMOM({ namaTo: t.nama, emailTo: t.email, idRequest: id_request, namaPeserta: request.nama_peserta, momText: mom_gr, isTimPelaksana: true, linkKeperluan: config.link_keperluan_asesmen || null });
     await delay(400);
   }
 
@@ -146,7 +146,8 @@ fase4Router.post('/dokumen', async (req, res) => {
       await kirimNotifikasiDokumenDiterima({
         namaTo: t.nama, emailTo: t.email,
         idRequest: id_request, namaPeserta: request.nama_peserta,
-        linkDokumen: dok.link, jenisDokumen: dok.jenis
+        linkDokumen: dok.link, jenisDokumen: dok.jenis,
+        linkKeperluan: config.link_keperluan_asesmen || null
       });
       await delay(400);
     }
@@ -208,18 +209,28 @@ fase4Router.post('/jadwal-ac', authMiddleware, picOnly, async (req, res) => {
 
   // Kirim notifikasi jadwal AC ke HC, User/Atasan, dan seluruh tim pelaksana
   const tim = getTimPelaksana(config);
-  const penerima = [
+  const penerimaHC = [
     { nama: request.pic_hc, email: request.email_pic_hc },
-    request.email_user ? { nama: request.user_atasan, email: request.email_user } : null,
-    ...tim
+    request.email_user ? { nama: request.user_atasan, email: request.email_user } : null
   ].filter(Boolean);
+  const lokasiLengkap = `${lokasi_ac} pukul ${jam_ac} WIB`;
 
-  for (const p of penerima) {
+  for (const p of penerimaHC) {
     await kirimReminderAC({
       namaTo: p.nama, emailTo: p.email,
       idRequest: id_request, namaPeserta: request.nama_peserta,
-      tanggalAC: tanggal_ac, lokasiAC: `${lokasi_ac} pukul ${jam_ac} WIB`,
-      isHariH: false
+      tanggalAC: tanggal_ac, lokasiAC: lokasiLengkap,
+      isHariH: false, attachCalendar: true
+    });
+    await delay(400);
+  }
+  for (const t of tim) {
+    await kirimReminderAC({
+      namaTo: t.nama, emailTo: t.email,
+      idRequest: id_request, namaPeserta: request.nama_peserta,
+      tanggalAC: tanggal_ac, lokasiAC: lokasiLengkap,
+      isHariH: false, attachCalendar: true,
+      linkKeperluan: config.link_keperluan_asesmen || null
     });
     await delay(400);
   }

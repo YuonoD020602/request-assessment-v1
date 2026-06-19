@@ -10,6 +10,7 @@ export default function DetailRequest() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [request, setRequest] = useState(null);
+  const [config, setConfig] = useState({});
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('info');
 
@@ -21,7 +22,10 @@ export default function DetailRequest() {
   const [pathLaporan, setPathLaporan] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => { fetchRequest(); }, [idRequest]);
+  useEffect(() => {
+    fetchRequest();
+    api.get('/api/config').then(res => setConfig(res.data.data || {})).catch(() => {});
+  }, [idRequest]);
 
   const fetchRequest = async () => {
     try {
@@ -213,6 +217,13 @@ export default function DetailRequest() {
               {request.tanggal_ac && request.jam_ac && (
                 <div className="mb-4 p-3 bg-green-50 rounded-lg text-sm text-green-700">
                   ✓ Jadwal AC: {request.tanggal_ac} {request.jam_ac} – {request.lokasi_ac}
+                </div>
+              )}
+              {config.link_keperluan_asesmen && (
+                <div className="mb-4 p-3 bg-indigo-50 rounded-lg text-sm text-indigo-700">
+                  <span className="font-medium">Link Keperluan Asesmen: </span>
+                  <a href={config.link_keperluan_asesmen} target="_blank" rel="noreferrer" className="underline">{config.link_keperluan_asesmen}</a>
+                  <span className="text-indigo-500 ml-1">(akan dikirim ke Tim Pelaksana via email)</span>
                 </div>
               )}
               <form onSubmit={submitJadwalAC} className="grid grid-cols-2 gap-4">
