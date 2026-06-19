@@ -146,6 +146,14 @@ export default function DetailRequest() {
                   ['Tujuan AC', request.tujuan_ac]].map(([k,v]) => (
                   <div key={k} className="flex gap-2"><span className="text-gray-500 w-28">{k}</span><span className="font-medium">{v || '-'}</span></div>
                 ))}
+                {request.dokumen_peserta_url && (
+                  <div className="flex gap-2">
+                    <span className="text-gray-500 w-28">Dok. Pengajuan</span>
+                    <a href={request.dokumen_peserta_url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline font-medium">
+                      📄 Download PDF
+                    </a>
+                  </div>
+                )}
               </div>
             </div>
           </div>

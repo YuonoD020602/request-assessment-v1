@@ -90,7 +90,7 @@ const sendEmail = async ({ to, subject, html, attachments = [] }) => {
 // ============================================================
 // FASE 1: Email Pembukaan Layanan ke HC
 // ============================================================
-const kirimEmailPembukaan = async ({ namaHC, emailHC, periodeAC, tenggat, kuota }) => {
+const kirimEmailPembukaan = async ({ namaHC, emailHC, periodeAC, tenggat, kuota, linkFormPengajuan }) => {
   await sendEmail({
     to: emailHC,
     subject: `[RACD AIHO] Pembukaan Layanan Assessment Center – ${periodeAC}`,
@@ -104,7 +104,14 @@ const kirimEmailPembukaan = async ({ namaHC, emailHC, periodeAC, tenggat, kuota 
           <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Batas Pendaftaran</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${tenggat}</td></tr>
           <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Kuota Tersedia</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${kuota} peserta</td></tr>
         </table>
-        <p>Untuk melakukan pengajuan, silakan akses form berikut:<br/>
+        ${linkFormPengajuan ? `
+        <div style="margin-top: 16px; padding: 12px 16px; background: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 4px;">
+          <p style="margin: 0 0 6px 0;"><strong>📋 Dokumen yang perlu disiapkan:</strong></p>
+          <p style="margin: 0;">Unduh, isi, dan simpan dalam format <strong>PDF</strong> dokumen berikut sebelum mengisi form pengajuan:</p>
+          <p style="margin: 8px 0 0 0;"><a href="${linkFormPengajuan}" style="color: #2563eb; font-weight: bold;">Form Pengajuan Potential Review &amp; Profiling →</a></p>
+          <p style="margin: 6px 0 0 0; font-size: 12px; color: #6b7280;">File PDF dokumen ini wajib dilampirkan saat mengisi form pengajuan.</p>
+        </div>` : ''}
+        <p style="margin-top: 16px;">Untuk melakukan pengajuan, silakan akses form berikut:<br/>
         <a href="${process.env.FRONTEND_URL}/form-pengajuan">Form Pengajuan Assessment</a></p>
         <p>Hormat kami,<br/><strong>PIC Asesmen RACD AIHO</strong><br/>PT Astra International</p>
       </div>
@@ -116,13 +123,13 @@ const kirimEmailPembukaan = async ({ namaHC, emailHC, periodeAC, tenggat, kuota 
 // ============================================================
 // FASE 2: Email ke Approver (dengan PDF terlampir)
 // ============================================================
-const kirimEmailApprover = async ({ namaApprover, emailApprover, idRequest, dataPeserta, tokenApprove, tokenReject, pdfBuffer, namaPDF }) => {
+const kirimEmailApprover = async ({ namaApprover, emailApprover, idRequest, dataPeserta, tokenApprove, tokenReject, pdfBuffer, namaPDF, dokumenPesertaBuffer, namaDokumenPeserta }) => {
   const urlApprove = `${process.env.FRONTEND_URL}/approval?token=${tokenApprove}&action=approve`;
   const urlReject = `${process.env.FRONTEND_URL}/approval?token=${tokenReject}&action=reject`;
 
-  const attachments = pdfBuffer && namaPDF
-    ? [{ filename: namaPDF, content: pdfBuffer }]
-    : [];
+  const attachments = [];
+  if (pdfBuffer && namaPDF) attachments.push({ filename: namaPDF, content: pdfBuffer });
+  if (dokumenPesertaBuffer && namaDokumenPeserta) attachments.push({ filename: namaDokumenPeserta, content: dokumenPesertaBuffer });
 
   await sendEmail({
     to: emailApprover,
