@@ -37,6 +37,17 @@ export default function Dashboard() {
     }
   };
 
+  const handleHapus = async (idRequest) => {
+    if (!window.confirm(`Hapus request ${idRequest}? Tindakan ini tidak bisa dibatalkan.`)) return;
+    try {
+      await api.delete(`/api/requests/${idRequest}`);
+      toast.success('Request berhasil dihapus');
+      fetchRequests();
+    } catch (err) {
+      toast.error('Gagal menghapus request');
+    }
+  };
+
   const filtered = filter ? requests.filter(r => r.status === filter) : requests;
 
   const stats = {
@@ -129,10 +140,16 @@ export default function Dashboard() {
                         {new Date(r.created_at).toLocaleDateString('id-ID')}
                       </td>
                       <td className="py-3 px-4">
-                        <Link to={`/request/${r.id_request}`}
-                          className="text-blue-600 hover:text-blue-800 font-medium text-xs">
-                          Detail →
-                        </Link>
+                        <div className="flex items-center gap-3">
+                          <Link to={`/request/${r.id_request}`}
+                            className="text-blue-600 hover:text-blue-800 font-medium text-xs">
+                            Detail →
+                          </Link>
+                          <button onClick={() => handleHapus(r.id_request)}
+                            className="text-red-500 hover:text-red-700 font-medium text-xs">
+                            Hapus
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

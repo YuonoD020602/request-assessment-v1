@@ -222,7 +222,6 @@ export default function FormPengajuan() {
                       <option value="">-- Pilih --</option>
                       <option value="Potential Review">Potential Review</option>
                       <option value="Profiling">Profiling</option>
-                      <option value="Potential Review & Profiling">Potential Review & Profiling</option>
                     </select>
                   </div>
                   <div className="col-span-2">
