@@ -258,8 +258,18 @@ export default function DetailRequest() {
                   </div>
                 </div>
               ) : (
-                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-xl text-sm text-yellow-700">
-                  ⏳ HC belum memilih slot presentasi. Bagikan link <strong>/pilih-slot</strong> ke HC.
+                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-xl text-sm text-yellow-700 space-y-2">
+                  <p>⏳ HC belum memilih slot presentasi. Bagikan link berikut ke HC:</p>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 bg-white border border-yellow-300 rounded-lg px-3 py-2 text-yellow-900 text-xs font-mono select-all">
+                      {window.location.origin}/pilih-slot
+                    </code>
+                    <button
+                      onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/pilih-slot`); toast.success('Link disalin!'); }}
+                      className="px-3 py-2 bg-yellow-200 hover:bg-yellow-300 text-yellow-800 rounded-lg text-xs font-medium whitespace-nowrap transition-colors">
+                      Salin Link
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
