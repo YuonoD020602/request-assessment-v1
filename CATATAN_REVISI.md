@@ -1,6 +1,6 @@
 # CATATAN REVISI — Request Assessment V1
 **Project:** RACD AIHO – PT Astra International  
-**Terakhir diperbarui:** 19 Juni 2026 (Batch 8)
+**Terakhir diperbarui:** 19 Juni 2026 (Batch 9)
 
 ---
 
@@ -28,7 +28,8 @@
 | 15 | Token approval: validasi `expired_at` + invalidasi semua token setelah digunakan | ✅ Selesai | Audit |
 | 16 | Audit & fix menyeluruh sistem (11 bug dari 2 putaran audit) | ✅ Selesai | Audit |
 | 17 | Upload dokumen PDF per peserta di Form Pengajuan + link template via email pembukaan | ✅ Selesai | Batch 8 |
-| 18 | Export PDF laporan per periode | 📋 Backlog | - |
+| 18 | Riwayat aktivitas & email — timeline per request + log pengiriman email pembukaan | ✅ Selesai | Batch 9 |
+| 19 | Export PDF laporan per periode | 📋 Backlog | - |
 
 ---
 
@@ -264,9 +265,38 @@ Fitur pengumpulan dokumen "Form Pengajuan Potential Review & Profiling" langsung
 
 ---
 
-### 📋 18. Export PDF Laporan per Periode
+### ✅ 18. Riwayat Aktivitas & Email — Timeline per Request + Log Pengiriman Email Pembukaan
+**Deskripsi:**  
+Dua fitur track record/audit trail yang sebelumnya tidak ada:
+
+**A. Tab Riwayat di Detail Request**  
+- Tab baru "Riwayat (N)" muncul di halaman Detail Request, sejajar dengan tab Info, Fase 3, Fase 4, dst.
+- Menampilkan semua aktivitas dan email yang pernah dikirim untuk request tersebut dalam format **timeline vertikal**
+- Setiap entry menampilkan: badge jenis aktivitas (biru untuk Email, hijau untuk tindakan sistem), teks detail, tanggal dan jam WIB
+- Data diambil dari tabel `log_aktivitas` yang sudah ada — dicatat otomatis sejak Batch 1 (`logEmail()` di emailService.js)
+- Endpoint baru: `GET /api/requests/:idRequest/log` (PIC only)
+
+**B. Riwayat Pengiriman Email Pembukaan di Daftar HC**  
+- Setelah blast email pembukaan, riwayat pengiriman tampil di halaman Daftar HC
+- Expand/collapse dengan toggle "Lihat (N entri)"
+- Setiap entry: waktu kirim (tanggal + jam WIB) dan detail pengiriman (berhasil/gagal berapa HC)
+- Juga langsung refresh setelah blast berhasil — tidak perlu reload halaman
+- Endpoint baru: `GET /api/hc/log-pembukaan` (PIC only, ambil max 20 entri terakhir)
+
+**Perubahan teknis:**
+- `backend/src/routes/requests.js`: tambah endpoint `GET /:idRequest/log`
+- `backend/src/routes/hc.js`: tambah endpoint `GET /log-pembukaan` (HARUS di atas `/:id` agar tidak konflik routing)
+- `frontend/src/pages/DetailRequest.jsx`: tambah state `logList`, fungsi `fetchLog()`, helper `refresh()`, dan tab baru "Riwayat"
+- `frontend/src/pages/DaftarHC.jsx`: tambah state `logPembukaan`, `showLog`, fungsi `fetchLog()`, section Riwayat Pengiriman
+
+**File:** `backend/src/routes/requests.js`, `backend/src/routes/hc.js`, `frontend/src/pages/DetailRequest.jsx`, `frontend/src/pages/DaftarHC.jsx`  
+**Selesai:** Batch 9
+
+---
+
+### 📋 19. Export PDF Laporan per Periode
 **Deskripsi:** Export data request per periode menjadi PDF laporan yang rapi (header logo, tabel, summary).  
-**Status:** Backlog — dikerjakan setelah Batch 6  
+**Status:** Backlog  
 **File:** TBD
 
 ---
