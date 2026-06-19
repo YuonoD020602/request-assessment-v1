@@ -87,17 +87,17 @@ const sendEmail = async ({ to, subject, html, attachments = [] }) => {
 // ============================================================
 // FASE 1: Email Pembukaan Layanan ke HC
 // ============================================================
-const kirimEmailPembukaan = async ({ namaHC, emailHC, tanggalAC, tenggat, kuota }) => {
+const kirimEmailPembukaan = async ({ namaHC, emailHC, periodeAC, tenggat, kuota }) => {
   await sendEmail({
     to: emailHC,
-    subject: `[RACD AIHO] Pembukaan Layanan Assessment Center – ${tanggalAC}`,
+    subject: `[RACD AIHO] Pembukaan Layanan Assessment Center – ${periodeAC}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <p>Kepada Yth.<br/>Bapak/Ibu ${namaHC}<br/>HC PGA/SO</p>
         <p>Dengan hormat,</p>
         <p>Kami informasikan bahwa <strong>RACD AIHO Assessment Center</strong> membuka layanan Potential Review Assessment dan Profiling dengan ketentuan sebagai berikut:</p>
         <table style="border-collapse: collapse; width: 100%;">
-          <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Tanggal Pelaksanaan AC</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${tanggalAC}</td></tr>
+          <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Periode Pelaksanaan AC</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${periodeAC}</td></tr>
           <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Batas Pendaftaran</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${tenggat}</td></tr>
           <tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Kuota Tersedia</strong></td><td style="padding: 8px; border: 1px solid #ddd;">${kuota} peserta</td></tr>
         </table>

@@ -50,7 +50,7 @@ router.post('/kirim-pembukaan', authMiddleware, picOnly, async (req, res) => {
       await kirimEmailPembukaan({
         namaHC: hc.nama_hc,
         emailHC: hc.email_hc,
-        tanggalAC: config.tanggal_ac,
+        periodeAC: config.periode_ac || config.tanggal_ac,
         tenggat: config.tenggat_pendaftaran,
         kuota: config.kuota_maks || '8'
       });
