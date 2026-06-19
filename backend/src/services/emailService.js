@@ -32,13 +32,16 @@ const addHoursToICS = (icsDate, hours) => {
   const d = parseInt(icsDate.substring(6, 8));
   const h = parseInt(icsDate.substring(9, 11));
   const mi = parseInt(icsDate.substring(11, 13));
-  const dt = new Date(Date.UTC(y, mo, d, h - 7, mi)); // convert WIB to UTC for calc
+  // Treat as WIB (UTC+7): convert to UTC, add hours, convert back to WIB
+  const dt = new Date(Date.UTC(y, mo, d, h - 7, mi));
   dt.setUTCHours(dt.getUTCHours() + hours);
-  const ny = dt.getUTCFullYear();
-  const nm = String(dt.getUTCMonth() + 1).padStart(2, '0');
-  const nd = String(dt.getUTCDate()).padStart(2, '0');
-  const nh = String(dt.getUTCHours() + 7).padStart(2, '0'); // back to WIB
-  return `${ny}${nm}${nd}T${nh}${mi.toString().padStart(2, '0')}00`;
+  const wib = new Date(dt.getTime() + 7 * 3600 * 1000);
+  const ny = String(wib.getUTCFullYear());
+  const nm = String(wib.getUTCMonth() + 1).padStart(2, '0');
+  const nd = String(wib.getUTCDate()).padStart(2, '0');
+  const nh = String(wib.getUTCHours()).padStart(2, '0');
+  const nmi = String(wib.getUTCMinutes()).padStart(2, '0');
+  return `${ny}${nm}${nd}T${nh}${nmi}00`;
 };
 
 const generateICS = ({ uid, summary, description, location, dateStr, timeStr, endTimeStr, durationHours = 2 }) => {

@@ -35,6 +35,7 @@ export default function DetailRequest() {
       setRequest(r);
       // Pre-fill forms dengan data existing
       if (r.tanggal_gr) setGrForm({ tanggal_gr: r.tanggal_gr, jam_gr: r.jam_gr || '', lokasi_gr: r.lokasi_gr || '', tanggal_ac: r.tanggal_ac || '', lokasi_ac: r.lokasi_ac || '' });
+      if (r.mom_gr) setMomForm({ mom_gr: r.mom_gr });
       if (r.tanggal_psikotes) setPsikotesForm({ tanggal_psikotes: r.tanggal_psikotes, jam_psikotes: r.jam_psikotes || '' });
       if (r.tanggal_ac && r.jam_ac) setJadwalAcForm({ tanggal_ac: r.tanggal_ac, jam_ac: r.jam_ac, lokasi_ac: r.lokasi_ac || '' });
       if (r.tanggal_presentasi) setPresentasiForm({ tanggal_presentasi: r.tanggal_presentasi, jam_presentasi: r.jam_presentasi || '', lokasi_presentasi: r.lokasi_presentasi || '' });
@@ -181,6 +182,7 @@ export default function DetailRequest() {
               <form onSubmit={submitMOM} className="space-y-4">
                 <div><label className="form-label">Isi MOM *</label>
                   <textarea className="form-input" rows={6} required placeholder="Tulis ringkasan MOM GR di sini..."
+                    value={momForm.mom_gr}
                     onChange={e => setMomForm({mom_gr: e.target.value})} /></div>
                 <button type="submit" className="btn-primary" disabled={submitting}>{submitting ? '...' : 'Kirim MOM'}</button>
               </form>
