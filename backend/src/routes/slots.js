@@ -48,17 +48,26 @@ router.post('/:id/book', async (req, res) => {
   const { id_request } = req.body;
   if (!id_request) return res.status(400).json({ error: 'ID Request wajib diisi' });
 
-  // Cek slot masih tersedia
-  const { data: slot } = await supabase.from('slot_presentasi').select('*').eq('id', id).single();
-  if (!slot) return res.status(404).json({ error: 'Slot tidak ditemukan' });
-  if (slot.status === 'Terpesan') return res.status(400).json({ error: 'Slot ini sudah diambil orang lain. Silakan pilih slot lain.' });
-
-  // Cek request valid
+  // Cek request valid dulu
   const { data: request } = await supabase.from('requests').select('*').eq('id_request', id_request).single();
   if (!request) return res.status(404).json({ error: 'ID Request tidak ditemukan' });
 
-  // Update slot jadi terpesan
-  await supabase.from('slot_presentasi').update({ status: 'Terpesan', id_request }).eq('id', id);
+  // Atomic update: hanya berhasil jika slot masih Tersedia
+  const { data: updatedSlots, error: slotError } = await supabase
+    .from('slot_presentasi')
+    .update({ status: 'Terpesan', id_request })
+    .eq('id', id)
+    .eq('status', 'Tersedia')
+    .select();
+
+  if (slotError) return res.status(500).json({ error: 'Gagal memproses booking' });
+  if (!updatedSlots || updatedSlots.length === 0) {
+    // Cek apakah slot ada atau sudah terpesan
+    const { data: existingSlot } = await supabase.from('slot_presentasi').select('status').eq('id', id).single();
+    if (!existingSlot) return res.status(404).json({ error: 'Slot tidak ditemukan' });
+    return res.status(400).json({ error: 'Slot ini sudah diambil orang lain. Silakan pilih slot lain.' });
+  }
+  const slot = updatedSlots[0];
 
   // Update request dengan jadwal presentasi
   await supabase.from('requests').update({

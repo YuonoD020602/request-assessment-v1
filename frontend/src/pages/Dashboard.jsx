@@ -313,10 +313,12 @@ export default function Dashboard() {
                             className="text-blue-600 hover:text-blue-800 font-medium text-xs whitespace-nowrap">
                             Detail →
                           </Link>
-                          <button onClick={() => handleHapus(r.id_request)}
-                            className="text-red-400 hover:text-red-600 font-medium text-xs">
-                            Hapus
-                          </button>
+                          {user?.role === 'pic_asesmen' && (
+                            <button onClick={() => handleHapus(r.id_request)}
+                              className="text-red-400 hover:text-red-600 font-medium text-xs">
+                              Hapus
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
