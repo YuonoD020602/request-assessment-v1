@@ -54,7 +54,8 @@ router.post('/kirim-pembukaan', authMiddleware, picOnly, async (req, res) => {
         tenggat: config.tanggal_tutup
           ? new Date(config.tanggal_tutup).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
           : '-',
-        kuota: config.kuota_maks || '8'
+        kuota: config.kuota_maks || '8',
+        linkFormPengajuan: config.link_form_pengajuan || null
       });
       berhasil++;
     } catch (e) {

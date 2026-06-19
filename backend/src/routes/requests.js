@@ -1,4 +1,5 @@
 const express = require('express');
+const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');
 const supabase = require('../supabase');
 const { authMiddleware, picOnly } = require('../middleware/auth');
@@ -6,6 +7,7 @@ const { kirimEmailApprover } = require('../services/emailService');
 const { generatePDFPengajuan } = require('../services/pdfService');
 
 const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
 const generateIdRequests = async (jumlah) => {
   const now = new Date();
@@ -21,8 +23,14 @@ const generateIdRequests = async (jumlah) => {
 };
 
 // POST /api/requests/submit
-router.post('/submit', async (req, res) => {
-  const { nama_perusahaan, pic_hc, email_pic_hc, user_atasan, email_user, peserta } = req.body;
+router.post('/submit', upload.any(), async (req, res) => {
+  const { nama_perusahaan, pic_hc, email_pic_hc, user_atasan, email_user } = req.body;
+  let peserta;
+  try {
+    peserta = typeof req.body.peserta === 'string' ? JSON.parse(req.body.peserta) : req.body.peserta;
+  } catch {
+    return res.status(400).json({ error: 'Data peserta tidak valid' });
+  }
 
   if (!nama_perusahaan || !pic_hc || !email_pic_hc) {
     return res.status(400).json({ error: 'Field wajib HC belum lengkap' });
@@ -32,9 +40,14 @@ router.post('/submit', async (req, res) => {
     return res.status(400).json({ error: 'Minimal 1 peserta harus diisi' });
   }
 
-  for (const p of peserta) {
+  for (let i = 0; i < peserta.length; i++) {
+    const p = peserta[i];
     if (!p.nama_peserta || !p.jenis_assessment) {
       return res.status(400).json({ error: 'Nama peserta dan jenis assessment wajib diisi untuk semua peserta' });
+    }
+    const file = req.files?.find(f => f.fieldname === `dokumen_pdf_${i}`);
+    if (!file) {
+      return res.status(400).json({ error: `Dokumen PDF untuk peserta ${p.nama_peserta} wajib diupload` });
     }
   }
 
@@ -68,6 +81,19 @@ router.post('/submit', async (req, res) => {
     const p = peserta[idx];
     const idRequest = generatedIds[idx];
 
+    // Upload dokumen PDF peserta ke Supabase Storage
+    const dokumenFile = req.files?.find(f => f.fieldname === `dokumen_pdf_${idx}`);
+    const namaClean = p.nama_peserta.replace(/\s+/g, '_');
+    const filePath = `${idRequest}/Form_Pengajuan_${namaClean}_${idRequest}.pdf`;
+    const { error: uploadError } = await supabase.storage
+      .from('dokumen-peserta')
+      .upload(filePath, dokumenFile.buffer, { contentType: 'application/pdf', upsert: true });
+    if (uploadError) {
+      return res.status(500).json({ error: `Gagal upload dokumen untuk ${p.nama_peserta}: ${uploadError.message}` });
+    }
+    const { data: urlData } = supabase.storage.from('dokumen-peserta').getPublicUrl(filePath);
+    const dokumenPesertaUrl = urlData.publicUrl;
+
     const { error } = await supabase.from('requests').insert({
       ...dataHC,
       nama_peserta: p.nama_peserta, email_peserta: p.email_peserta,
@@ -77,16 +103,18 @@ router.post('/submit', async (req, res) => {
       jumlah_peers: p.jumlah_peers, masa_kerja: p.masa_kerja,
       tujuan_ac: p.tujuan_ac, jenis_assessment: p.jenis_assessment,
       terakhir_assessment: p.terakhir_assessment,
-      id_request: idRequest, status: 'Pending - Menunggu Review'
+      id_request: idRequest, status: 'Pending - Menunggu Review',
+      dokumen_peserta_url: dokumenPesertaUrl
     });
 
     if (error) {
       return res.status(500).json({ error: `Gagal menyimpan pengajuan untuk ${p.nama_peserta}` });
     }
 
-    // Generate PDF untuk peserta ini
+    // Generate PDF ringkasan data peserta
     const pdfBuffer = await generatePDFPengajuan(dataHC, p, idRequest);
-    const namaPDF = `Pengajuan_AC_${p.nama_peserta.replace(/\s/g, '_')}_${idRequest}.pdf`;
+    const namaPDF = `Pengajuan_AC_${namaClean}_${idRequest}.pdf`;
+    const namaDokumenPeserta = `Form_Pengajuan_${namaClean}_${idRequest}.pdf`;
 
     const dataPeserta = {
       nama_perusahaan, pic_hc,
@@ -110,7 +138,9 @@ router.post('/submit', async (req, res) => {
         emailApprover: approver.email,
         idRequest, dataPeserta,
         tokenApprove, tokenReject,
-        pdfBuffer, namaPDF
+        pdfBuffer, namaPDF,
+        dokumenPesertaBuffer: dokumenFile.buffer,
+        namaDokumenPeserta
       });
     }
 

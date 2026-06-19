@@ -6,7 +6,8 @@ const pesertaKosong = () => ({
   nama_peserta: '', email_peserta: '', masa_kerja: '',
   posisi_current: '', gol_current: '', posisi_target: '', gol_target: '',
   dept: '', div: '', jumlah_bawahan: '', jumlah_peers: '',
-  tujuan_ac: '', jenis_assessment: '', terakhir_assessment: ''
+  tujuan_ac: '', jenis_assessment: '', terakhir_assessment: '',
+  dokumen_pdf: null
 });
 
 export default function FormPengajuan() {
@@ -33,13 +34,30 @@ export default function FormPengajuan() {
     setPesertaList(pesertaList.filter((_, i) => i !== idx));
   };
 
+  const handleDokumenChange = (idx, file) => {
+    const updated = [...pesertaList];
+    updated[idx].dokumen_pdf = file;
+    setPesertaList(updated);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    for (let i = 0; i < pesertaList.length; i++) {
+      if (!pesertaList[i].dokumen_pdf) {
+        return toast.error(`Peserta ${i + 1}: Dokumen PDF wajib diupload`);
+      }
+    }
     setLoading(true);
     try {
-      const res = await api.post('/api/requests/submit', {
-        ...dataHC,
-        peserta: pesertaList
+      const formData = new FormData();
+      Object.entries(dataHC).forEach(([k, v]) => formData.append(k, v));
+      const pesertaData = pesertaList.map(({ dokumen_pdf, ...rest }) => rest);
+      formData.append('peserta', JSON.stringify(pesertaData));
+      pesertaList.forEach((p, idx) => {
+        if (p.dokumen_pdf) formData.append(`dokumen_pdf_${idx}`, p.dokumen_pdf);
+      });
+      const res = await api.post('/api/requests/submit', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
       setSubmitted(res.data);
     } catch (err) {
@@ -236,6 +254,19 @@ export default function FormPengajuan() {
                       placeholder="mis. Belum pernah / 2 tahun lalu"
                       value={peserta.terakhir_assessment}
                       onChange={e => handlePesertaChange(idx, e)} />
+                  </div>
+                  <div className="col-span-2 pt-2 border-t">
+                    <label className="form-label">
+                      Upload Form Pengajuan Potential Review & Profiling (PDF) <span className="text-red-500">*</span>
+                    </label>
+                    <input type="file" accept=".pdf" className="form-input"
+                      onChange={e => handleDokumenChange(idx, e.target.files[0])} />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Unduh template Form Pengajuan dari link yang dikirim di email pembukaan, isi, lalu upload PDF-nya di sini.
+                    </p>
+                    {peserta.dokumen_pdf && (
+                      <p className="text-xs text-green-600 mt-1">✓ {peserta.dokumen_pdf.name}</p>
+                    )}
                   </div>
                 </div>
               </div>
