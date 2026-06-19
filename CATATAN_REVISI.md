@@ -19,8 +19,8 @@
 | 6 | Cek Status — cari by email HC | ✅ Selesai | Batch 2 |
 | 7 | Invite kalender (.ics) untuk email jadwal | ✅ Selesai | Batch 3 |
 | 8 | Booking slot presentasi oleh HC | ✅ Selesai | Batch 5 |
-| 9 | Dashboard interaktif + filter periode + export CSV | 🔄 Direncanakan | Batch 6 |
-| 10 | Konfigurasi: `tanggal_ac` → `periode_ac` (bulan & tahun) | 🔄 Direncanakan | Batch 6 |
+| 9 | Dashboard interaktif + filter periode + export CSV | ✅ Selesai | Batch 6 |
+| 10 | Konfigurasi: `tanggal_ac` → `periode_ac` (bulan & tahun) | ✅ Selesai | Batch 6 |
 | 11 | Export PDF laporan per periode | 📋 Backlog | - |
 
 ---
@@ -128,26 +128,26 @@
 
 ---
 
-### 🔄 9. Dashboard Interaktif + Filter + Export CSV
+### ✅ 9. Dashboard Interaktif + Filter + Export CSV
 **Deskripsi:**  
-- Filter bar: Periode (by `tanggal_ac`), Perusahaan, Search nama peserta, Reset filter  
-- Stats card: Total | Approved | Proses | Selesai | Ditolak  
-- Progress bar kapasitas: X / `kuota_maks` slot terpakai per periode  
-- Tabel: badge warna per status, kolom lebih informatif  
+- Filter bar: Periode (by `tanggal_ac`), Perusahaan, Status, Search nama peserta, Reset filter  
+- 6 stats card: Total | Pending | Approved | Proses | Selesai | Ditolak  
+- Progress bar kapasitas: X / `kuota_maks` slot terpakai per periode (hijau < 70%, kuning ≥ 70%, merah ≥ 100%)  
+- Tabel: badge warna per status, kolom lebih informatif, No, ID, Perusahaan, Peserta, Jenis AC, Status, Tanggal AC, Pengajuan, Aksi  
 - Tombol Export CSV sesuai filter aktif  
-**Status:** Direncanakan — Batch 6  
+**Selesai:** Batch 6  
 **File:** `frontend/src/pages/Dashboard.jsx`
 
 ---
 
-### 🔄 10. Konfigurasi: `tanggal_ac` → `periode_ac`
+### ✅ 10. Konfigurasi: `tanggal_ac` → `periode_ac`
 **Deskripsi:**  
-- Field `tanggal_ac` di Konfigurasi (date picker) diganti jadi `periode_ac` (text, contoh: "Juli 2026")  
+- Field `tanggal_ac` di Konfigurasi (date picker) diganti jadi `periode_ac` (text input, contoh: "Juli 2026")  
 - 1 bulan = 3 sesi × maks 3 orang = maks 9 orang/bulan  
-- Email pembukaan pakai "periode_ac" bukan tanggal spesifik  
+- Email pembukaan pakai `periode_ac` bukan tanggal spesifik; fallback ke `tanggal_ac` jika belum diupdate  
 - Tanggal spesifik per peserta tetap diinput manual PIC di Fase 4  
-**Status:** Direncanakan — Batch 6  
-**File:** `frontend/src/pages/Konfigurasi.jsx`, `backend/src/services/emailService.js`
+**Selesai:** Batch 6  
+**File:** `frontend/src/pages/Konfigurasi.jsx`, `backend/src/services/emailService.js`, `backend/src/routes/hc.js`
 
 ---
 
