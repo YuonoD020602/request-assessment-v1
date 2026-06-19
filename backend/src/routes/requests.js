@@ -100,9 +100,10 @@ router.post('/submit', async (req, res) => {
     for (const approver of approvers) {
       const tokenApprove = uuidv4();
       const tokenReject = uuidv4();
+      const expiredAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
       await supabase.from('token_approval').insert([
-        { id_request: idRequest, token: tokenApprove, action: 'approve', approver_nama: approver.nama, approver_email: approver.email },
-        { id_request: idRequest, token: tokenReject, action: 'reject', approver_nama: approver.nama, approver_email: approver.email }
+        { id_request: idRequest, token: tokenApprove, action: 'approve', approver_nama: approver.nama, approver_email: approver.email, expired_at: expiredAt },
+        { id_request: idRequest, token: tokenReject, action: 'reject', approver_nama: approver.nama, approver_email: approver.email, expired_at: expiredAt }
       ]);
       await kirimEmailApprover({
         namaApprover: approver.nama,

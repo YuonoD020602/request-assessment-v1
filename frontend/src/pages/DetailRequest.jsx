@@ -18,9 +18,8 @@ export default function DetailRequest() {
   const [momForm, setMomForm] = useState({ mom_gr: '' });
   const [psikotesForm, setPsikotesForm] = useState({ tanggal_psikotes: '', jam_psikotes: '' });
   const [jadwalAcForm, setJadwalAcForm] = useState({ tanggal_ac: '', jam_ac: '', lokasi_ac: '' });
-  const [presentasiForm, setPresentasiForm] = useState({ tanggal_presentasi: '', jam_presentasi: '', lokasi_presentasi: '' });
   const [formsReady, setFormsReady] = useState(false);
-  const [pathLaporan, setPathLaporan] = useState('');
+  const [fileLaporan, setFileLaporan] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -38,7 +37,6 @@ export default function DetailRequest() {
       if (r.mom_gr) setMomForm({ mom_gr: r.mom_gr });
       if (r.tanggal_psikotes) setPsikotesForm({ tanggal_psikotes: r.tanggal_psikotes, jam_psikotes: r.jam_psikotes || '' });
       if (r.tanggal_ac && r.jam_ac) setJadwalAcForm({ tanggal_ac: r.tanggal_ac, jam_ac: r.jam_ac, lokasi_ac: r.lokasi_ac || '' });
-      if (r.tanggal_presentasi) setPresentasiForm({ tanggal_presentasi: r.tanggal_presentasi, jam_presentasi: r.jam_presentasi || '', lokasi_presentasi: r.lokasi_presentasi || '' });
       setFormsReady(true);
     } catch { toast.error('Request tidak ditemukan'); navigate('/dashboard'); }
     finally { setLoading(false); }
@@ -80,20 +78,19 @@ export default function DetailRequest() {
     finally { setSubmitting(false); }
   };
 
-  const submitPresentasi = async (e) => {
-    e.preventDefault(); setSubmitting(true);
-    try {
-      await api.post('/api/fase6/jadwal-presentasi', { id_request: idRequest, ...presentasiForm });
-      toast.success('Undangan presentasi berhasil dikirim!'); fetchRequest();
-    } catch (err) { toast.error(err.response?.data?.error || 'Gagal'); }
-    finally { setSubmitting(false); }
-  };
-
   const submitLaporan = async (e) => {
-    e.preventDefault(); setSubmitting(true);
+    e.preventDefault();
+    if (!fileLaporan) return toast.error('Pilih file PDF terlebih dahulu');
+    setSubmitting(true);
     try {
-      await api.post('/api/fase6/kirim-laporan', { id_request: idRequest, path_laporan: pathLaporan });
-      toast.success('Laporan berhasil dikirim!'); fetchRequest();
+      const formData = new FormData();
+      formData.append('pdf', fileLaporan);
+      formData.append('id_request', idRequest);
+      await api.post('/api/fase6/kirim-laporan', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      toast.success('Laporan berhasil dikirim!');
+      fetchRequest();
     } catch (err) { toast.error(err.response?.data?.error || 'Gagal'); }
     finally { setSubmitting(false); }
   };
@@ -251,17 +248,20 @@ export default function DetailRequest() {
           <div className="space-y-6">
             <div className="card">
               <h3 className="font-semibold text-gray-900 mb-4">Jadwal Presentasi Hasil AC</h3>
-              {request.tanggal_presentasi && (
-                <div className="mb-4 p-3 bg-green-50 rounded-lg text-sm text-green-700">
-                  ✓ Undangan presentasi sudah dikirim: {request.tanggal_presentasi} {request.jam_presentasi}
+              {request.tanggal_presentasi ? (
+                <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
+                  <p className="text-sm font-semibold text-green-800 mb-2">✅ HC telah memilih slot presentasi</p>
+                  <div className="space-y-1 text-sm">
+                    <p><span className="text-gray-500">Tanggal:</span> <strong>{request.tanggal_presentasi}</strong></p>
+                    <p><span className="text-gray-500">Pukul:</span> <strong>{request.jam_presentasi} WIB</strong></p>
+                    <p><span className="text-gray-500">Lokasi:</span> <strong>{request.lokasi_presentasi || '-'}</strong></p>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-xl text-sm text-yellow-700">
+                  ⏳ HC belum memilih slot presentasi. Bagikan link <strong>/pilih-slot</strong> ke HC.
                 </div>
               )}
-              <form onSubmit={submitPresentasi} className="grid grid-cols-2 gap-4">
-                <div><label className="form-label">Tanggal *</label><input type="date" className="form-input" required value={presentasiForm.tanggal_presentasi} onChange={e => setPresentasiForm({...presentasiForm, tanggal_presentasi: e.target.value})} /></div>
-                <div><label className="form-label">Jam *</label><input type="time" className="form-input" required value={presentasiForm.jam_presentasi} onChange={e => setPresentasiForm({...presentasiForm, jam_presentasi: e.target.value})} /></div>
-                <div className="col-span-2"><label className="form-label">Lokasi / Link *</label><input className="form-input" required value={presentasiForm.lokasi_presentasi} onChange={e => setPresentasiForm({...presentasiForm, lokasi_presentasi: e.target.value})} /></div>
-                <div className="col-span-2"><button type="submit" className="btn-primary" disabled={submitting}>{submitting ? '...' : request.tanggal_presentasi ? 'Update & Kirim Ulang Undangan Presentasi' : 'Kirim Undangan Presentasi'}</button></div>
-              </form>
             </div>
 
             <div className="card">
@@ -269,19 +269,11 @@ export default function DetailRequest() {
               {request.status_laporan === 'Laporan Dikirim' && (
                 <div className="mb-4 p-3 bg-green-50 rounded-lg text-sm text-green-700">✓ Laporan sudah dikirim</div>
               )}
-              <div className="mb-4 p-3 bg-blue-50 rounded-lg text-sm text-blue-700">
-                <p className="font-medium mb-1">Cara upload laporan:</p>
-                <ol className="list-decimal list-inside space-y-1">
-                  <li>Upload file PDF ke Supabase Storage bucket <strong>laporan-pdf</strong></li>
-                  <li>Salin nama file yang diupload (contoh: <code>laporan-REQ-202506-001.pdf</code>)</li>
-                  <li>Paste di kolom di bawah, lalu klik Kirim Laporan</li>
-                </ol>
-              </div>
               <form onSubmit={submitLaporan} className="space-y-4">
                 <div>
-                  <label className="form-label">Nama File PDF di Storage *</label>
-                  <input className="form-input" placeholder="laporan-REQ-202506-001.pdf" required
-                    value={pathLaporan} onChange={e => setPathLaporan(e.target.value)} />
+                  <label className="form-label">Upload File PDF *</label>
+                  <input type="file" accept=".pdf" className="form-input"
+                    onChange={e => setFileLaporan(e.target.files[0])} />
                 </div>
                 <button type="submit" className="btn-primary" disabled={submitting}>{submitting ? '...' : 'Kirim Laporan ke HC & User'}</button>
               </form>
