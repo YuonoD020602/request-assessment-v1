@@ -55,6 +55,9 @@ router.post('/approve', async (req, res) => {
 
   if (error || !tokenData) return res.status(404).json({ error: 'Token tidak valid' });
   if (tokenData.sudah_digunakan) return res.status(400).json({ error: 'Token sudah digunakan' });
+  if (tokenData.expired_at && new Date(tokenData.expired_at) < new Date()) {
+    return res.status(400).json({ error: 'Link approval sudah kadaluarsa' });
+  }
 
   // Tandai token sudah digunakan
   await supabase.from('token_approval').update({ sudah_digunakan: true }).eq('token', token);
@@ -109,6 +112,9 @@ router.post('/reject', async (req, res) => {
 
   if (error || !tokenData) return res.status(404).json({ error: 'Token tidak valid' });
   if (tokenData.sudah_digunakan) return res.status(400).json({ error: 'Token sudah digunakan' });
+  if (tokenData.expired_at && new Date(tokenData.expired_at) < new Date()) {
+    return res.status(400).json({ error: 'Link approval sudah kadaluarsa' });
+  }
 
   // Tandai token sudah digunakan
   await supabase.from('token_approval').update({ sudah_digunakan: true }).eq('token', token);

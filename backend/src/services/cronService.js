@@ -51,7 +51,8 @@ const runDailyReminders = async () => {
     const { data: dokBelum } = await supabase
       .from('requests')
       .select('*')
-      .eq('status_dokumen', 'Belum Diterima')
+      .in('status', ['GR Selesai - Menunggu Dokumen'])
+      .or('status_dokumen.eq.Belum Diterima,status_dokumen.is.null')
       .eq('tanggal_ac', fmt(h3));
 
     for (const req of dokBelum || []) {
@@ -93,6 +94,14 @@ const runDailyReminders = async () => {
         });
       }
 
+      // Ke pic_hc
+      await kirimJadwalPsikotes({
+        namaTo: req.pic_hc, emailTo: req.email_pic_hc,
+        idRequest: req.id_request, namaPeserta: req.nama_peserta,
+        tanggal: req.tanggal_psikotes, jam: req.jam_psikotes,
+        isReminder: true
+      });
+
       // Ke email peserta jika ada
       if (req.email_peserta) {
         await kirimJadwalPsikotes({
@@ -124,8 +133,9 @@ const runDailyReminders = async () => {
 
       const penerima = [
         { nama: req.pic_hc, email: req.email_pic_hc },
+        req.email_user ? { nama: req.user_atasan, email: req.email_user } : null,
         ...getTimPelaksana(config)
-      ];
+      ].filter(Boolean);
 
       for (const p of penerima) {
         if (p.email) {

@@ -24,6 +24,8 @@ const STATUS_COLOR = {
   'Menunggu GR': 'bg-purple-100 text-purple-800',
   'GR Selesai - Menunggu Dokumen': 'bg-indigo-100 text-indigo-800',
   'Dokumen Diterima': 'bg-cyan-100 text-cyan-800',
+  'Psikotes Dijadwalkan': 'bg-violet-100 text-violet-800',
+  'AC Dijadwalkan': 'bg-sky-100 text-sky-800',
   'Menunggu Presentasi': 'bg-orange-100 text-orange-800',
   'Laporan Dikirim': 'bg-teal-100 text-teal-800',
   'Selesai': 'bg-green-100 text-green-800',
@@ -133,7 +135,7 @@ export default function Dashboard() {
     total: base.length,
     pending: base.filter(r => r.status === 'Pending - Menunggu Review').length,
     approved: base.filter(r => r.status === 'Approved').length,
-    proses: base.filter(r => ['Menunggu GR','GR Selesai - Menunggu Dokumen','Dokumen Diterima','Menunggu Presentasi'].includes(r.status)).length,
+    proses: base.filter(r => ['Menunggu GR','GR Selesai - Menunggu Dokumen','Dokumen Diterima','Psikotes Dijadwalkan','AC Dijadwalkan','Menunggu Presentasi'].includes(r.status)).length,
     selesai: base.filter(r => ['Laporan Dikirim','Selesai'].includes(r.status)).length,
     ditolak: base.filter(r => r.status === 'Rejected').length,
   };
@@ -241,6 +243,8 @@ export default function Dashboard() {
                 <option value="Menunggu GR">Menunggu GR</option>
                 <option value="GR Selesai - Menunggu Dokumen">Menunggu Dokumen</option>
                 <option value="Dokumen Diterima">Dokumen Diterima</option>
+                <option value="Psikotes Dijadwalkan">Psikotes Dijadwalkan</option>
+                <option value="AC Dijadwalkan">AC Dijadwalkan</option>
                 <option value="Menunggu Presentasi">Menunggu Presentasi</option>
                 <option value="Laporan Dikirim">Laporan Dikirim</option>
                 <option value="Selesai">Selesai</option>

@@ -189,7 +189,7 @@ export function CekStatus() {
             </div>
 
             {/* Jadwal Psikotes & AC */}
-            {['Approved', 'Menunggu GR', 'GR Selesai - Menunggu Dokumen', 'Dokumen Diterima', 'Menunggu Presentasi', 'Selesai'].includes(result.status) && (
+            {['Approved', 'Menunggu GR', 'GR Selesai - Menunggu Dokumen', 'Dokumen Diterima', 'Psikotes Dijadwalkan', 'AC Dijadwalkan', 'Menunggu Presentasi', 'Selesai'].includes(result.status) && (
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-semibold text-gray-900">📅 Jadwal Selanjutnya</h3>

@@ -1,4 +1,5 @@
 const express = require('express');
+const multer = require('multer');
 const supabase = require('../supabase');
 const { authMiddleware, picOnly } = require('../middleware/auth');
 const {
@@ -8,6 +9,7 @@ const {
 } = require('../services/emailService');
 
 const delay = (ms) => new Promise(r => setTimeout(r, ms));
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 // Helper: ambil semua tim pelaksana dari config secara dinamis
 const getTimPelaksana = (config) => {
@@ -170,7 +172,7 @@ fase4Router.post('/psikotes', authMiddleware, picOnly, async (req, res) => {
   const config = Object.fromEntries(cfgData.map(c => [c.key, c.value]));
 
   const isRevisi = !!(request.tanggal_psikotes);
-  await supabase.from('requests').update({ tanggal_psikotes, jam_psikotes }).eq('id_request', id_request);
+  await supabase.from('requests').update({ tanggal_psikotes, jam_psikotes, status: 'Psikotes Dijadwalkan' }).eq('id_request', id_request);
 
   // Kirim ke HC, User/Atasan, dan semua Admin AC
   const admins = getAdmins(config);
@@ -208,7 +210,7 @@ fase4Router.post('/jadwal-ac', authMiddleware, picOnly, async (req, res) => {
   const config = Object.fromEntries(cfgData.map(c => [c.key, c.value]));
 
   const isRevisiAC = !!(request.tanggal_ac && request.jam_ac);
-  await supabase.from('requests').update({ tanggal_ac, jam_ac, lokasi_ac }).eq('id_request', id_request);
+  await supabase.from('requests').update({ tanggal_ac, jam_ac, lokasi_ac, status: 'AC Dijadwalkan' }).eq('id_request', id_request);
 
   // Kirim notifikasi jadwal AC ke HC, User/Atasan, dan seluruh tim pelaksana
   const tim = getTimPelaksana(config);
@@ -280,18 +282,28 @@ fase6Router.post('/jadwal-presentasi', authMiddleware, picOnly, async (req, res)
   res.json({ success: true, message: 'Undangan presentasi berhasil dikirim' });
 });
 
-fase6Router.post('/kirim-laporan', authMiddleware, picOnly, async (req, res) => {
-  const { id_request, path_laporan } = req.body;
-  if (!id_request || !path_laporan) return res.status(400).json({ error: 'ID Request dan path laporan wajib diisi' });
+fase6Router.post('/kirim-laporan', authMiddleware, picOnly, upload.single('pdf'), async (req, res) => {
+  const { id_request } = req.body;
+  if (!id_request) return res.status(400).json({ error: 'ID Request wajib diisi' });
+  if (!req.file) return res.status(400).json({ error: 'File PDF wajib diupload' });
 
   const { data: request } = await supabase.from('requests').select('*').eq('id_request', id_request).single();
   if (!request) return res.status(404).json({ error: 'Request tidak ditemukan' });
 
-  const { data: fileData, error: fileError } = await supabase.storage.from('laporan-pdf').download(path_laporan);
-  if (fileError) return res.status(404).json({ error: 'File PDF tidak ditemukan di storage' });
+  const fileBuffer = req.file.buffer;
+  const filePath = `${id_request}/laporan_${Date.now()}.pdf`;
 
-  const pdfBuffer = Buffer.from(await fileData.arrayBuffer());
+  const { error: uploadError } = await supabase.storage
+    .from('laporan-pdf')
+    .upload(filePath, fileBuffer, { contentType: 'application/pdf', upsert: true });
+  if (uploadError) return res.status(500).json({ error: 'Gagal upload PDF ke storage: ' + uploadError.message });
+
+  const { data: urlData } = supabase.storage.from('laporan-pdf').getPublicUrl(filePath);
+  const publicUrl = urlData.publicUrl;
+
+  const pdfBuffer = fileBuffer;
   const namaPDF = `Laporan_AC_${request.nama_peserta.replace(/\s/g, '_')}_${id_request}.pdf`;
+  const path_laporan = publicUrl;
 
   const penerima = [
     { nama: request.pic_hc, email: request.email_pic_hc },
