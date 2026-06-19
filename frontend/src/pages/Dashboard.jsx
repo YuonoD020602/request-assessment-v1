@@ -49,7 +49,8 @@ const exportCSV = (data, periode) => {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `Request_AC_${periode || 'semua'}.csv`;
+  const periodeLabel = !periode ? 'semua' : periode === '__none__' ? 'belum-dijadwalkan' : periode.replace(/\s+/g, '_');
+  a.download = `Request_AC_${periodeLabel}.csv`;
   a.click();
   URL.revokeObjectURL(url);
 };
@@ -71,7 +72,7 @@ export default function Dashboard() {
     api.get('/api/config').then(res => {
       const cfg = res.data.data || {};
       if (cfg.kuota_maks) setKuotaMaks(parseInt(cfg.kuota_maks) || 9);
-    }).catch(() => {});
+    }).catch(() => toast.error('Gagal memuat konfigurasi kuota'));
   }, []);
 
   const fetchRequests = async () => {
@@ -112,7 +113,10 @@ export default function Dashboard() {
   // Data terfilter
   const filtered = useMemo(() => {
     return requests.filter(r => {
-      if (filterPeriode && toPeriode(r.tanggal_ac) !== filterPeriode) return false;
+      if (filterPeriode) {
+        if (filterPeriode === '__none__') { if (r.tanggal_ac) return false; }
+        else if (toPeriode(r.tanggal_ac) !== filterPeriode) return false;
+      }
       if (filterPerusahaan && r.nama_perusahaan !== filterPerusahaan) return false;
       if (filterStatus && r.status !== filterStatus) return false;
       if (search) {
@@ -137,8 +141,8 @@ export default function Dashboard() {
   const hasFilter = filterPeriode || filterPerusahaan || filterStatus || search;
   const resetFilter = () => { setFilterPeriode(''); setFilterPerusahaan(''); setFilterStatus(''); setSearch(''); };
 
-  // Progress bar kapasitas (hanya saat filter periode aktif)
-  const kapasitasAktif = filterPeriode
+  // Progress bar kapasitas (hanya saat filter periode aktif, bukan __none__)
+  const kapasitasAktif = (filterPeriode && filterPeriode !== '__none__')
     ? requests.filter(r => toPeriode(r.tanggal_ac) === filterPeriode && r.status !== 'Rejected').length
     : null;
 

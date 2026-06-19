@@ -1,7 +1,6 @@
 const express = require('express');
 const supabase = require('../supabase');
 const { authMiddleware, picOnly } = require('../middleware/auth');
-const { kirimEmailPembukaan } = require('../services/emailService');
 
 const router = express.Router();
 

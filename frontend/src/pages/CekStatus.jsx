@@ -214,11 +214,11 @@ export function CekStatus() {
                   </div>
 
                   {/* Jadwal AC */}
-                  <div className={`p-3 rounded-lg border ${result.tanggal_ac && result.jam_ac ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
+                  <div className={`p-3 rounded-lg border ${result.tanggal_ac ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
                     <p className="text-xs font-semibold text-gray-500 mb-1">🏢 JADWAL ASSESSMENT CENTER</p>
-                    {result.tanggal_ac && result.jam_ac ? (
+                    {result.tanggal_ac ? (
                       <div className="space-y-1 text-sm">
-                        <p className="font-medium text-gray-900">📅 {result.tanggal_ac} pukul {result.jam_ac} WIB</p>
+                        <p className="font-medium text-gray-900">📅 {result.tanggal_ac}{result.jam_ac ? ` pukul ${result.jam_ac} WIB` : ''}</p>
                         {result.lokasi_ac && (
                           <p className="text-gray-600 text-xs">📍 {result.lokasi_ac}</p>
                         )}

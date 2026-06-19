@@ -1,7 +1,7 @@
 const express = require('express');
 const supabase = require('../supabase');
 const { authMiddleware, picOnly } = require('../middleware/auth');
-const { kirimReminderAC } = require('../services/emailService');
+const { kirimUndanganPresentasi } = require('../services/emailService');
 
 const router = express.Router();
 const delay = (ms) => new Promise(r => setTimeout(r, ms));
@@ -79,11 +79,10 @@ router.post('/:id/book', async (req, res) => {
   ].filter(Boolean);
 
   for (const p of penerima) {
-    await kirimReminderAC({
+    await kirimUndanganPresentasi({
       namaTo: p.nama, emailTo: p.email,
       idRequest: id_request, namaPeserta: request.nama_peserta,
-      tanggalAC: slot.tanggal, lokasiAC: `${slot.lokasi} pukul ${slot.jam} WIB`,
-      isHariH: false, attachCalendar: true
+      tanggal: slot.tanggal, jam: slot.jam, lokasi: slot.lokasi || '-'
     });
     await delay(400);
   }
@@ -91,12 +90,11 @@ router.post('/:id/book', async (req, res) => {
   // Kirim notif ke semua admin AC
   let k = 1;
   while (config[`admin_ac_${k}_email`]) {
-    await kirimReminderAC({
+    await kirimUndanganPresentasi({
       namaTo: config[`admin_ac_${k}_nama`],
       emailTo: config[`admin_ac_${k}_email`],
       idRequest: id_request, namaPeserta: request.nama_peserta,
-      tanggalAC: slot.tanggal, lokasiAC: `${slot.lokasi} pukul ${slot.jam} WIB`,
-      isHariH: false, attachCalendar: false
+      tanggal: slot.tanggal, jam: slot.jam, lokasi: slot.lokasi || '-'
     });
     k++;
     await delay(400);

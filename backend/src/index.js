@@ -53,9 +53,9 @@ app.use('/api/fase6', fase6Routes);
 app.use('/api/slots', slotRoutes);
 
 // ============================================================
-// CRON JOB - Jalankan setiap hari pukul 06.00 WIB (UTC+7 = 23.00 UTC)
+// CRON JOB - Jalankan setiap hari pukul 06.00 WIB
 // ============================================================
-cron.schedule('0 23 * * *', async () => {
+cron.schedule('0 6 * * *', async () => {
   console.log('[CRON] Menjalankan reminder harian...');
   await runDailyReminders();
 }, {
