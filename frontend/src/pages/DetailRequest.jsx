@@ -19,6 +19,7 @@ export default function DetailRequest() {
   const [psikotesForm, setPsikotesForm] = useState({ tanggal_psikotes: '', jam_psikotes: '' });
   const [jadwalAcForm, setJadwalAcForm] = useState({ tanggal_ac: '', jam_ac: '', lokasi_ac: '' });
   const [presentasiForm, setPresentasiForm] = useState({ tanggal_presentasi: '', jam_presentasi: '', lokasi_presentasi: '' });
+  const [formsReady, setFormsReady] = useState(false);
   const [pathLaporan, setPathLaporan] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -30,7 +31,14 @@ export default function DetailRequest() {
   const fetchRequest = async () => {
     try {
       const res = await api.get(`/api/requests/${idRequest}`);
-      setRequest(res.data.data);
+      const r = res.data.data;
+      setRequest(r);
+      // Pre-fill forms dengan data existing
+      if (r.tanggal_gr) setGrForm({ tanggal_gr: r.tanggal_gr, jam_gr: r.jam_gr || '', lokasi_gr: r.lokasi_gr || '', tanggal_ac: r.tanggal_ac || '', lokasi_ac: r.lokasi_ac || '' });
+      if (r.tanggal_psikotes) setPsikotesForm({ tanggal_psikotes: r.tanggal_psikotes, jam_psikotes: r.jam_psikotes || '' });
+      if (r.tanggal_ac && r.jam_ac) setJadwalAcForm({ tanggal_ac: r.tanggal_ac, jam_ac: r.jam_ac, lokasi_ac: r.lokasi_ac || '' });
+      if (r.tanggal_presentasi) setPresentasiForm({ tanggal_presentasi: r.tanggal_presentasi, jam_presentasi: r.jam_presentasi || '', lokasi_presentasi: r.lokasi_presentasi || '' });
+      setFormsReady(true);
     } catch { toast.error('Request tidak ditemukan'); navigate('/dashboard'); }
     finally { setLoading(false); }
   };
@@ -156,12 +164,12 @@ export default function DetailRequest() {
                 </div>
               )}
               <form onSubmit={submitGR} className="grid grid-cols-2 gap-4">
-                <div><label className="form-label">Tanggal GR *</label><input type="date" className="form-input" required onChange={e => setGrForm({...grForm, tanggal_gr: e.target.value})} /></div>
-                <div><label className="form-label">Jam GR *</label><input type="time" className="form-input" required onChange={e => setGrForm({...grForm, jam_gr: e.target.value})} /></div>
-                <div className="col-span-2"><label className="form-label">Lokasi / Link Meet *</label><input className="form-input" required onChange={e => setGrForm({...grForm, lokasi_gr: e.target.value})} /></div>
-                <div><label className="form-label">Tanggal AC</label><input type="date" className="form-input" onChange={e => setGrForm({...grForm, tanggal_ac: e.target.value})} /></div>
-                <div><label className="form-label">Lokasi AC</label><input className="form-input" onChange={e => setGrForm({...grForm, lokasi_ac: e.target.value})} /></div>
-                <div className="col-span-2"><button type="submit" className="btn-primary" disabled={submitting}>{submitting ? '...' : 'Kirim Undangan GR'}</button></div>
+                <div><label className="form-label">Tanggal GR *</label><input type="date" className="form-input" required value={grForm.tanggal_gr} onChange={e => setGrForm({...grForm, tanggal_gr: e.target.value})} /></div>
+                <div><label className="form-label">Jam GR *</label><input type="time" className="form-input" required value={grForm.jam_gr} onChange={e => setGrForm({...grForm, jam_gr: e.target.value})} /></div>
+                <div className="col-span-2"><label className="form-label">Lokasi / Link Meet *</label><input className="form-input" required value={grForm.lokasi_gr} onChange={e => setGrForm({...grForm, lokasi_gr: e.target.value})} /></div>
+                <div><label className="form-label">Tanggal AC</label><input type="date" className="form-input" value={grForm.tanggal_ac} onChange={e => setGrForm({...grForm, tanggal_ac: e.target.value})} /></div>
+                <div><label className="form-label">Lokasi AC</label><input className="form-input" value={grForm.lokasi_ac} onChange={e => setGrForm({...grForm, lokasi_ac: e.target.value})} /></div>
+                <div className="col-span-2"><button type="submit" className="btn-primary" disabled={submitting}>{submitting ? '...' : request.tanggal_gr ? 'Update & Kirim Ulang Undangan GR' : 'Kirim Undangan GR'}</button></div>
               </form>
             </div>
 
@@ -205,10 +213,10 @@ export default function DetailRequest() {
                 </div>
               )}
               <form onSubmit={submitPsikotes} className="grid grid-cols-2 gap-4">
-                <div><label className="form-label">Tanggal *</label><input type="date" className="form-input" required onChange={e => setPsikotesForm({...psikotesForm, tanggal_psikotes: e.target.value})} /></div>
-                <div><label className="form-label">Rentang Jam Psikotes *</label><input className="form-input" required placeholder="contoh: 08.00–10.00" onChange={e => setPsikotesForm({...psikotesForm, jam_psikotes: e.target.value})} /></div>
+                <div><label className="form-label">Tanggal *</label><input type="date" className="form-input" required value={psikotesForm.tanggal_psikotes} onChange={e => setPsikotesForm({...psikotesForm, tanggal_psikotes: e.target.value})} /></div>
+                <div><label className="form-label">Rentang Jam Psikotes *</label><input className="form-input" required placeholder="contoh: 08.00–10.00" value={psikotesForm.jam_psikotes} onChange={e => setPsikotesForm({...psikotesForm, jam_psikotes: e.target.value})} /></div>
                 <div className="col-span-2 p-3 bg-blue-50 rounded-lg text-sm text-blue-700">Peserta akan diarahkan cek email dari astra.recruitment@ai.astra.co.id</div>
-                <div className="col-span-2"><button type="submit" className="btn-primary" disabled={submitting}>{submitting ? '...' : 'Kirim Jadwal Psikotes'}</button></div>
+                <div className="col-span-2"><button type="submit" className="btn-primary" disabled={submitting}>{submitting ? '...' : request.tanggal_psikotes ? 'Update & Kirim Ulang Jadwal Psikotes' : 'Kirim Jadwal Psikotes'}</button></div>
               </form>
             </div>
 
@@ -227,10 +235,10 @@ export default function DetailRequest() {
                 </div>
               )}
               <form onSubmit={submitJadwalAC} className="grid grid-cols-2 gap-4">
-                <div><label className="form-label">Tanggal AC *</label><input type="date" className="form-input" required onChange={e => setJadwalAcForm({...jadwalAcForm, tanggal_ac: e.target.value})} /></div>
-                <div><label className="form-label">Jam AC *</label><input type="time" className="form-input" required onChange={e => setJadwalAcForm({...jadwalAcForm, jam_ac: e.target.value})} /></div>
-                <div className="col-span-2"><label className="form-label">Lokasi / Link AC *</label><input className="form-input" required onChange={e => setJadwalAcForm({...jadwalAcForm, lokasi_ac: e.target.value})} /></div>
-                <div className="col-span-2"><button type="submit" className="btn-primary" disabled={submitting}>{submitting ? '...' : 'Simpan Jadwal AC'}</button></div>
+                <div><label className="form-label">Tanggal AC *</label><input type="date" className="form-input" required value={jadwalAcForm.tanggal_ac} onChange={e => setJadwalAcForm({...jadwalAcForm, tanggal_ac: e.target.value})} /></div>
+                <div><label className="form-label">Jam AC *</label><input type="time" className="form-input" required value={jadwalAcForm.jam_ac} onChange={e => setJadwalAcForm({...jadwalAcForm, jam_ac: e.target.value})} /></div>
+                <div className="col-span-2"><label className="form-label">Lokasi / Link AC *</label><input className="form-input" required value={jadwalAcForm.lokasi_ac} onChange={e => setJadwalAcForm({...jadwalAcForm, lokasi_ac: e.target.value})} /></div>
+                <div className="col-span-2"><button type="submit" className="btn-primary" disabled={submitting}>{submitting ? '...' : request.tanggal_ac && request.jam_ac ? 'Update & Kirim Ulang Notifikasi AC' : 'Simpan Jadwal AC'}</button></div>
               </form>
             </div>
           </div>
@@ -247,10 +255,10 @@ export default function DetailRequest() {
                 </div>
               )}
               <form onSubmit={submitPresentasi} className="grid grid-cols-2 gap-4">
-                <div><label className="form-label">Tanggal *</label><input type="date" className="form-input" required onChange={e => setPresentasiForm({...presentasiForm, tanggal_presentasi: e.target.value})} /></div>
-                <div><label className="form-label">Jam *</label><input type="time" className="form-input" required onChange={e => setPresentasiForm({...presentasiForm, jam_presentasi: e.target.value})} /></div>
-                <div className="col-span-2"><label className="form-label">Lokasi / Link *</label><input className="form-input" required onChange={e => setPresentasiForm({...presentasiForm, lokasi_presentasi: e.target.value})} /></div>
-                <div className="col-span-2"><button type="submit" className="btn-primary" disabled={submitting}>{submitting ? '...' : 'Kirim Undangan Presentasi'}</button></div>
+                <div><label className="form-label">Tanggal *</label><input type="date" className="form-input" required value={presentasiForm.tanggal_presentasi} onChange={e => setPresentasiForm({...presentasiForm, tanggal_presentasi: e.target.value})} /></div>
+                <div><label className="form-label">Jam *</label><input type="time" className="form-input" required value={presentasiForm.jam_presentasi} onChange={e => setPresentasiForm({...presentasiForm, jam_presentasi: e.target.value})} /></div>
+                <div className="col-span-2"><label className="form-label">Lokasi / Link *</label><input className="form-input" required value={presentasiForm.lokasi_presentasi} onChange={e => setPresentasiForm({...presentasiForm, lokasi_presentasi: e.target.value})} /></div>
+                <div className="col-span-2"><button type="submit" className="btn-primary" disabled={submitting}>{submitting ? '...' : request.tanggal_presentasi ? 'Update & Kirim Ulang Undangan Presentasi' : 'Kirim Undangan Presentasi'}</button></div>
               </form>
             </div>
 

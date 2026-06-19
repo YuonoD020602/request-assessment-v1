@@ -169,6 +169,7 @@ fase4Router.post('/psikotes', authMiddleware, picOnly, async (req, res) => {
   const { data: cfgData } = await supabase.from('konfigurasi').select('key, value');
   const config = Object.fromEntries(cfgData.map(c => [c.key, c.value]));
 
+  const isRevisi = !!(request.tanggal_psikotes);
   await supabase.from('requests').update({ tanggal_psikotes, jam_psikotes }).eq('id_request', id_request);
 
   // Kirim ke HC, User/Atasan, dan semua Admin AC
@@ -184,13 +185,14 @@ fase4Router.post('/psikotes', authMiddleware, picOnly, async (req, res) => {
       namaTo: p.nama, emailTo: p.email,
       idRequest: id_request, namaPeserta: request.nama_peserta,
       tanggal: tanggal_psikotes, jam: jam_psikotes,
-      isReminder: false
+      isReminder: false, isRevisi
     });
     await delay(400);
   }
 
-  await supabase.from('log_aktivitas').insert({ id_request, aktivitas: 'Jadwal Psikotes Dikirim', detail: `${tanggal_psikotes} ${jam_psikotes}` });
-  res.json({ success: true, message: 'Jadwal psikotes berhasil dikirim' });
+  const aktivitas = isRevisi ? 'Jadwal Psikotes Direvisi' : 'Jadwal Psikotes Dikirim';
+  await supabase.from('log_aktivitas').insert({ id_request, aktivitas, detail: `${tanggal_psikotes} ${jam_psikotes}` });
+  res.json({ success: true, message: isRevisi ? 'Jadwal psikotes berhasil diperbarui dan dikirim ulang' : 'Jadwal psikotes berhasil dikirim' });
 });
 
 fase4Router.post('/jadwal-ac', authMiddleware, picOnly, async (req, res) => {
@@ -205,6 +207,7 @@ fase4Router.post('/jadwal-ac', authMiddleware, picOnly, async (req, res) => {
   const { data: cfgData } = await supabase.from('konfigurasi').select('key, value');
   const config = Object.fromEntries(cfgData.map(c => [c.key, c.value]));
 
+  const isRevisiAC = !!(request.tanggal_ac && request.jam_ac);
   await supabase.from('requests').update({ tanggal_ac, jam_ac, lokasi_ac }).eq('id_request', id_request);
 
   // Kirim notifikasi jadwal AC ke HC, User/Atasan, dan seluruh tim pelaksana
@@ -220,7 +223,7 @@ fase4Router.post('/jadwal-ac', authMiddleware, picOnly, async (req, res) => {
       namaTo: p.nama, emailTo: p.email,
       idRequest: id_request, namaPeserta: request.nama_peserta,
       tanggalAC: tanggal_ac, lokasiAC: lokasiLengkap,
-      isHariH: false, attachCalendar: true
+      isHariH: false, attachCalendar: true, isRevisi: isRevisiAC
     });
     await delay(400);
   }
@@ -229,14 +232,15 @@ fase4Router.post('/jadwal-ac', authMiddleware, picOnly, async (req, res) => {
       namaTo: t.nama, emailTo: t.email,
       idRequest: id_request, namaPeserta: request.nama_peserta,
       tanggalAC: tanggal_ac, lokasiAC: lokasiLengkap,
-      isHariH: false, attachCalendar: true,
+      isHariH: false, attachCalendar: true, isRevisi: isRevisiAC,
       linkKeperluan: config.link_keperluan_asesmen || null
     });
     await delay(400);
   }
 
-  await supabase.from('log_aktivitas').insert({ id_request, aktivitas: 'Jadwal AC Diinput', detail: `${tanggal_ac} ${jam_ac} di ${lokasi_ac}` });
-  res.json({ success: true, message: 'Jadwal AC berhasil disimpan dan notifikasi dikirim' });
+  const aktivitasAC = isRevisiAC ? 'Jadwal AC Direvisi' : 'Jadwal AC Diinput';
+  await supabase.from('log_aktivitas').insert({ id_request, aktivitas: aktivitasAC, detail: `${tanggal_ac} ${jam_ac} di ${lokasi_ac}` });
+  res.json({ success: true, message: isRevisiAC ? 'Jadwal AC berhasil diperbarui dan notifikasi revisi dikirim' : 'Jadwal AC berhasil disimpan dan notifikasi dikirim' });
 });
 
 // ============================================================
