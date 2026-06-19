@@ -294,12 +294,12 @@ const kirimNotifikasiDokumenDiterima = async ({ namaTo, emailTo, idRequest, nama
 // ============================================================
 // FASE 4: Jadwal Psikotes (+ .ics kalender)
 // ============================================================
-const kirimJadwalPsikotes = async ({ namaTo, emailTo, idRequest, namaPeserta, tanggal, jam, isReminder = false }) => {
+const kirimJadwalPsikotes = async ({ namaTo, emailTo, idRequest, namaPeserta, tanggal, jam, isReminder = false, isRevisi = false }) => {
   const attachments = [];
   if (!isReminder) {
     const icsContent = generateICS({
-      uid: `psikotes-${idRequest}`,
-      summary: `Psikotes AC – ${namaPeserta}`,
+      uid: `psikotes-${idRequest}-${isRevisi ? 'rev' : 'v1'}`,
+      summary: `${isRevisi ? '[REVISI] ' : ''}Psikotes AC – ${namaPeserta}`,
       description: `Psikotes Assessment Center untuk ${namaPeserta}. ID: ${idRequest}. Platform: cek email dari astra.recruitment@ai.astra.co.id`,
       dateStr: tanggal,
       timeStr: jam,
@@ -308,23 +308,24 @@ const kirimJadwalPsikotes = async ({ namaTo, emailTo, idRequest, namaPeserta, ta
     if (icsContent) attachments.push({ filename: `Psikotes_${idRequest}.ics`, content: Buffer.from(icsContent) });
   }
 
+  const prefix = isRevisi ? '[REVISI] ' : isReminder ? 'Reminder Besok: ' : '';
   await sendEmail({
     to: emailTo,
-    subject: isReminder ? `[RACD AIHO] Reminder Besok: Psikotes – ${idRequest}` : `[RACD AIHO] Jadwal Psikotes – ${idRequest}`,
+    subject: isReminder ? `[RACD AIHO] Reminder Besok: Psikotes – ${idRequest}` : `[RACD AIHO] ${prefix}Jadwal Psikotes – ${idRequest}`,
     attachments,
-    html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;"><p>Kepada Yth. Bapak/Ibu ${namaTo}</p><p>${isReminder ? 'Reminder' : 'Jadwal'} Psikotes untuk <strong>${namaPeserta}</strong>:</p><table style="border-collapse:collapse;width:100%;"><tr><td style="padding:8px;border:1px solid #ddd;"><strong>Tanggal</strong></td><td style="padding:8px;border:1px solid #ddd;">${tanggal}</td></tr><tr><td style="padding:8px;border:1px solid #ddd;"><strong>Pukul</strong></td><td style="padding:8px;border:1px solid #ddd;">${jam} WIB</td></tr><tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Platform</strong></td><td style="padding: 8px; border: 1px solid #ddd;">Cek email dari astra.recruitment@ai.astra.co.id</td></tr></table>${!isReminder ? '<p style="color:#555;font-size:13px;">File kalender (.ics) terlampir.</p>' : ''}<p>Hormat kami,<br/><strong>PIC Asesmen RACD AIHO</strong></p></div>`
+    html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;"><p>Kepada Yth. Bapak/Ibu ${namaTo}</p>${isRevisi ? '<div style="background:#fff3cd;border-left:4px solid #f59e0b;padding:10px;margin-bottom:12px;"><strong>⚠ Jadwal psikotes telah diperbarui. Harap abaikan jadwal sebelumnya.</strong></div>' : ''}<p>${isReminder ? 'Reminder' : isRevisi ? 'Update jadwal' : 'Jadwal'} Psikotes untuk <strong>${namaPeserta}</strong>:</p><table style="border-collapse:collapse;width:100%;"><tr><td style="padding:8px;border:1px solid #ddd;"><strong>Tanggal</strong></td><td style="padding:8px;border:1px solid #ddd;">${tanggal}</td></tr><tr><td style="padding:8px;border:1px solid #ddd;"><strong>Pukul</strong></td><td style="padding:8px;border:1px solid #ddd;">${jam} WIB</td></tr><tr><td style="padding: 8px; border: 1px solid #ddd;"><strong>Platform</strong></td><td style="padding: 8px; border: 1px solid #ddd;">Cek email dari astra.recruitment@ai.astra.co.id</td></tr></table>${!isReminder ? '<p style="color:#555;font-size:13px;">File kalender (.ics) terlampir.</p>' : ''}<p>Hormat kami,<br/><strong>PIC Asesmen RACD AIHO</strong></p></div>`
   });
-  await logEmail(idRequest, emailTo, isReminder ? 'Reminder Psikotes H-1' : 'Jadwal Psikotes');
+  await logEmail(idRequest, emailTo, isReminder ? 'Reminder Psikotes H-1' : isRevisi ? 'Revisi Jadwal Psikotes' : 'Jadwal Psikotes');
 };
 
 // ============================================================
 // FASE 5: Reminder AC H-1 dan Hari H (+ .ics + link keperluan)
 // ============================================================
-const kirimReminderAC = async ({ namaTo, emailTo, idRequest, namaPeserta, tanggalAC, lokasiAC, isHariH = false, attachCalendar = false, linkKeperluan = null }) => {
+const kirimReminderAC = async ({ namaTo, emailTo, idRequest, namaPeserta, tanggalAC, lokasiAC, isHariH = false, attachCalendar = false, linkKeperluan = null, isRevisi = false }) => {
   const attachments = [];
   if (attachCalendar) {
     const icsContent = generateICS({
-      uid: `ac-${idRequest}`,
+      uid: `ac-${idRequest}-${isRevisi ? 'rev' : 'v1'}`,
       summary: `Assessment Center – ${namaPeserta}`,
       description: `Pelaksanaan Assessment Center untuk ${namaPeserta}. ID: ${idRequest}`,
       location: lokasiAC,
@@ -338,14 +339,18 @@ const kirimReminderAC = async ({ namaTo, emailTo, idRequest, namaPeserta, tangga
   const linkKeperluanHtml = linkKeperluan
     ? `<p><strong>Link Keperluan Asesmen:</strong> <a href="${linkKeperluan}">${linkKeperluan}</a></p>`
     : '';
+  const revisiHtml = isRevisi
+    ? '<div style="background:#fff3cd;border-left:4px solid #f59e0b;padding:10px;margin-bottom:12px;"><strong>⚠ Jadwal AC telah diperbarui. Harap abaikan jadwal sebelumnya.</strong></div>'
+    : '';
+  const subjectPrefix = isHariH ? 'Hari Ini' : isRevisi ? '[REVISI] Jadwal' : attachCalendar ? 'Jadwal' : 'Reminder Besok';
 
   await sendEmail({
     to: emailTo,
-    subject: isHariH ? `[RACD AIHO] Hari Ini: Pelaksanaan AC – ${idRequest}` : `[RACD AIHO] ${attachCalendar ? 'Jadwal' : 'Reminder Besok'}: Pelaksanaan AC – ${idRequest}`,
+    subject: `[RACD AIHO] ${subjectPrefix}: Pelaksanaan AC – ${idRequest}`,
     attachments,
-    html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;"><p>Kepada Yth. Bapak/Ibu ${namaTo}</p><p>${isHariH ? 'Hari ini' : attachCalendar ? 'Berikut jadwal' : 'Besok'} adalah pelaksanaan <strong>Assessment Center</strong> untuk <strong>${namaPeserta}</strong>.</p><table style="border-collapse:collapse;width:100%;"><tr><td style="padding:8px;border:1px solid #ddd;"><strong>Tanggal</strong></td><td style="padding:8px;border:1px solid #ddd;">${tanggalAC}</td></tr><tr><td style="padding:8px;border:1px solid #ddd;"><strong>Lokasi</strong></td><td style="padding:8px;border:1px solid #ddd;">${lokasiAC}</td></tr></table>${linkKeperluanHtml}${attachCalendar ? '<p style="color:#555;font-size:13px;">File kalender (.ics) terlampir.</p>' : ''}<p>Hormat kami,<br/><strong>PIC Asesmen RACD AIHO</strong></p></div>`
+    html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;"><p>Kepada Yth. Bapak/Ibu ${namaTo}</p>${revisiHtml}<p>${isHariH ? 'Hari ini' : isRevisi ? 'Jadwal AC telah diperbarui untuk' : attachCalendar ? 'Berikut jadwal' : 'Besok'} adalah pelaksanaan <strong>Assessment Center</strong> untuk <strong>${namaPeserta}</strong>.</p><table style="border-collapse:collapse;width:100%;"><tr><td style="padding:8px;border:1px solid #ddd;"><strong>Tanggal</strong></td><td style="padding:8px;border:1px solid #ddd;">${tanggalAC}</td></tr><tr><td style="padding:8px;border:1px solid #ddd;"><strong>Lokasi</strong></td><td style="padding:8px;border:1px solid #ddd;">${lokasiAC}</td></tr></table>${linkKeperluanHtml}${attachCalendar ? '<p style="color:#555;font-size:13px;">File kalender (.ics) terlampir.</p>' : ''}<p>Hormat kami,<br/><strong>PIC Asesmen RACD AIHO</strong></p></div>`
   });
-  await logEmail(idRequest, emailTo, isHariH ? 'Reminder AC Hari H' : attachCalendar ? 'Jadwal AC' : 'Reminder AC H-1');
+  await logEmail(idRequest, emailTo, isHariH ? 'Reminder AC Hari H' : isRevisi ? 'Revisi Jadwal AC' : attachCalendar ? 'Jadwal AC' : 'Reminder AC H-1');
 };
 
 // ============================================================
