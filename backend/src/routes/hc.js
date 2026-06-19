@@ -5,6 +5,18 @@ const { kirimEmailPembukaan } = require('../services/emailService');
 
 const router = express.Router();
 
+// GET /api/hc/log-pembukaan - Riwayat pengiriman email pembukaan (HARUS di atas /:id)
+router.get('/log-pembukaan', authMiddleware, picOnly, async (req, res) => {
+  const { data, error } = await supabase
+    .from('log_aktivitas')
+    .select('id, aktivitas, detail, created_at')
+    .eq('aktivitas', 'Email Pembukaan Terkirim')
+    .order('created_at', { ascending: false })
+    .limit(20);
+  if (error) return res.status(500).json({ error: 'Gagal ambil log' });
+  res.json({ data: data || [] });
+});
+
 // GET /api/hc - Daftar semua HC
 router.get('/', authMiddleware, picOnly, async (req, res) => {
   const { data, error } = await supabase.from('daftar_hc').select('*').order('nama_perusahaan');

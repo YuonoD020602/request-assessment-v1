@@ -11,8 +11,10 @@ export function DaftarHC() {
   const [sending, setSending] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [hasilPengiriman, setHasilPengiriman] = useState(null);
+  const [logPembukaan, setLogPembukaan] = useState([]);
+  const [showLog, setShowLog] = useState(false);
 
-  useEffect(() => { fetchHC(); }, []);
+  useEffect(() => { fetchHC(); fetchLog(); }, []);
 
   const fetchHC = async () => {
     try {
@@ -20,6 +22,13 @@ export function DaftarHC() {
       setHcList(res.data.data || []);
     } catch { toast.error('Gagal memuat data HC'); }
     finally { setLoading(false); }
+  };
+
+  const fetchLog = async () => {
+    try {
+      const res = await api.get('/api/hc/log-pembukaan');
+      setLogPembukaan(res.data.data || []);
+    } catch { }
   };
 
   const handleAdd = async (e) => {
@@ -50,6 +59,7 @@ export function DaftarHC() {
       const res = await api.post('/api/hc/kirim-pembukaan');
       const { berhasil, gagal, total, gagalList } = res.data;
       setHasilPengiriman({ berhasil, gagal, total, gagalList });
+      fetchLog();
 
       if (gagal === 0) {
         toast.success(`✅ Email berhasil dikirim ke semua ${berhasil} HC`);
@@ -106,6 +116,39 @@ export function DaftarHC() {
             <button onClick={() => setHasilPengiriman(null)} className="mt-2 text-xs text-gray-400 hover:text-gray-600">
               Tutup
             </button>
+          </div>
+        )}
+
+        {/* Riwayat Pengiriman Email Pembukaan */}
+        {logPembukaan.length > 0 && (
+          <div className="card">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-gray-900 text-sm">Riwayat Pengiriman Email Pembukaan</h3>
+              <button onClick={() => setShowLog(!showLog)} className="text-xs text-blue-600 hover:text-blue-800">
+                {showLog ? 'Sembunyikan' : `Lihat (${logPembukaan.length} entri)`}
+              </button>
+            </div>
+            {showLog && (
+              <div className="space-y-2">
+                {logPembukaan.map((log) => {
+                  const tgl = new Date(log.created_at);
+                  const label = tgl.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+                  const jam = tgl.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' });
+                  return (
+                    <div key={log.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg text-sm">
+                      <div className="w-2 h-2 bg-blue-400 rounded-full mt-1.5 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-gray-700">{log.detail}</p>
+                      </div>
+                      <div className="text-xs text-gray-400 flex-shrink-0 text-right">
+                        <p>{label}</p>
+                        <p>{jam} WIB</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
