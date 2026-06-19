@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 const menuItems = [
   { path: '/dashboard', label: 'Dashboard', icon: '📊' },
   { path: '/daftar-hc', label: 'Daftar HC', icon: '👥', picOnly: true },
+  { path: '/slot-presentasi', label: 'Slot Presentasi', icon: '📅', picOnly: true },
   { path: '/konfigurasi', label: 'Konfigurasi', icon: '⚙️', picOnly: true },
 ];
 
