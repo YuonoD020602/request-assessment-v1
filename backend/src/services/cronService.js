@@ -89,7 +89,7 @@ const runDailyReminders = async () => {
           namaTo: admin.nama, emailTo: admin.email,
           idRequest: req.id_request, namaPeserta: req.nama_peserta,
           tanggal: req.tanggal_psikotes, jam: req.jam_psikotes,
-          linkPlatform: req.link_platform_psikotes, isReminder: true
+          isReminder: true
         });
       }
 
@@ -102,7 +102,6 @@ const runDailyReminders = async () => {
           namaPeserta: req.nama_peserta,
           tanggal: req.tanggal_psikotes,
           jam: req.jam_psikotes,
-          linkPlatform: req.link_platform_psikotes,
           isReminder: true
         });
       }

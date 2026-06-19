@@ -40,11 +40,18 @@ router.post('/submit', async (req, res) => {
 
   const { data: cfgData } = await supabase.from('konfigurasi').select('key, value');
   const config = Object.fromEntries(cfgData.map(c => [c.key, c.value]));
-  const kuotaMaks = parseInt(config.kuota_maks || '8');
 
-  const bulanIni = new Date();
-  const prefixBulan = `REQ-${bulanIni.getFullYear()}${String(bulanIni.getMonth() + 1).padStart(2, '0')}`;
-  const { count } = await supabase.from('requests').select('*', { count: 'exact', head: true }).like('id_request', `${prefixBulan}-%`).neq('status', 'Rejected');
+  // Cek rentang tanggal pendaftaran
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (config.tanggal_buka && config.tanggal_tutup) {
+    const tglBuka = new Date(config.tanggal_buka);
+    const tglTutup = new Date(config.tanggal_tutup);
+    tglTutup.setHours(23, 59, 59, 999);
+    if (today < tglBuka || today > tglTutup) {
+      return res.status(400).json({ error: 'Pendaftaran sudah ditutup. Silakan hubungi PIC Asesmen.' });
+    }
+  }
 
   const approvers = [
     { nama: config.approver_1_nama, email: config.approver_1_email },
@@ -59,26 +66,7 @@ router.post('/submit', async (req, res) => {
 
   for (let idx = 0; idx < peserta.length; idx++) {
     const p = peserta[idx];
-    const sisaKuota = kuotaMaks - (count + resultIds.length);
     const idRequest = generatedIds[idx];
-
-    if (sisaKuota <= 0) {
-      await supabase.from('requests').insert({
-        ...dataHC,
-        nama_peserta: p.nama_peserta, email_peserta: p.email_peserta,
-        posisi_current: p.posisi_current, dept: p.dept, div: p.div,
-        gol_current: p.gol_current, posisi_target: p.posisi_target,
-        gol_target: p.gol_target, jumlah_bawahan: p.jumlah_bawahan,
-        jumlah_peers: p.jumlah_peers, masa_kerja: p.masa_kerja,
-        tujuan_ac: p.tujuan_ac, jenis_assessment: p.jenis_assessment,
-        terakhir_assessment: p.terakhir_assessment,
-        id_request: idRequest, status: 'Ditunda - Kuota Penuh'
-      });
-      await supabase.from('log_aktivitas').insert({ id_request: idRequest, aktivitas: 'Pengajuan Ditunda', detail: 'Kuota bulan ini sudah penuh' });
-      resultIds.push(idRequest);
-      statusList.push('kuota_penuh');
-      continue;
-    }
 
     const { error } = await supabase.from('requests').insert({
       ...dataHC,
@@ -158,6 +146,19 @@ router.get('/', authMiddleware, picOnly, async (req, res) => {
 router.get('/:idRequest', authMiddleware, picOnly, async (req, res) => {
   const { data, error } = await supabase.from('requests').select('*').eq('id_request', req.params.idRequest).single();
   if (error || !data) return res.status(404).json({ error: 'Request tidak ditemukan' });
+  res.json({ data });
+});
+
+// GET /api/requests/status/by-email/:email - Cek semua request by email HC (publik)
+router.get('/status/by-email/:email', async (req, res) => {
+  const email = decodeURIComponent(req.params.email);
+  const { data, error } = await supabase
+    .from('requests')
+    .select('id_request, nama_peserta, jenis_assessment, status, created_at, tanggal_psikotes, jam_psikotes, tanggal_ac, jam_ac, lokasi_ac, status_dokumen')
+    .eq('email_pic_hc', email)
+    .order('created_at', { ascending: false });
+  if (error) return res.status(500).json({ error: 'Gagal mengambil data' });
+  if (!data || data.length === 0) return res.status(404).json({ error: 'Tidak ada request ditemukan untuk email ini' });
   res.json({ data });
 });
 

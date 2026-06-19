@@ -15,7 +15,7 @@ export default function DetailRequest() {
 
   const [grForm, setGrForm] = useState({ tanggal_gr: '', jam_gr: '', lokasi_gr: '', tanggal_ac: '', lokasi_ac: '' });
   const [momForm, setMomForm] = useState({ mom_gr: '' });
-  const [psikotesForm, setPsikotesForm] = useState({ tanggal_psikotes: '', jam_psikotes: '', link_platform_psikotes: '' });
+  const [psikotesForm, setPsikotesForm] = useState({ tanggal_psikotes: '', jam_psikotes: '' });
   const [jadwalAcForm, setJadwalAcForm] = useState({ tanggal_ac: '', jam_ac: '', lokasi_ac: '' });
   const [presentasiForm, setPresentasiForm] = useState({ tanggal_presentasi: '', jam_presentasi: '', lokasi_presentasi: '' });
   const [pathLaporan, setPathLaporan] = useState('');
@@ -200,10 +200,12 @@ export default function DetailRequest() {
                   ✓ Jadwal psikotes: {request.tanggal_psikotes} {request.jam_psikotes}
                 </div>
               )}
+              <div className="mb-4 p-3 bg-blue-50 rounded-lg text-sm text-blue-700">
+                Peserta akan diarahkan untuk cek email dari <strong>astra.recruitment@ai.astra.co.id</strong>
+              </div>
               <form onSubmit={submitPsikotes} className="grid grid-cols-2 gap-4">
                 <div><label className="form-label">Tanggal *</label><input type="date" className="form-input" required onChange={e => setPsikotesForm({...psikotesForm, tanggal_psikotes: e.target.value})} /></div>
-                <div><label className="form-label">Jam *</label><input type="time" className="form-input" required onChange={e => setPsikotesForm({...psikotesForm, jam_psikotes: e.target.value})} /></div>
-                <div className="col-span-2"><label className="form-label">Link Platform *</label><input className="form-input" required onChange={e => setPsikotesForm({...psikotesForm, link_platform_psikotes: e.target.value})} /></div>
+                <div><label className="form-label">Rentang Jam *</label><input className="form-input" placeholder="contoh: 08.00–10.00" required onChange={e => setPsikotesForm({...psikotesForm, jam_psikotes: e.target.value})} /></div>
                 <div className="col-span-2"><button type="submit" className="btn-primary" disabled={submitting}>{submitting ? '...' : 'Kirim Jadwal Psikotes'}</button></div>
               </form>
             </div>

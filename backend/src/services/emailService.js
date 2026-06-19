@@ -214,11 +214,11 @@ const kirimNotifikasiDokumenDiterima = async ({ namaTo, emailTo, idRequest, nama
 // ============================================================
 // FASE 4: Jadwal Psikotes
 // ============================================================
-const kirimJadwalPsikotes = async ({ namaTo, emailTo, idRequest, namaPeserta, tanggal, jam, linkPlatform, isReminder = false }) => {
+const kirimJadwalPsikotes = async ({ namaTo, emailTo, idRequest, namaPeserta, tanggal, jam, isReminder = false }) => {
   await sendEmail({
     to: emailTo,
     subject: isReminder ? `[RACD AIHO] Reminder Besok: Psikotes – ${idRequest}` : `[RACD AIHO] Jadwal Psikotes – ${idRequest}`,
-    html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;"><p>Kepada Yth. Bapak/Ibu ${namaTo}</p><p>${isReminder ? 'Reminder' : 'Jadwal'} Psikotes untuk <strong>${namaPeserta}</strong>:</p><table style="border-collapse:collapse;width:100%;"><tr><td style="padding:8px;border:1px solid #ddd;"><strong>Tanggal</strong></td><td style="padding:8px;border:1px solid #ddd;">${tanggal}</td></tr><tr><td style="padding:8px;border:1px solid #ddd;"><strong>Pukul</strong></td><td style="padding:8px;border:1px solid #ddd;">${jam} WIB</td></tr><tr><td style="padding:8px;border:1px solid #ddd;"><strong>Platform</strong></td><td style="padding:8px;border:1px solid #ddd;"><a href="${linkPlatform}">${linkPlatform}</a></td></tr></table><p>Hormat kami,<br/><strong>PIC Asesmen RACD AIHO</strong></p></div>`
+    html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;"><p>Kepada Yth. Bapak/Ibu ${namaTo}</p><p>${isReminder ? 'Reminder' : 'Jadwal'} Psikotes untuk <strong>${namaPeserta}</strong>:</p><table style="border-collapse:collapse;width:100%;"><tr><td style="padding:8px;border:1px solid #ddd;"><strong>Tanggal</strong></td><td style="padding:8px;border:1px solid #ddd;">${tanggal}</td></tr><tr><td style="padding:8px;border:1px solid #ddd;"><strong>Pukul</strong></td><td style="padding:8px;border:1px solid #ddd;">${jam} WIB</td></tr><tr><td style="padding:8px;border:1px solid #ddd;"><strong>Platform</strong></td><td style="padding:8px;border:1px solid #ddd;">Cek email dari astra.recruitment@ai.astra.co.id</td></tr></table><p>Hormat kami,<br/><strong>PIC Asesmen RACD AIHO</strong></p></div>`
   });
   await logEmail(idRequest, emailTo, isReminder ? 'Reminder Psikotes H-1' : 'Jadwal Psikotes');
 };

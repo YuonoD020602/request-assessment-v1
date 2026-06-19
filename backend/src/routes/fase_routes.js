@@ -157,8 +157,8 @@ fase4Router.post('/dokumen', async (req, res) => {
 });
 
 fase4Router.post('/psikotes', authMiddleware, picOnly, async (req, res) => {
-  const { id_request, tanggal_psikotes, jam_psikotes, link_platform_psikotes } = req.body;
-  if (!id_request || !tanggal_psikotes || !jam_psikotes || !link_platform_psikotes) {
+  const { id_request, tanggal_psikotes, jam_psikotes } = req.body;
+  if (!id_request || !tanggal_psikotes || !jam_psikotes) {
     return res.status(400).json({ error: 'Field wajib belum lengkap' });
   }
 
@@ -168,7 +168,7 @@ fase4Router.post('/psikotes', authMiddleware, picOnly, async (req, res) => {
   const { data: cfgData } = await supabase.from('konfigurasi').select('key, value');
   const config = Object.fromEntries(cfgData.map(c => [c.key, c.value]));
 
-  await supabase.from('requests').update({ tanggal_psikotes, jam_psikotes, link_platform_psikotes }).eq('id_request', id_request);
+  await supabase.from('requests').update({ tanggal_psikotes, jam_psikotes }).eq('id_request', id_request);
 
   // Kirim ke HC, User/Atasan, dan semua Admin AC
   const admins = getAdmins(config);
@@ -183,7 +183,7 @@ fase4Router.post('/psikotes', authMiddleware, picOnly, async (req, res) => {
       namaTo: p.nama, emailTo: p.email,
       idRequest: id_request, namaPeserta: request.nama_peserta,
       tanggal: tanggal_psikotes, jam: jam_psikotes,
-      linkPlatform: link_platform_psikotes, isReminder: false
+      isReminder: false
     });
     await delay(400);
   }
