@@ -1,6 +1,6 @@
 # CATATAN REVISI — Request Assessment V1
 **Project:** RACD AIHO – PT Astra International  
-**Terakhir diperbarui:** Juni 2026
+**Terakhir diperbarui:** 19 Juni 2026
 
 ---
 
@@ -21,7 +21,13 @@
 | 8 | Booking slot presentasi oleh HC | ✅ Selesai | Batch 5 |
 | 9 | Dashboard interaktif + filter periode + export CSV | ✅ Selesai | Batch 6 |
 | 10 | Konfigurasi: `tanggal_ac` → `periode_ac` (bulan & tahun) | ✅ Selesai | Batch 6 |
-| 11 | Export PDF laporan per periode | 📋 Backlog | - |
+| 11 | Upload PDF laporan ke Supabase Storage + kirim sebagai email attachment | ✅ Selesai | Batch 7 |
+| 12 | Status baru: `Psikotes Dijadwalkan` & `AC Dijadwalkan` | ✅ Selesai | Batch 7 |
+| 13 | Fase 6 read-only jadwal presentasi + link `/pilih-slot` bisa disalin | ✅ Selesai | Batch 7 |
+| 14 | Hapus field redundant `tenggat_pendaftaran`, gabung ke `tanggal_tutup` | ✅ Selesai | Batch 7 |
+| 15 | Token approval: validasi `expired_at` + invalidasi semua token setelah digunakan | ✅ Selesai | Audit |
+| 16 | Audit & fix menyeluruh sistem (11 bug dari 2 putaran audit) | ✅ Selesai | Audit |
+| 17 | Export PDF laporan per periode | 📋 Backlog | - |
 
 ---
 
@@ -151,7 +157,83 @@
 
 ---
 
-### 📋 11. Export PDF Laporan per Periode
+### ✅ 11. Upload PDF Laporan (Supabase Storage + Email Attachment)
+**Deskripsi:**  
+- PIC upload file PDF laporan hasil AC via form di Fase 6 DetailRequest  
+- PDF disimpan ke Supabase Storage bucket `laporan-pdf` dengan path `{id_request}/laporan_{timestamp}.pdf`  
+- Email otomatis dikirim ke HC & User/Atasan dengan PDF sebagai attachment (bukan link)  
+- Status request otomatis berubah ke `Selesai` setelah laporan terkirim  
+- Form upload disembunyikan setelah `status_laporan = 'Laporan Dikirim'`  
+**Endpoint:** `POST /api/fase6/kirim-laporan` (multipart/form-data, Multer memory storage)  
+**File:** `backend/src/routes/fase_routes.js`, `backend/src/services/emailService.js`, `frontend/src/pages/DetailRequest.jsx`, `backend/package.json` (tambah `multer`)  
+**Selesai:** Batch 7
+
+---
+
+### ✅ 12. Status Baru: `Psikotes Dijadwalkan` & `AC Dijadwalkan`
+**Deskripsi:**  
+- Status `Psikotes Dijadwalkan` otomatis di-set saat PIC kirim jadwal psikotes (Fase 4)  
+- Status `AC Dijadwalkan` otomatis di-set saat PIC kirim jadwal AC (Fase 4)  
+- Dashboard: badge warna violet (Psikotes) dan sky (AC)  
+- CekStatus: tampil badge warna sesuai, termasuk di section jadwal selanjutnya  
+**File:** `backend/src/routes/fase_routes.js`, `frontend/src/pages/Dashboard.jsx`, `frontend/src/pages/CekStatus.jsx`  
+**Selesai:** Batch 7
+
+---
+
+### ✅ 13. Fase 6 Read-Only + Link `/pilih-slot` Bisa Disalin
+**Deskripsi:**  
+- Fase 6 DetailRequest sekarang hanya menampilkan jadwal presentasi (read-only), tidak ada form input PIC — HC memilih sendiri via `/pilih-slot`  
+- Jika HC belum memilih slot, tampil box kuning dengan link `{origin}/pilih-slot` lengkap beserta tombol "Salin Link"  
+- Tombol salin menggunakan `navigator.clipboard.writeText` + toast notifikasi  
+**File:** `frontend/src/pages/DetailRequest.jsx`  
+**Selesai:** Batch 7
+
+---
+
+### ✅ 14. Hapus Field Redundant `tenggat_pendaftaran`
+**Deskripsi:**  
+- Field `tenggat_pendaftaran` di Konfigurasi dihapus — fungsinya sudah ditangani `tanggal_tutup`  
+- Email pembukaan pakai `tanggal_tutup` untuk info batas pendaftaran  
+- Format tanggal di email: `toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })`  
+**File:** `frontend/src/pages/Konfigurasi.jsx`, `backend/src/routes/hc.js`  
+**Selesai:** Batch 7
+
+---
+
+### ✅ 15. Token Approval: `expired_at` + Invalidasi Semua Token
+**Deskripsi:**  
+- Saat token approval dibuat, field `expired_at` diisi 7 hari dari sekarang (sebelumnya NULL → semua token dianggap expired karena `new Date(null) = 1970`)  
+- Setelah salah satu token digunakan (approve atau reject), semua token untuk `id_request` yang sama langsung di-invalidasi — mencegah token reject dipakai setelah approve, dan sebaliknya  
+**File:** `backend/src/routes/requests.js`, `backend/src/routes/approval.js`  
+**Selesai:** Audit
+
+---
+
+### ✅ 16. Audit & Fix Menyeluruh Sistem (11 Bug dari 2 Putaran)
+**Deskripsi:** Dua putaran audit menemukan dan memperbaiki:
+
+**Putaran 1 (Audit 1):**
+- `cek-file` Storage: `list('', {search})` di root → `list(idRequest)` baca subfolder benar
+- Cron H-1 & Hari-H AC: tidak filter status → tambah `.not('status', 'in', '(...)')` exclude Rejected/Selesai
+- CekStatus race condition `setTimeout 100ms` → refactor ke `handleCekById(id)` yang langsung pakai parameter
+- CekStatus warna badge: tambah violet, sky, indigo, teal untuk status lanjutan
+- Dashboard dead code `STATUS_BADGE` dihapus
+- Form upload laporan tetap aktif setelah terkirim → sembunyikan jika `status_laporan = 'Laporan Dikirim'`
+
+**Putaran 2 (Audit 2):**
+- Cron filter `"Pending"` tidak match → fix ke `"Pending - Menunggu Review"`, tambah `"Laporan Dikirim"`
+- Race condition double booking slot → atomic single-query `UPDATE WHERE status='Tersedia'`
+- CekStatus badge `Menunggu GR` & `GR Selesai - Menunggu Dokumen` tidak punya warna → tambah orange & amber
+- FormDokumen tanpa pesan jika `?id=` kosong → tampilkan error + link kembali
+- Tombol Hapus di Dashboard muncul semua role → kondisi `user?.role === 'pic_asesmen'`
+
+**File:** `backend/src/routes/fase_routes.js`, `backend/src/routes/approval.js`, `backend/src/routes/slots.js`, `backend/src/services/cronService.js`, `frontend/src/pages/CekStatus.jsx`, `frontend/src/pages/Dashboard.jsx`, `frontend/src/pages/DetailRequest.jsx`, `frontend/src/pages/FormDokumen.jsx`  
+**Selesai:** Audit
+
+---
+
+### 📋 17. Export PDF Laporan per Periode
 **Deskripsi:** Export data request per periode menjadi PDF laporan yang rapi (header logo, tabel, summary).  
 **Status:** Backlog — dikerjakan setelah Batch 6  
 **File:** TBD
@@ -164,8 +246,11 @@
 - **Tabel `requests`:** Semua kolom yang dipakai sudah ada. `jam_psikotes` bertipe TEXT ✅
 - **Tabel `konfigurasi`:** Key-value store, field baru otomatis terbuat saat disimpan dari UI
 - **Tabel `slot_presentasi`:** Dibuat manual via SQL Editor (Batch 5)
+- **Tabel `token_approval`:** Kolom `expired_at` wajib diisi saat insert (7 hari dari sekarang)
 - **Constraint `jenis_assessment`:** Sudah diupdate, hanya "Potential Review" dan "Profiling" ✅
 - **Kolom `link_platform_psikotes`:** Masih ada di DB (data lama aman), tidak dipakai lagi
+- **Supabase Storage:** Bucket `laporan-pdf` (public), path format: `{id_request}/laporan_{timestamp}.pdf`
+- **Storage Policy:** Row-level security policy dibuat via SQL Editor untuk allow upload dari service role
 
 ### Infrastruktur
 - **Frontend:** React + Vite + TailwindCSS → Vercel (auto-deploy dari branch `main`)
