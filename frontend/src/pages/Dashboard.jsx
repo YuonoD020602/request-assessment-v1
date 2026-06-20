@@ -7,20 +7,25 @@ import toast from 'react-hot-toast';
 
 
 const STATUS_COLOR = {
-  'Pending - Menunggu Review': 'bg-yellow-100 text-yellow-800',
-  'Approved': 'bg-blue-100 text-blue-800',
-  'Rejected': 'bg-red-100 text-red-700',
-  'Menunggu GR': 'bg-purple-100 text-purple-800',
-  'GR Selesai - Menunggu Dokumen': 'bg-indigo-100 text-indigo-800',
-  'Dokumen Diterima': 'bg-cyan-100 text-cyan-800',
-  'Psikotes Dijadwalkan': 'bg-violet-100 text-violet-800',
-  'AC Dijadwalkan': 'bg-sky-100 text-sky-800',
-  'Menunggu Presentasi': 'bg-orange-100 text-orange-800',
-  'Laporan Dikirim': 'bg-teal-100 text-teal-800',
-  'Selesai': 'bg-green-100 text-green-800',
+  'Pending - Menunggu Review': 'bg-amber-100 text-amber-800 border border-amber-200',
+  'Approved': 'bg-blue-100 text-blue-800 border border-blue-200',
+  'Rejected': 'bg-red-100 text-red-700 border border-red-200',
+  'Menunggu GR': 'bg-purple-100 text-purple-800 border border-purple-200',
+  'GR Selesai - Menunggu Dokumen': 'bg-indigo-100 text-indigo-800 border border-indigo-200',
+  'Dokumen Diterima': 'bg-cyan-100 text-cyan-800 border border-cyan-200',
+  'Psikotes Dijadwalkan': 'bg-violet-100 text-violet-800 border border-violet-200',
+  'AC Dijadwalkan': 'bg-sky-100 text-sky-800 border border-sky-200',
+  'Menunggu Presentasi': 'bg-orange-100 text-orange-800 border border-orange-200',
+  'Laporan Dikirim': 'bg-teal-100 text-teal-800 border border-teal-200',
+  'Selesai': 'bg-emerald-100 text-emerald-800 border border-emerald-200',
 };
 
-// Format tanggal_ac "2026-07-15" → "Juli 2026"
+const STATUS_ROW_ACCENT = {
+  'Pending - Menunggu Review': 'border-l-amber-400',
+  'Rejected': 'border-l-red-400',
+  'Selesai': 'border-l-emerald-400',
+};
+
 const toPeriode = (tgl) => {
   if (!tgl) return null;
   const d = new Date(tgl);
@@ -47,12 +52,12 @@ const exportCSV = (data, periode) => {
 };
 
 const STATS_CONFIG = [
-  { key: 'total',   label: 'Total Request', icon: '📋', gradient: 'from-slate-500 to-slate-700',   ring: 'ring-slate-200' },
-  { key: 'pending', label: 'Pending',        icon: '⏳', gradient: 'from-amber-400 to-orange-500', ring: 'ring-amber-200' },
-  { key: 'approved',label: 'Approved',       icon: '✅', gradient: 'from-blue-500 to-blue-700',    ring: 'ring-blue-200' },
-  { key: 'proses',  label: 'Dalam Proses',   icon: '⚙️', gradient: 'from-violet-500 to-purple-700',ring: 'ring-violet-200' },
-  { key: 'selesai', label: 'Selesai',        icon: '🏆', gradient: 'from-emerald-500 to-green-700',ring: 'ring-emerald-200' },
-  { key: 'ditolak', label: 'Ditolak',        icon: '❌', gradient: 'from-rose-400 to-red-600',     ring: 'ring-rose-200' },
+  { key: 'total',    label: 'Total',       sub: 'Semua request',    icon: '📋', from: 'from-slate-600',   to: 'to-slate-800',   bg: 'bg-slate-50',   text: 'text-slate-700' },
+  { key: 'pending',  label: 'Pending',     sub: 'Menunggu review',  icon: '⏳', from: 'from-amber-500',   to: 'to-orange-600',  bg: 'bg-amber-50',   text: 'text-amber-700' },
+  { key: 'approved', label: 'Approved',    sub: 'Disetujui',        icon: '✅', from: 'from-blue-500',    to: 'to-blue-700',    bg: 'bg-blue-50',    text: 'text-blue-700' },
+  { key: 'proses',   label: 'Proses',      sub: 'Sedang berjalan',  icon: '⚙️', from: 'from-violet-500',  to: 'to-purple-700',  bg: 'bg-violet-50',  text: 'text-violet-700' },
+  { key: 'selesai',  label: 'Selesai',     sub: 'Laporan terkirim', icon: '🏆', from: 'from-emerald-500', to: 'to-green-700',   bg: 'bg-emerald-50', text: 'text-emerald-700' },
+  { key: 'ditolak',  label: 'Ditolak',     sub: 'Tidak disetujui',  icon: '❌', from: 'from-rose-500',    to: 'to-red-700',     bg: 'bg-rose-50',    text: 'text-rose-700' },
 ];
 
 export default function Dashboard() {
@@ -61,7 +66,6 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [kuotaMaks, setKuotaMaks] = useState(9);
 
-  // Filter state
   const [filterPeriode, setFilterPeriode] = useState('');
   const [filterPerusahaan, setFilterPerusahaan] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -140,80 +144,109 @@ export default function Dashboard() {
   const kapasitasAktif = (filterPeriode && filterPeriode !== '__none__')
     ? requests.filter(r => toPeriode(r.tanggal_ac) === filterPeriode && r.status !== 'Rejected').length
     : null;
+  const kapasitasPct = kapasitasAktif != null ? Math.min((kapasitasAktif / kuotaMaks) * 100, 100) : 0;
 
   return (
     <Layout>
       <div className="space-y-6">
-        {/* Header Banner */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-600 p-6 shadow-lg">
-          <div className="absolute inset-0 opacity-10" style={{
-            backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)',
-            backgroundSize: '40px 40px'
-          }} />
+
+        {/* ── Hero Header ── */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-800 via-blue-700 to-indigo-700 p-7 shadow-xl">
+          {/* decorative blobs */}
+          <div className="absolute -top-10 -right-10 w-48 h-48 bg-white/5 rounded-full blur-2xl" />
+          <div className="absolute bottom-0 left-20 w-32 h-32 bg-indigo-400/10 rounded-full blur-xl" />
+          <div className="absolute inset-0"
+            style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
           <div className="relative flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-              <p className="text-blue-100 text-sm mt-1">Selamat datang, <span className="font-semibold text-white">{user?.nama}</span> 👋</p>
+              <p className="text-blue-200 text-xs font-semibold uppercase tracking-widest mb-1">RACD AIHO · PT Astra International</p>
+              <h1 className="text-3xl font-extrabold text-white tracking-tight">Dashboard</h1>
+              <p className="text-blue-100 text-sm mt-1.5">
+                Selamat datang kembali, <span className="font-bold text-white">{user?.nama}</span> 👋
+              </p>
             </div>
             {user?.role === 'pic_asesmen' && (
               <a href="/form-pengajuan" target="_blank"
-                className="flex items-center gap-2 bg-white/15 hover:bg-white/25 backdrop-blur text-white text-sm font-medium px-4 py-2.5 rounded-xl border border-white/30 transition-colors">
+                className="flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white text-sm font-semibold px-5 py-3 rounded-xl border border-white/25 transition-all shadow-lg hover:shadow-white/10">
                 🔗 Link Form Pengajuan
               </a>
             )}
           </div>
         </div>
 
-        {/* Stats Cards */}
+        {/* ── Stats Cards ── */}
         <div className="grid grid-cols-6 gap-3">
           {STATS_CONFIG.map((s) => (
             <div key={s.key}
-              className={`relative overflow-hidden rounded-xl bg-white border border-gray-100 shadow-sm p-4 ring-1 ${s.ring}`}>
-              <div className={`absolute top-0 left-0 w-1 h-full bg-gradient-to-b ${s.gradient}`} />
-              <p className="text-xs text-gray-500 font-medium mb-1 ml-1">{s.label}</p>
-              <div className="flex items-end gap-2 ml-1">
-                <p className="text-2xl font-bold text-gray-900">{stats[s.key]}</p>
-                <span className="text-lg mb-0.5">{s.icon}</span>
+              className={`relative overflow-hidden rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow p-5 cursor-default`}
+              onClick={() => s.key !== 'total' && setFilterStatus(
+                s.key === 'pending' ? 'Pending - Menunggu Review' :
+                s.key === 'approved' ? 'Approved' :
+                s.key === 'selesai' ? 'Selesai' :
+                s.key === 'ditolak' ? 'Rejected' : ''
+              )}>
+              {/* top color stripe */}
+              <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${s.from} ${s.to}`} />
+              {/* icon badge */}
+              <div className={`w-10 h-10 ${s.bg} rounded-xl flex items-center justify-center mb-3 text-xl`}>
+                {s.icon}
               </div>
+              <p className={`text-3xl font-extrabold ${s.text} leading-none mb-1`}>{stats[s.key]}</p>
+              <p className="text-xs font-bold text-gray-700">{s.label}</p>
+              <p className="text-xs text-gray-400 mt-0.5">{s.sub}</p>
             </div>
           ))}
         </div>
 
-        {/* Progress Bar Kapasitas */}
+        {/* ── Progress Bar Kapasitas ── */}
         {filterPeriode && filterPeriode !== '__none__' && (
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
             <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <span className="text-base">📊</span>
-                <p className="text-sm font-semibold text-gray-800">Kapasitas Periode: <span className="text-blue-700">{filterPeriode}</span></p>
+              <div>
+                <p className="text-sm font-bold text-gray-800">Kapasitas Periode: <span className="text-blue-700">{filterPeriode}</span></p>
+                <p className="text-xs text-gray-400 mt-0.5">Berdasarkan request aktif (bukan Rejected)</p>
               </div>
-              <p className="text-sm font-bold text-gray-700">{kapasitasAktif} / {kuotaMaks} <span className="font-normal text-gray-400">peserta</span></p>
+              <div className="text-right">
+                <p className="text-2xl font-extrabold text-gray-800">{Math.round(kapasitasPct)}<span className="text-base font-normal text-gray-400">%</span></p>
+                <p className="text-xs text-gray-400">{kapasitasAktif} / {kuotaMaks} peserta</p>
+              </div>
             </div>
-            <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+            <div className="w-full bg-gray-100 rounded-full h-4 overflow-hidden">
               <div
-                className={`h-3 rounded-full transition-all duration-500 ${kapasitasAktif >= kuotaMaks ? 'bg-gradient-to-r from-red-400 to-red-600' : kapasitasAktif >= kuotaMaks * 0.7 ? 'bg-gradient-to-r from-amber-400 to-orange-500' : 'bg-gradient-to-r from-emerald-400 to-green-500'}`}
-                style={{ width: `${Math.min((kapasitasAktif / kuotaMaks) * 100, 100)}%` }}
-              />
+                className={`h-4 rounded-full transition-all duration-700 ease-out relative overflow-hidden ${
+                  kapasitasPct >= 100 ? 'bg-gradient-to-r from-red-400 to-rose-600' :
+                  kapasitasPct >= 70  ? 'bg-gradient-to-r from-amber-400 to-orange-500' :
+                                        'bg-gradient-to-r from-emerald-400 to-teal-500'}`}
+                style={{ width: `${kapasitasPct}%` }}>
+                <div className="absolute inset-0 bg-white/20 animate-pulse" style={{ animationDuration: '2s' }} />
+              </div>
             </div>
-            <p className="text-xs text-gray-400 mt-2">
-              {kapasitasAktif >= kuotaMaks ? '⚠️ Kapasitas penuh' : `${kuotaMaks - kapasitasAktif} slot tersisa`}
-              {' · '}Kuota maksimal dapat diubah di Konfigurasi
-            </p>
+            <div className="flex items-center justify-between mt-2">
+              <p className="text-xs text-gray-400">
+                {kapasitasPct >= 100 ? '⚠️ Kapasitas penuh' : `${kuotaMaks - kapasitasAktif} slot tersisa`}
+              </p>
+              <p className="text-xs text-gray-400">Kuota maksimal dapat diubah di Konfigurasi</p>
+            </div>
           </div>
         )}
 
-        {/* Filter Bar + Tabel */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+        {/* ── Filter + Tabel ── */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+
           {/* Filter Section */}
-          <div className="p-5 border-b border-gray-50">
+          <div className="px-6 py-5 border-b border-gray-50">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Filter & Pencarian</p>
             <div className="flex flex-wrap items-end gap-3">
               <div className="flex-1 min-w-48">
-                <label className="form-label">🔍 Cari Peserta / ID</label>
-                <input className="form-input" placeholder="Nama peserta atau ID request..."
-                  value={search} onChange={e => setSearch(e.target.value)} />
+                <label className="form-label text-xs">Cari Peserta / ID</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
+                  <input className="form-input pl-9" placeholder="Nama peserta atau ID request..."
+                    value={search} onChange={e => setSearch(e.target.value)} />
+                </div>
               </div>
               <div className="min-w-40">
-                <label className="form-label">Periode AC</label>
+                <label className="form-label text-xs">Periode AC</label>
                 <select className="form-input" value={filterPeriode} onChange={e => setFilterPeriode(e.target.value)}>
                   <option value="">Semua Periode</option>
                   {periodeList.map(p => <option key={p} value={p}>{p}</option>)}
@@ -221,14 +254,14 @@ export default function Dashboard() {
                 </select>
               </div>
               <div className="min-w-44">
-                <label className="form-label">Perusahaan</label>
+                <label className="form-label text-xs">Perusahaan</label>
                 <select className="form-input" value={filterPerusahaan} onChange={e => setFilterPerusahaan(e.target.value)}>
                   <option value="">Semua Perusahaan</option>
                   {perusahaanList.map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
               </div>
               <div className="min-w-44">
-                <label className="form-label">Status</label>
+                <label className="form-label text-xs">Status</label>
                 <select className="form-input" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
                   <option value="">Semua Status</option>
                   <option value="Pending - Menunggu Review">Pending</option>
@@ -247,87 +280,96 @@ export default function Dashboard() {
               <div className="flex gap-2">
                 {hasFilter && (
                   <button onClick={resetFilter}
-                    className="px-3 py-2 text-sm text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                    className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors font-medium">
                     ✕ Reset
                   </button>
                 )}
                 <button onClick={() => exportCSV(filtered, filterPeriode)}
-                  className="flex items-center gap-1.5 px-4 py-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 font-medium transition-colors">
+                  className="flex items-center gap-1.5 px-4 py-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 font-semibold transition-colors shadow-sm">
                   ↓ Export CSV
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Hasil info bar */}
-          <div className="px-5 py-3 bg-gray-50/60 border-b border-gray-100 flex items-center justify-between">
-            <p className="text-xs text-gray-500">
-              Menampilkan <span className="font-semibold text-gray-700">{filtered.length}</span> dari <span className="font-semibold text-gray-700">{requests.length}</span> request
-              {filterPeriode && filterPeriode !== '__none__' && <span className="ml-2 text-blue-600 font-medium">· {filterPeriode}</span>}
+          {/* Info bar */}
+          <div className="px-6 py-2.5 bg-gradient-to-r from-gray-50/80 to-slate-50/50 border-b border-gray-100 flex items-center justify-between">
+            <p className="text-xs text-gray-400">
+              Menampilkan <span className="font-bold text-gray-600">{filtered.length}</span> dari <span className="font-bold text-gray-600">{requests.length}</span> request
+              {filterPeriode && filterPeriode !== '__none__' && <span className="ml-2 text-blue-600 font-semibold">· {filterPeriode}</span>}
             </p>
-            {hasFilter && <span className="text-xs text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">Filter aktif</span>}
+            {hasFilter && (
+              <span className="text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full font-semibold">
+                ⚡ Filter aktif
+              </span>
+            )}
           </div>
 
           {/* Tabel */}
           {loading ? (
-            <div className="text-center py-16">
-              <div className="inline-block w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-3" />
-              <p className="text-gray-400 text-sm">Memuat data...</p>
+            <div className="flex flex-col items-center justify-center py-20 gap-4">
+              <div className="w-10 h-10 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin" />
+              <p className="text-gray-400 text-sm font-medium">Memuat data...</p>
             </div>
           ) : filtered.length === 0 ? (
-            <div className="text-center py-16">
-              <p className="text-4xl mb-3">🔍</p>
-              <p className="text-gray-600 font-medium mb-1">Tidak ada data ditemukan</p>
+            <div className="flex flex-col items-center justify-center py-20 gap-3">
+              <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center text-3xl">🔍</div>
+              <p className="text-gray-600 font-semibold">Tidak ada data ditemukan</p>
               <p className="text-sm text-gray-400">Coba ubah filter atau reset pencarian</p>
+              {hasFilter && (
+                <button onClick={resetFilter} className="mt-1 text-sm text-blue-600 hover:text-blue-800 font-semibold underline">
+                  Reset semua filter
+                </button>
+              )}
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-gray-50 border-b border-gray-100">
-                    <th className="text-left py-3 px-4 text-gray-400 font-semibold text-xs tracking-wide uppercase">No</th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-semibold text-xs tracking-wide uppercase">ID Request</th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-semibold text-xs tracking-wide uppercase">Perusahaan</th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-semibold text-xs tracking-wide uppercase">Nama Peserta</th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-semibold text-xs tracking-wide uppercase">Jenis AC</th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-semibold text-xs tracking-wide uppercase">Status</th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-semibold text-xs tracking-wide uppercase">Tanggal AC</th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-semibold text-xs tracking-wide uppercase">Pengajuan</th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-semibold text-xs tracking-wide uppercase">Aksi</th>
+                  <tr className="bg-gradient-to-r from-gray-50 to-slate-50 border-b border-gray-100">
+                    {['No','ID Request','Perusahaan','Nama Peserta','Jenis AC','Status','Tanggal AC','Pengajuan','Aksi'].map(h => (
+                      <th key={h} className="text-left py-3 px-4 text-gray-400 font-bold text-xs tracking-widest uppercase whitespace-nowrap">{h}</th>
+                    ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody>
                   {filtered.map((r, idx) => (
-                    <tr key={r.id} className="hover:bg-blue-50/40 transition-colors group">
-                      <td className="py-3.5 px-4 text-gray-300 text-xs font-medium">{idx + 1}</td>
-                      <td className="py-3.5 px-4">
-                        <span className="font-mono text-xs text-blue-700 font-bold bg-blue-50 px-2 py-1 rounded-md whitespace-nowrap">{r.id_request}</span>
+                    <tr key={r.id}
+                      className={`border-b border-gray-50 hover:bg-blue-50/30 transition-colors border-l-2 ${STATUS_ROW_ACCENT[r.status] || 'border-l-transparent'}`}>
+                      <td className="py-4 px-4 text-gray-300 text-xs font-semibold">{idx + 1}</td>
+                      <td className="py-4 px-4">
+                        <span className="font-mono text-xs text-blue-700 font-bold bg-blue-50 border border-blue-100 px-2.5 py-1 rounded-lg whitespace-nowrap">{r.id_request}</span>
                       </td>
-                      <td className="py-3.5 px-4 text-gray-600 text-xs font-medium">{r.nama_perusahaan}</td>
-                      <td className="py-3.5 px-4 text-gray-900 font-semibold text-xs">{r.nama_peserta}</td>
-                      <td className="py-3.5 px-4">
+                      <td className="py-4 px-4 text-gray-600 text-xs font-medium">{r.nama_perusahaan}</td>
+                      <td className="py-4 px-4">
+                        <p className="text-gray-900 font-bold text-xs">{r.nama_peserta}</p>
+                        <p className="text-gray-400 text-xs mt-0.5">{r.jenis_assessment}</p>
+                      </td>
+                      <td className="py-4 px-4">
                         <span className="text-xs text-gray-500 bg-gray-50 border border-gray-200 px-2 py-0.5 rounded-md whitespace-nowrap">{r.jenis_assessment}</span>
                       </td>
-                      <td className="py-3.5 px-4">
-                        <span className={`text-xs px-2.5 py-1 rounded-full font-semibold whitespace-nowrap ${STATUS_COLOR[r.status] || 'bg-gray-100 text-gray-600'}`}>
+                      <td className="py-4 px-4">
+                        <span className={`text-xs px-2.5 py-1 rounded-full font-semibold whitespace-nowrap ${STATUS_COLOR[r.status] || 'bg-gray-100 text-gray-600 border border-gray-200'}`}>
                           {r.status}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 text-gray-500 text-xs whitespace-nowrap">
-                        {r.tanggal_ac ? <span className="font-medium text-gray-700">{r.tanggal_ac}</span> : <span className="text-gray-300">—</span>}
+                      <td className="py-4 px-4 text-xs whitespace-nowrap">
+                        {r.tanggal_ac
+                          ? <span className="font-semibold text-gray-700 bg-gray-50 border border-gray-200 px-2 py-0.5 rounded">{r.tanggal_ac}</span>
+                          : <span className="text-gray-200">—</span>}
                       </td>
-                      <td className="py-3.5 px-4 text-gray-400 text-xs whitespace-nowrap">
+                      <td className="py-4 px-4 text-gray-400 text-xs whitespace-nowrap">
                         {new Date(r.created_at).toLocaleDateString('id-ID')}
                       </td>
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-2">
+                      <td className="py-4 px-4">
+                        <div className="flex items-center gap-1.5">
                           <Link to={`/request/${r.id_request}`}
-                            className="text-xs font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap">
+                            className="text-xs font-bold text-blue-600 hover:text-white hover:bg-blue-600 bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-lg transition-all whitespace-nowrap shadow-sm">
                             Detail →
                           </Link>
                           {user?.role === 'pic_asesmen' && (
                             <button onClick={() => handleHapus(r.id_request)}
-                              className="text-xs font-medium text-red-400 hover:text-red-600 hover:bg-red-50 px-2 py-1.5 rounded-lg transition-colors">
+                              className="text-xs font-medium text-red-400 hover:text-white hover:bg-red-500 hover:border-red-500 border border-transparent px-2 py-1.5 rounded-lg transition-all">
                               Hapus
                             </button>
                           )}
