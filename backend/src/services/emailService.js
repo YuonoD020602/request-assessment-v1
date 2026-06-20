@@ -391,6 +391,39 @@ const kirimUndanganPresentasi = async ({ namaTo, emailTo, idRequest, namaPeserta
 };
 
 // ============================================================
+// FASE 6: Notifikasi Pilih Slot Presentasi ke HC
+// ============================================================
+const kirimNotifikasiPilihSlot = async ({ namaHC, emailHC, idRequest, namaPeserta, linkCekStatus }) => {
+  await sendEmail({
+    to: emailHC,
+    subject: `[RACD AIHO] Pilih Jadwal Presentasi Hasil AC – ${idRequest}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <p>Kepada Yth.<br/>Bapak/Ibu ${namaHC}</p>
+        <p>Assessment Center untuk <strong>${namaPeserta}</strong> (${idRequest}) telah selesai dilaksanakan.</p>
+        <p>Selanjutnya, Anda perlu <strong>memilih jadwal Presentasi Hasil AC</strong> sesuai slot yang tersedia.</p>
+        <div style="margin: 20px 0; padding: 16px; background: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 4px;">
+          <p style="margin: 0 0 8px 0; font-weight: bold;">📅 Cara memilih jadwal presentasi:</p>
+          <ol style="margin: 0; padding-left: 20px;">
+            <li>Klik tombol di bawah untuk membuka halaman Cek Status</li>
+            <li>Scroll ke bawah ke bagian <strong>"Pilih Jadwal Presentasi"</strong></li>
+            <li>Pilih slot yang tersedia dan konfirmasi</li>
+          </ol>
+        </div>
+        <div style="text-align: center; margin: 24px 0;">
+          <a href="${linkCekStatus}" style="background: #1d4ed8; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 15px;">
+            📅 Pilih Jadwal Presentasi →
+          </a>
+        </div>
+        <p style="color: #666; font-size: 12px;">Atau salin link berikut ke browser: ${linkCekStatus}</p>
+        <p>Hormat kami,<br/><strong>PIC Asesmen RACD AIHO</strong><br/>PT Astra International</p>
+      </div>
+    `
+  });
+  await logEmail(idRequest, emailHC, 'Notifikasi Pilih Slot Presentasi');
+};
+
+// ============================================================
 // FASE 6: Kirim Laporan PDF
 // ============================================================
 const kirimLaporan = async ({ namaTo, emailTo, idRequest, namaPeserta, pdfBuffer, namaPDF }) => {
@@ -412,5 +445,6 @@ module.exports = {
   kirimEmailPembukaan, kirimEmailApprover, kirimEmailApprovedHC,
   kirimEmailRejectedHC, kirimEmailUndanganGR, kirimEmailMOM,
   kirimReminderDokumen, kirimNotifikasiDokumenDiterima,
-  kirimJadwalPsikotes, kirimReminderAC, kirimUndanganPresentasi, kirimLaporan
+  kirimJadwalPsikotes, kirimReminderAC, kirimUndanganPresentasi,
+  kirimNotifikasiPilihSlot, kirimLaporan
 };

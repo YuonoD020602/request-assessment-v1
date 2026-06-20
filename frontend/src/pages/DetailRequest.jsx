@@ -89,6 +89,16 @@ export default function DetailRequest() {
     finally { setSubmitting(false); }
   };
 
+  const kirimNotifPilihSlot = async () => {
+    setSubmitting(true);
+    try {
+      await api.post('/api/fase6/notif-pilih-slot', { id_request: idRequest });
+      toast.success('Notifikasi berhasil dikirim ke HC!');
+      refresh();
+    } catch (err) { toast.error(err.response?.data?.error || 'Gagal'); }
+    finally { setSubmitting(false); }
+  };
+
   const submitLaporan = async (e) => {
     e.preventDefault();
     if (!fileLaporan) return toast.error('Pilih file PDF terlebih dahulu');
@@ -275,17 +285,29 @@ export default function DetailRequest() {
                   </div>
                 </div>
               ) : (
-                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-xl text-sm text-yellow-700 space-y-2">
-                  <p>⏳ HC belum memilih slot presentasi. Bagikan link berikut ke HC:</p>
-                  <div className="flex items-center gap-2">
-                    <code className="flex-1 bg-white border border-yellow-300 rounded-lg px-3 py-2 text-yellow-900 text-xs font-mono select-all">
-                      {window.location.origin}/pilih-slot
-                    </code>
-                    <button
-                      onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/pilih-slot`); toast.success('Link disalin!'); }}
-                      className="px-3 py-2 bg-yellow-200 hover:bg-yellow-300 text-yellow-800 rounded-lg text-xs font-medium whitespace-nowrap transition-colors">
-                      Salin Link
-                    </button>
+                <div className="space-y-3">
+                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-xl text-sm text-yellow-700">
+                    <p className="font-medium mb-1">⏳ HC belum memilih slot presentasi</p>
+                    <p className="text-xs text-yellow-600">Kirim notifikasi ke HC agar mereka memilih jadwal melalui halaman Cek Status.</p>
+                  </div>
+                  <button
+                    onClick={kirimNotifPilihSlot}
+                    disabled={submitting}
+                    className="btn-primary w-full flex items-center justify-center gap-2">
+                    {submitting ? '⏳ Mengirim...' : '📧 Kirim Notifikasi Pilih Jadwal ke HC'}
+                  </button>
+                  <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-500">
+                    <p className="font-medium mb-1">Atau bagikan link langsung:</p>
+                    <div className="flex items-center gap-2">
+                      <code className="flex-1 bg-white border border-gray-200 rounded px-2 py-1 font-mono select-all truncate">
+                        {window.location.origin}/cek-status?id={idRequest}
+                      </code>
+                      <button
+                        onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/cek-status?id=${idRequest}`); toast.success('Link disalin!'); }}
+                        className="px-2 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded text-xs whitespace-nowrap">
+                        Salin
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}

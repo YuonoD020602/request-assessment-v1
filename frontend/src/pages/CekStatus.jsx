@@ -12,15 +12,45 @@ export function CekStatus() {
   const [mode, setMode] = useState('id'); // 'id' atau 'email'
   const [emailHC, setEmailHC] = useState('');
   const [resultList, setResultList] = useState([]); // untuk hasil by-email
+  const [slots, setSlots] = useState([]);
+  const [bookingId, setBookingId] = useState(null); // slot yg sedang di-booking
+  const [bookingDone, setBookingDone] = useState(false);
+
+  const fetchSlots = async () => {
+    try {
+      const res = await api.get('/api/slots');
+      setSlots((res.data.data || []).filter(s => s.status === 'Tersedia'));
+    } catch { }
+  };
+
+  const handleBookSlot = async (slotId) => {
+    if (!window.confirm('Konfirmasi pilih jadwal ini?')) return;
+    setBookingId(slotId);
+    try {
+      await api.post(`/api/slots/${slotId}/book`, { id_request: result.id_request });
+      setBookingDone(true);
+      handleCekById(result.id_request);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Gagal memilih slot. Coba lagi.');
+    } finally {
+      setBookingId(null);
+    }
+  };
 
   const handleCekById = async (id) => {
     if (!id) return;
     setLoading(true);
     setError('');
     setResult(null);
+    setBookingDone(false);
     try {
       const res = await api.get(`/api/requests/status/${id}`);
-      setResult(res.data.data);
+      const data = res.data.data;
+      setResult(data);
+      // Fetch slot jika belum ada presentasi
+      if (!data.tanggal_presentasi && data.tanggal_ac && data.jam_ac) {
+        fetchSlots();
+      }
     } catch {
       setError('ID Request tidak ditemukan. Periksa kembali ID yang Anda masukkan.');
     } finally {
@@ -259,6 +289,41 @@ export function CekStatus() {
                 <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-yellow-700">
                   💡 Klik <strong>Refresh</strong> untuk cek jadwal terbaru. Jadwal juga akan dikirim ke email Anda.
                 </div>
+              </div>
+            )}
+
+            {/* Pilih Slot Presentasi */}
+            {result.tanggal_ac && result.jam_ac && !result.tanggal_presentasi && (
+              <div className="bg-white rounded-xl shadow-sm border border-blue-200 p-6">
+                <h3 className="font-semibold text-gray-900 mb-1">📅 Pilih Jadwal Presentasi Hasil AC</h3>
+                <p className="text-sm text-gray-500 mb-4">Silakan pilih salah satu slot waktu yang tersedia untuk presentasi hasil Assessment Center Anda.</p>
+                {bookingDone && (
+                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700 mb-4">
+                    ✅ Jadwal berhasil dipilih! Email konfirmasi akan dikirim ke Anda.
+                  </div>
+                )}
+                {slots.length === 0 ? (
+                  <div className="p-4 bg-gray-50 rounded-lg text-sm text-gray-500 text-center">
+                    Belum ada slot tersedia saat ini. Hubungi PIC RACD untuk informasi lebih lanjut.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {slots.map(slot => (
+                      <div key={slot.id} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-200 transition-colors">
+                        <div className="text-sm">
+                          <p className="font-medium text-gray-900">📅 {slot.tanggal} — {slot.jam} WIB</p>
+                          {slot.lokasi && <p className="text-gray-500 text-xs mt-0.5">📍 {slot.lokasi}</p>}
+                        </div>
+                        <button
+                          onClick={() => handleBookSlot(slot.id)}
+                          disabled={bookingId === slot.id}
+                          className="ml-4 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap">
+                          {bookingId === slot.id ? 'Memilih...' : 'Pilih Slot Ini'}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 

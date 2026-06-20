@@ -5,7 +5,7 @@ const { authMiddleware, picOnly } = require('../middleware/auth');
 const {
   kirimEmailUndanganGR, kirimEmailMOM,
   kirimNotifikasiDokumenDiterima, kirimJadwalPsikotes,
-  kirimUndanganPresentasi, kirimLaporan, kirimReminderAC
+  kirimUndanganPresentasi, kirimNotifikasiPilihSlot, kirimLaporan, kirimReminderAC
 } = require('../services/emailService');
 
 const delay = (ms) => new Promise(r => setTimeout(r, ms));
@@ -282,6 +282,26 @@ fase6Router.post('/jadwal-presentasi', authMiddleware, picOnly, async (req, res)
 
   await supabase.from('log_aktivitas').insert({ id_request, aktivitas: 'Jadwal Presentasi Dikirim', detail: `${tanggal_presentasi} ${jam_presentasi} di ${lokasi_presentasi}` });
   res.json({ success: true, message: 'Undangan presentasi berhasil dikirim' });
+});
+
+fase6Router.post('/notif-pilih-slot', authMiddleware, picOnly, async (req, res) => {
+  const { id_request } = req.body;
+  if (!id_request) return res.status(400).json({ error: 'ID Request wajib diisi' });
+
+  const { data: request } = await supabase.from('requests').select('*').eq('id_request', id_request).single();
+  if (!request) return res.status(404).json({ error: 'Request tidak ditemukan' });
+
+  const linkCekStatus = `${process.env.FRONTEND_URL}/cek-status?id=${id_request}`;
+  await kirimNotifikasiPilihSlot({
+    namaHC: request.pic_hc,
+    emailHC: request.email_pic_hc,
+    idRequest: id_request,
+    namaPeserta: request.nama_peserta,
+    linkCekStatus
+  });
+
+  await supabase.from('log_aktivitas').insert({ id_request, aktivitas: 'Notifikasi Pilih Slot Dikirim', detail: `Email notifikasi pilih slot presentasi dikirim ke ${request.email_pic_hc}` });
+  res.json({ success: true, message: 'Notifikasi berhasil dikirim ke HC' });
 });
 
 fase6Router.post('/kirim-laporan', authMiddleware, picOnly, upload.single('pdf'), async (req, res) => {
