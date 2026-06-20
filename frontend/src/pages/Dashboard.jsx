@@ -271,8 +271,7 @@ export default function Dashboard() {
               <div className="flex-1 min-w-48">
                 <label className="form-label text-xs">Cari Peserta / ID</label>
                 <div className="relative">
-                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-                  <input className="form-input pl-9" placeholder="Nama peserta atau ID request..."
+                  <input className="form-input" placeholder="Nama peserta atau ID request..."
                     value={search} onChange={e => setSearch(e.target.value)} />
                 </div>
               </div>
