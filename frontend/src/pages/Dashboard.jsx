@@ -52,12 +52,42 @@ const exportCSV = (data, periode) => {
 };
 
 const STATS_CONFIG = [
-  { key: 'total',    label: 'Total',       sub: 'Semua request',    icon: '📋', from: 'from-slate-600',   to: 'to-slate-800',   bg: 'bg-slate-50',   text: 'text-slate-700' },
-  { key: 'pending',  label: 'Pending',     sub: 'Menunggu review',  icon: '⏳', from: 'from-amber-500',   to: 'to-orange-600',  bg: 'bg-amber-50',   text: 'text-amber-700' },
-  { key: 'approved', label: 'Approved',    sub: 'Disetujui',        icon: '✅', from: 'from-blue-500',    to: 'to-blue-700',    bg: 'bg-blue-50',    text: 'text-blue-700' },
-  { key: 'proses',   label: 'Proses',      sub: 'Sedang berjalan',  icon: '⚙️', from: 'from-violet-500',  to: 'to-purple-700',  bg: 'bg-violet-50',  text: 'text-violet-700' },
-  { key: 'selesai',  label: 'Selesai',     sub: 'Laporan terkirim', icon: '🏆', from: 'from-emerald-500', to: 'to-green-700',   bg: 'bg-emerald-50', text: 'text-emerald-700' },
-  { key: 'ditolak',  label: 'Ditolak',     sub: 'Tidak disetujui',  icon: '❌', from: 'from-rose-500',    to: 'to-red-700',     bg: 'bg-rose-50',    text: 'text-rose-700' },
+  {
+    key: 'total', label: 'Total', sub: 'Semua request',
+    from: 'from-slate-600', to: 'to-slate-800', numCls: 'text-slate-800',
+    iconBg: 'bg-slate-100', iconCls: 'text-slate-500',
+    svg: <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+  },
+  {
+    key: 'pending', label: 'Pending', sub: 'Menunggu review',
+    from: 'from-amber-400', to: 'to-orange-500', numCls: 'text-amber-700',
+    iconBg: 'bg-amber-50', iconCls: 'text-amber-500',
+    svg: <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+  },
+  {
+    key: 'approved', label: 'Approved', sub: 'Disetujui',
+    from: 'from-blue-500', to: 'to-blue-700', numCls: 'text-blue-700',
+    iconBg: 'bg-blue-50', iconCls: 'text-blue-500',
+    svg: <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+  },
+  {
+    key: 'proses', label: 'Proses', sub: 'Sedang berjalan',
+    from: 'from-violet-500', to: 'to-purple-700', numCls: 'text-violet-700',
+    iconBg: 'bg-violet-50', iconCls: 'text-violet-500',
+    svg: <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M4 4v5h5M20 20v-5h-5M4 9a9 9 0 0115-2.3M20 15a9 9 0 01-15 2.3"/></svg>
+  },
+  {
+    key: 'selesai', label: 'Selesai', sub: 'Laporan terkirim',
+    from: 'from-emerald-500', to: 'to-teal-600', numCls: 'text-emerald-700',
+    iconBg: 'bg-emerald-50', iconCls: 'text-emerald-500',
+    svg: <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+  },
+  {
+    key: 'ditolak', label: 'Ditolak', sub: 'Tidak disetujui',
+    from: 'from-rose-500', to: 'to-red-600', numCls: 'text-rose-700',
+    iconBg: 'bg-rose-50', iconCls: 'text-rose-500',
+    svg: <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+  },
 ];
 
 export default function Dashboard() {
@@ -178,7 +208,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-6 gap-3">
           {STATS_CONFIG.map((s) => (
             <div key={s.key}
-              className={`relative overflow-hidden rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow p-5 cursor-default`}
+              className="relative overflow-hidden rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 p-4 cursor-default group"
               onClick={() => s.key !== 'total' && setFilterStatus(
                 s.key === 'pending' ? 'Pending - Menunggu Review' :
                 s.key === 'approved' ? 'Approved' :
@@ -187,12 +217,13 @@ export default function Dashboard() {
               )}>
               {/* top color stripe */}
               <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${s.from} ${s.to}`} />
-              {/* icon badge */}
-              <div className={`w-10 h-10 ${s.bg} rounded-xl flex items-center justify-center mb-3 text-xl`}>
-                {s.icon}
+              {/* icon top-right */}
+              <div className={`absolute top-4 right-4 w-7 h-7 ${s.iconBg} rounded-lg flex items-center justify-center ${s.iconCls} opacity-80 group-hover:opacity-100 transition-opacity`}>
+                {s.svg}
               </div>
-              <p className={`text-3xl font-extrabold ${s.text} leading-none mb-1`}>{stats[s.key]}</p>
-              <p className="text-xs font-bold text-gray-700">{s.label}</p>
+              {/* number */}
+              <p className={`text-3xl font-extrabold ${s.numCls} leading-none mt-2`}>{stats[s.key]}</p>
+              <p className="text-xs font-bold text-gray-700 mt-2">{s.label}</p>
               <p className="text-xs text-gray-400 mt-0.5">{s.sub}</p>
             </div>
           ))}
