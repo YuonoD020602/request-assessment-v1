@@ -33,14 +33,28 @@ export default function SlotPresentasi() {
     }
   };
 
-  const handleHapus = async (id) => {
-    if (!window.confirm('Hapus slot ini?')) return;
+  const handleHapus = async (slot) => {
+    const msg = slot.status === 'Terpesan'
+      ? `Slot ini sudah dipesan oleh ${slot.id_request}. Menghapus akan membatalkan booking dan mereset status request ke "AC Dijadwalkan". Lanjutkan?`
+      : 'Hapus slot ini?';
+    if (!window.confirm(msg)) return;
     try {
-      await api.delete(`/api/slots/${id}`);
+      await api.delete(`/api/slots/${slot.id}`);
       toast.success('Slot dihapus');
       fetchSlots();
     } catch (err) {
       toast.error(err.response?.data?.error || 'Gagal menghapus slot');
+    }
+  };
+
+  const handleBebaskan = async (slot) => {
+    if (!window.confirm(`Bebaskan slot ini dari ${slot.id_request}? Status request akan kembali ke "AC Dijadwalkan" dan slot menjadi Tersedia kembali.`)) return;
+    try {
+      await api.put(`/api/slots/${slot.id}/release`);
+      toast.success('Slot dibebaskan');
+      fetchSlots();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Gagal membebaskan slot');
     }
   };
 
@@ -127,12 +141,18 @@ export default function SlotPresentasi() {
                     </td>
                     <td className="py-2 px-3 text-gray-500 font-mono text-xs">{slot.id_request || '-'}</td>
                     <td className="py-2 px-3">
-                      {slot.status === 'Tersedia' && (
-                        <button onClick={() => handleHapus(slot.id)}
+                      <div className="flex gap-1">
+                        {slot.status === 'Terpesan' && (
+                          <button onClick={() => handleBebaskan(slot)}
+                            className="text-orange-500 hover:text-orange-700 text-xs px-2 py-1 rounded hover:bg-orange-50">
+                            Bebaskan
+                          </button>
+                        )}
+                        <button onClick={() => handleHapus(slot)}
                           className="text-red-400 hover:text-red-600 text-xs px-2 py-1 rounded hover:bg-red-50">
                           Hapus
                         </button>
-                      )}
+                      </div>
                     </td>
                   </tr>
                 ))}

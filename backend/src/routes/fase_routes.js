@@ -54,7 +54,7 @@ const getAdmins = (config) => {
 const fase3Router = express.Router();
 
 fase3Router.post('/jadwal-gr', authMiddleware, picOnly, async (req, res) => {
-  const { id_request, tanggal_gr, jam_gr, lokasi_gr, tanggal_ac, lokasi_ac } = req.body;
+  const { id_request, tanggal_gr, jam_gr, lokasi_gr } = req.body;
   if (!id_request || !tanggal_gr || !jam_gr || !lokasi_gr) {
     return res.status(400).json({ error: 'Field wajib belum lengkap' });
   }
@@ -64,8 +64,6 @@ fase3Router.post('/jadwal-gr', authMiddleware, picOnly, async (req, res) => {
 
   await supabase.from('requests').update({
     tanggal_gr, jam_gr, lokasi_gr,
-    tanggal_ac: tanggal_ac || request.tanggal_ac,
-    lokasi_ac: lokasi_ac || request.lokasi_ac,
     status: 'Menunggu GR'
   }).eq('id_request', id_request);
 
@@ -119,8 +117,8 @@ fase3Router.post('/input-mom', authMiddleware, picOnly, async (req, res) => {
 const fase4Router = express.Router();
 
 fase4Router.post('/dokumen', async (req, res) => {
-  const { id_request, link_form_potrev, link_data_karyawan, link_form_star } = req.body;
-  if (!id_request || !link_form_potrev || !link_data_karyawan || !link_form_star) {
+  const { id_request, link_data_karyawan, link_form_star } = req.body;
+  if (!id_request || !link_data_karyawan || !link_form_star) {
     return res.status(400).json({ error: 'Semua link dokumen wajib diisi' });
   }
 
@@ -128,7 +126,7 @@ fase4Router.post('/dokumen', async (req, res) => {
   if (error || !request) return res.status(404).json({ error: 'ID Request tidak ditemukan' });
 
   await supabase.from('requests').update({
-    link_form_potrev, link_data_karyawan, link_form_star,
+    link_data_karyawan, link_form_star,
     status_dokumen: 'Dokumen Diterima',
     status: 'Dokumen Diterima'
   }).eq('id_request', id_request);
@@ -137,7 +135,6 @@ fase4Router.post('/dokumen', async (req, res) => {
   const config = Object.fromEntries(cfgData.map(c => [c.key, c.value]));
 
   const dokumen = [
-    { jenis: 'Form Potential Review', link: link_form_potrev },
     { jenis: 'Data Karyawan', link: link_data_karyawan },
     { jenis: 'Form STAR', link: link_form_star }
   ];
@@ -172,7 +169,12 @@ fase4Router.post('/psikotes', authMiddleware, picOnly, async (req, res) => {
   const config = Object.fromEntries(cfgData.map(c => [c.key, c.value]));
 
   const isRevisi = !!(request.tanggal_psikotes);
-  await supabase.from('requests').update({ tanggal_psikotes, jam_psikotes, status: 'Psikotes Dijadwalkan' }).eq('id_request', id_request);
+  const { error: updateErr } = await supabase.from('requests').update({ tanggal_psikotes, jam_psikotes, status: 'Psikotes Dijadwalkan' }).eq('id_request', id_request);
+  if (updateErr) {
+    // Jika status constraint gagal, coba update field tanpa status lalu status terpisah
+    await supabase.from('requests').update({ tanggal_psikotes, jam_psikotes }).eq('id_request', id_request);
+    await supabase.from('requests').update({ status: 'Psikotes Dijadwalkan' }).eq('id_request', id_request);
+  }
 
   // Kirim ke HC, User/Atasan, dan semua Admin AC
   const admins = getAdmins(config);

@@ -14,7 +14,7 @@ export default function DetailRequest() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('info');
 
-  const [grForm, setGrForm] = useState({ tanggal_gr: '', jam_gr: '', lokasi_gr: '', tanggal_ac: '', lokasi_ac: '' });
+  const [grForm, setGrForm] = useState({ tanggal_gr: '', jam_gr: '', lokasi_gr: '' });
   const [momForm, setMomForm] = useState({ mom_gr: '' });
   const [psikotesForm, setPsikotesForm] = useState({ tanggal_psikotes: '', jam_psikotes: '' });
   const [jadwalAcForm, setJadwalAcForm] = useState({ tanggal_ac: '', jam_ac: '', lokasi_ac: '' });
@@ -42,7 +42,7 @@ export default function DetailRequest() {
       const r = res.data.data;
       setRequest(r);
       // Pre-fill forms dengan data existing
-      if (r.tanggal_gr) setGrForm({ tanggal_gr: r.tanggal_gr, jam_gr: r.jam_gr || '', lokasi_gr: r.lokasi_gr || '', tanggal_ac: r.tanggal_ac || '', lokasi_ac: r.lokasi_ac || '' });
+      if (r.tanggal_gr) setGrForm({ tanggal_gr: r.tanggal_gr, jam_gr: r.jam_gr || '', lokasi_gr: r.lokasi_gr || '' });
       if (r.mom_gr) setMomForm({ mom_gr: r.mom_gr });
       if (r.tanggal_psikotes) setPsikotesForm({ tanggal_psikotes: r.tanggal_psikotes, jam_psikotes: r.jam_psikotes || '' });
       if (r.tanggal_ac && r.jam_ac) setJadwalAcForm({ tanggal_ac: r.tanggal_ac, jam_ac: r.jam_ac, lokasi_ac: r.lokasi_ac || '' });
@@ -185,8 +185,6 @@ export default function DetailRequest() {
                 <div><label className="form-label">Tanggal GR *</label><input type="date" className="form-input" required value={grForm.tanggal_gr} onChange={e => setGrForm({...grForm, tanggal_gr: e.target.value})} /></div>
                 <div><label className="form-label">Jam GR *</label><input type="time" className="form-input" required value={grForm.jam_gr} onChange={e => setGrForm({...grForm, jam_gr: e.target.value})} /></div>
                 <div className="col-span-2"><label className="form-label">Lokasi / Link Meet *</label><input className="form-input" required value={grForm.lokasi_gr} onChange={e => setGrForm({...grForm, lokasi_gr: e.target.value})} /></div>
-                <div><label className="form-label">Tanggal AC</label><input type="date" className="form-input" value={grForm.tanggal_ac} onChange={e => setGrForm({...grForm, tanggal_ac: e.target.value})} /></div>
-                <div><label className="form-label">Lokasi AC</label><input className="form-input" value={grForm.lokasi_ac} onChange={e => setGrForm({...grForm, lokasi_ac: e.target.value})} /></div>
                 <div className="col-span-2"><button type="submit" className="btn-primary" disabled={submitting}>{submitting ? '...' : request.tanggal_gr ? 'Update & Kirim Ulang Undangan GR' : 'Kirim Undangan GR'}</button></div>
               </form>
             </div>
@@ -215,9 +213,8 @@ export default function DetailRequest() {
               <div className={`p-3 rounded-lg text-sm ${request.status_dokumen === 'Dokumen Diterima' ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-700'}`}>
                 {request.status_dokumen === 'Dokumen Diterima' ? '✓ Dokumen sudah diterima dari HC' : '⏳ Menunggu dokumen dari HC'}
               </div>
-              {request.link_form_potrev && (
+              {request.link_data_karyawan && (
                 <div className="mt-3 space-y-1 text-sm">
-                  <a href={request.link_form_potrev} target="_blank" className="text-blue-600 hover:underline block">📄 Form Potential Review</a>
                   <a href={request.link_data_karyawan} target="_blank" className="text-blue-600 hover:underline block">📄 Data Karyawan</a>
                   <a href={request.link_form_star} target="_blank" className="text-blue-600 hover:underline block">📄 Form STAR</a>
                 </div>

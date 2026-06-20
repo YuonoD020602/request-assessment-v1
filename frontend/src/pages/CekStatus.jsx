@@ -224,11 +224,11 @@ export function CekStatus() {
                   </div>
 
                   {/* Jadwal AC */}
-                  <div className={`p-3 rounded-lg border ${result.tanggal_ac ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
+                  <div className={`p-3 rounded-lg border ${result.tanggal_ac && result.jam_ac ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
                     <p className="text-xs font-semibold text-gray-500 mb-1">🏢 JADWAL ASSESSMENT CENTER</p>
-                    {result.tanggal_ac ? (
+                    {result.tanggal_ac && result.jam_ac ? (
                       <div className="space-y-1 text-sm">
-                        <p className="font-medium text-gray-900">📅 {result.tanggal_ac}{result.jam_ac ? ` pukul ${result.jam_ac} WIB` : ''}</p>
+                        <p className="font-medium text-gray-900">📅 {result.tanggal_ac} pukul {result.jam_ac} WIB</p>
                         {result.lokasi_ac && (
                           <p className="text-gray-600 text-xs">📍 {result.lokasi_ac}</p>
                         )}
@@ -237,6 +237,23 @@ export function CekStatus() {
                       <p className="text-sm text-gray-400 italic">Belum dijadwalkan</p>
                     )}
                   </div>
+
+                  {/* Jadwal Presentasi */}
+                  {(result.tanggal_presentasi || ['Menunggu Presentasi', 'Selesai'].includes(result.status)) && (
+                    <div className={`p-3 rounded-lg border ${result.tanggal_presentasi ? 'bg-indigo-50 border-indigo-200' : 'bg-gray-50 border-gray-200'}`}>
+                      <p className="text-xs font-semibold text-gray-500 mb-1">🎤 JADWAL PRESENTASI HASIL AC</p>
+                      {result.tanggal_presentasi ? (
+                        <div className="space-y-1 text-sm">
+                          <p className="font-medium text-gray-900">📅 {result.tanggal_presentasi} pukul {result.jam_presentasi} WIB</p>
+                          {result.lokasi_presentasi && (
+                            <p className="text-gray-600 text-xs">📍 {result.lokasi_presentasi}</p>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-400 italic">Menunggu konfirmasi jadwal dari RACD</p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-yellow-700">

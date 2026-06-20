@@ -191,7 +191,8 @@ router.get('/status/:idRequest', async (req, res) => {
     .select(`
       id_request, status, nama_peserta, nama_perusahaan, created_at, catatan_reject,
       tanggal_psikotes, jam_psikotes,
-      tanggal_ac, jam_ac, lokasi_ac
+      tanggal_ac, jam_ac, lokasi_ac,
+      tanggal_presentasi, jam_presentasi, lokasi_presentasi
     `)
     .eq('id_request', req.params.idRequest)
     .single();

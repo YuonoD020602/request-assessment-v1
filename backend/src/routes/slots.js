@@ -31,14 +31,44 @@ router.post('/', authMiddleware, picOnly, async (req, res) => {
   res.json({ success: true, data });
 });
 
-// DELETE /api/slots/:id - Hapus slot (PIC only, hanya yang belum terpesan)
+// DELETE /api/slots/:id - Hapus slot (PIC only), cascade clear request jika terpesan
 router.delete('/:id', authMiddleware, picOnly, async (req, res) => {
   const { id } = req.params;
   const { data: slot } = await supabase.from('slot_presentasi').select('*').eq('id', id).single();
   if (!slot) return res.status(404).json({ error: 'Slot tidak ditemukan' });
-  if (slot.status === 'Terpesan') return res.status(400).json({ error: 'Slot sudah terpesan, tidak bisa dihapus' });
+
+  // Jika terpesan, bersihkan data presentasi dari request terkait
+  if (slot.status === 'Terpesan' && slot.id_request) {
+    await supabase.from('requests').update({
+      tanggal_presentasi: null,
+      jam_presentasi: null,
+      lokasi_presentasi: null,
+      status: 'AC Dijadwalkan'
+    }).eq('id_request', slot.id_request);
+  }
 
   await supabase.from('slot_presentasi').delete().eq('id', id);
+  res.json({ success: true });
+});
+
+// PUT /api/slots/:id/release - Bebaskan slot Terpesan → Tersedia (PIC only)
+router.put('/:id/release', authMiddleware, picOnly, async (req, res) => {
+  const { id } = req.params;
+  const { data: slot } = await supabase.from('slot_presentasi').select('*').eq('id', id).single();
+  if (!slot) return res.status(404).json({ error: 'Slot tidak ditemukan' });
+  if (slot.status !== 'Terpesan') return res.status(400).json({ error: 'Slot bukan Terpesan' });
+
+  // Bersihkan data presentasi dari request terkait
+  if (slot.id_request) {
+    await supabase.from('requests').update({
+      tanggal_presentasi: null,
+      jam_presentasi: null,
+      lokasi_presentasi: null,
+      status: 'AC Dijadwalkan'
+    }).eq('id_request', slot.id_request);
+  }
+
+  await supabase.from('slot_presentasi').update({ status: 'Tersedia', id_request: null }).eq('id', id);
   res.json({ success: true });
 });
 
