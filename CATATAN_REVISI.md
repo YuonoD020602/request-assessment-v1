@@ -1,6 +1,6 @@
 # CATATAN REVISI — Request Assessment V1
 **Project:** RACD AIHO – PT Astra International  
-**Terakhir diperbarui:** 20 Juni 2026 (Batch 10)
+**Terakhir diperbarui:** 20 Juni 2026 (Batch 11)
 
 ---
 
@@ -33,6 +33,7 @@
 | 21 | Fix bug: status Psikotes Dijadwalkan tidak tersimpan (DB CHECK constraint + backend) | ✅ Selesai | Batch 10 |
 | 22 | Slot Presentasi: Hapus cascade (reset request) + tombol Bebaskan slot | ✅ Selesai | Batch 10 |
 | 23 | HC pilih slot presentasi via Cek Status + email notifikasi pilih jadwal di Fase 6 | ✅ Selesai | Batch 10 |
+| 25 | Visual overhaul menyeluruh — sidebar, dashboard, semua halaman admin, form, cek status, pilih slot | ✅ Selesai | Batch 11 |
 | 24 | Export PDF laporan per periode | 📋 Backlog | - |
 
 ---
@@ -370,6 +371,76 @@ Sebelumnya HC harus membuka 2 halaman berbeda: `/cek-status` untuk memantau stat
 **Endpoint baru:** `POST /api/fase6/notif-pilih-slot`  
 **File:** `backend/src/routes/fase_routes.js`, `backend/src/services/emailService.js`, `frontend/src/pages/DetailRequest.jsx`, `frontend/src/pages/CekStatus.jsx`  
 **Selesai:** Batch 10
+
+---
+
+### ✅ 25. Visual Overhaul Menyeluruh (Batch 11)
+**Deskripsi:**  
+Peningkatan tampilan visual menyeluruh tanpa mengubah fungsi sistem. Seluruh halaman frontend didesain ulang untuk tampil lebih profesional dan modern.
+
+**Komponen yang diperbarui:**
+
+**Sidebar (Layout.jsx):**
+- Diubah dari putih polos menjadi dark gradient (`slate-900 → indigo-950 → slate-900`)
+- Menu item menggunakan SVG icons menggantikan emoji
+- Item aktif: gradient biru-indigo dengan dot indikator
+- Separator line gradient antar section
+- Avatar user dengan gradient biru-ungu
+- Tombol keluar dengan icon panah, highlight merah saat hover
+
+**Dashboard:**
+- Hero banner gradient dengan dot pattern & dekoratif blob
+- Stats cards: SVG icon kecil di pojok kanan atas (bukan emoji besar), angka besar langsung di kiri — lebih compact
+- Filter pencarian: icon search SVG (tidak tumpang tindih), lalu dihapus jika masih overlap
+- Tabel: left border accent per status, font mono ID Request, badge warna per status
+
+**Daftar HC:**
+- Hero banner biru-indigo dengan counter HC terdaftar di kanan
+- Avatar initial berwarna-warni per HC (gradient berbeda tiap baris)
+- Log pembukaan: numbered badge timeline
+- Alert hasil pengiriman: icon box + close button dengan SVG
+
+**Slot Presentasi:**
+- Hero banner dark dengan counter Tersedia/Terpesan di kanan
+- Link HC: card prominent dengan icon + tombol salin proper
+- Tabel: icon kalender berwarna per slot, row terpesan highlight amber
+- Tombol "Bebaskan" dengan border amber, lebih prominent
+
+**Konfigurasi:**
+- Hero banner dark navy dengan tombol "Simpan Semua" di hero
+- Setiap section (Jadwal AC, Approver, URL & Link) punya icon SVG + deskripsi singkat
+- Tim Pelaksana: setiap person row dalam kotak abu, numbered badge, tombol hapus icon ×
+- `PersonRow` dan `TeamSection` dipecah jadi komponen terpisah untuk keterbacaan
+
+**Form Pengajuan:**
+- Step indicator di atas form: "Data HC → Data Peserta → Kirim"
+- Logo dengan green dot indicator
+- `FL` (FieldLabel) dan `SectionDivider` sebagai helper component
+- Upload area: seluruh label clickable, conditional state (abu → hijau setelah upload)
+- Submit button: shimmer/shine animation saat hover
+- Halaman sukses: animated ping ring, gradient border ID card
+
+**Cek Status:**
+- Background custom gradient via `style` prop
+- Hero lebih besar dengan "Live" badge + pulse dot
+- Vertical timeline/stepper: done steps filled blue, pending outlined, connector line berwarna
+- Result header card: gradient sesuai status + dot pattern
+- Slot picker: numbered index badge
+- Halaman selesai: gradient celebration card
+
+**Pilih Slot (halaman HC):**
+- Full dark background dengan dot pattern + glassmorphism
+- Branding card (logo RA) di atas
+- Flow 2 langkah bernomor (1 → 2) yang jelas
+- Input ID Request: dark glassmorphism style
+- Slot card: numbered index badge, lokasi dengan icon pin, tombol gradient biru-indigo
+- Halaman sukses: animated ping ring + recap card
+
+**Zero logic change** — seluruh perubahan murni CSS className dan JSX wrapper, tidak ada state/API/alur yang berubah.
+
+**Commit:** `931d43e`, `f23613c`, `b0b797b`, `f5b6884`, `451b921`  
+**File:** `frontend/src/components/Layout.jsx`, `frontend/src/pages/Dashboard.jsx`, `frontend/src/pages/DaftarHC.jsx`, `frontend/src/pages/SlotPresentasi.jsx`, `frontend/src/pages/Konfigurasi.jsx`, `frontend/src/pages/FormPengajuan.jsx`, `frontend/src/pages/CekStatus.jsx`, `frontend/src/pages/PilihSlot.jsx`  
+**Selesai:** Batch 11
 
 ---
 
