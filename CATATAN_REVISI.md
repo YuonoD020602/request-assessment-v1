@@ -1,6 +1,6 @@
 # CATATAN REVISI — Request Assessment V1
 **Project:** RACD AIHO – PT Astra International  
-**Terakhir diperbarui:** 19 Juni 2026 (Batch 9)
+**Terakhir diperbarui:** 20 Juni 2026 (Batch 10)
 
 ---
 
@@ -29,7 +29,11 @@
 | 16 | Audit & fix menyeluruh sistem (11 bug dari 2 putaran audit) | ✅ Selesai | Audit |
 | 17 | Upload dokumen PDF per peserta di Form Pengajuan + link template via email pembukaan | ✅ Selesai | Batch 8 |
 | 18 | Riwayat aktivitas & email — timeline per request + log pengiriman email pembukaan | ✅ Selesai | Batch 9 |
-| 19 | Export PDF laporan per periode | 📋 Backlog | - |
+| 20 | Hapus field redundant: link Form Potrev di FormDokumen + Tanggal AC & Lokasi AC di form GR | ✅ Selesai | Batch 10 |
+| 21 | Fix bug: status Psikotes Dijadwalkan tidak tersimpan (DB CHECK constraint + backend) | ✅ Selesai | Batch 10 |
+| 22 | Slot Presentasi: Hapus cascade (reset request) + tombol Bebaskan slot | ✅ Selesai | Batch 10 |
+| 23 | HC pilih slot presentasi via Cek Status + email notifikasi pilih jadwal di Fase 6 | ✅ Selesai | Batch 10 |
+| 24 | Export PDF laporan per periode | 📋 Backlog | - |
 
 ---
 
@@ -294,7 +298,82 @@ Dua fitur track record/audit trail yang sebelumnya tidak ada:
 
 ---
 
-### 📋 19. Export PDF Laporan per Periode
+### ✅ 20. Hapus Field Redundant: Link Form Potrev + Tanggal AC & Lokasi AC di GR
+**Deskripsi:**  
+Menghapus 3 field yang sudah tidak relevan atau menimbulkan overlap:
+
+1. **`link_form_potrev` di FormDokumen.jsx** — Link Google Drive "Form Potential Review" dihapus karena form ini sudah dikumpulkan sebagai PDF di form pengajuan awal. Section pengumpulan dokumen lanjutan kini hanya berisi 2 item: Link Data Karyawan + Link Form STAR.
+
+2. **`tanggal_ac` dan `lokasi_ac` di form GR (Fase 3)** — Field "Tanggal AC (perkiraan)" dan "Lokasi AC" dihapus dari form GR karena overlap dengan Fase 4 yang sudah punya form penjadwalan AC tersendiri. Menghindari kebingungan user dan data ganda di DB.
+
+**File:** `frontend/src/pages/FormDokumen.jsx`, `frontend/src/pages/DetailRequest.jsx`, `backend/src/routes/fase_routes.js`  
+**Selesai:** Batch 10
+
+---
+
+### ✅ 21. Fix Bug: Status "Psikotes Dijadwalkan" Tidak Tersimpan
+**Deskripsi:**  
+Status peserta tidak berubah menjadi `Psikotes Dijadwalkan` meski PIC sudah mengisi dan mengirim jadwal psikotes.
+
+**Root cause:**  
+DB `CHECK` constraint pada kolom `requests.status` tidak menyertakan nilai `'Psikotes Dijadwalkan'` dan `'AC Dijadwalkan'` (constraint lama masih mengandung status usang `'Ditunda - Kuota Penuh'`). Saat `supabase.from('requests').update({ status: 'Psikotes Dijadwalkan' })` dipanggil, constraint menolak update secara silent — tidak ada error yang di-throw ke frontend.
+
+**Solusi (2 lapis):**  
+1. **DB fix:** User menjalankan SQL di Supabase Editor untuk drop dan recreate constraint `requests_status_check` dengan semua status valid termasuk `'Psikotes Dijadwalkan'` dan `'AC Dijadwalkan'`  
+2. **Backend fix:** Endpoint `/fase4/psikotes` ditambahkan error-checking dengan fallback split update — jika update gabungan gagal (e.g. constraint), coba update data jadwal dulu, lalu update status secara terpisah
+
+**File:** `backend/src/routes/fase_routes.js` (endpoint `/psikotes`)  
+**Selesai:** Batch 10
+
+---
+
+### ✅ 22. Slot Presentasi: Hapus Cascade + Tombol Bebaskan
+**Deskripsi:**  
+Sebelumnya slot yang statusnya `Terpesan` tidak bisa dihapus. Sekarang PIC punya 2 opsi:
+
+- **Hapus** (tombol merah, untuk semua slot): Menghapus slot dari daftar. Jika slot berstatus `Terpesan`, sebelum menghapus sistem otomatis membersihkan data presentasi di request terkait (`tanggal_presentasi`, `jam_presentasi`, `lokasi_presentasi` dikosongkan) dan mereset status request kembali ke `AC Dijadwalkan` — sehingga HC bisa memilih slot lain.
+
+- **Bebaskan** (tombol oranye, hanya muncul untuk slot `Terpesan`): Melepas booking tanpa menghapus slot. Slot kembali ke `Tersedia` (id_request = null), data presentasi di request dikosongkan, status request kembali ke `AC Dijadwalkan`.
+
+Saat menghapus slot `Terpesan`, muncul dialog konfirmasi yang menginformasikan efek cascade.
+
+**Endpoint baru:** `PUT /api/slots/:id/release`  
+**File:** `backend/src/routes/slots.js`, `frontend/src/pages/SlotPresentasi.jsx`  
+**Selesai:** Batch 10
+
+---
+
+### ✅ 23. HC Pilih Slot Presentasi via Cek Status + Email Notifikasi di Fase 6
+**Deskripsi:**  
+Sebelumnya HC harus membuka 2 halaman berbeda: `/cek-status` untuk memantau status, dan `/pilih-slot` untuk memilih jadwal presentasi. Sekarang semuanya bisa dilakukan di **satu halaman `/cek-status`**.
+
+**Alur baru (sisi PIC — Fase 6):**  
+1. Setelah AC dijadwalkan, PIC membuka tab **Fase 6** di Detail Request  
+2. Jika HC belum memilih slot, tampil:  
+   - Kotak kuning informatif  
+   - Tombol **"📧 Kirim Notifikasi Pilih Jadwal ke HC"** → mengirim email ke HC berisi instruksi + link ke `/cek-status?id=REQ-xxx`  
+   - Kotak abu-abu berisi link yang sama, bisa disalin manual  
+3. Jika HC sudah memilih → tampil kotak hijau konfirmasi dengan detail jadwal
+
+**Alur baru (sisi HC — Cek Status):**  
+1. HC membuka `/cek-status`, input ID Request  
+2. Jika status `AC Dijadwalkan` dan belum punya jadwal presentasi → muncul section **"Pilih Jadwal Presentasi Hasil AC"** dengan daftar slot tersedia  
+3. HC klik **"Pilih Slot Ini"** → konfirmasi → slot di-booking secara atomic  
+4. Halaman otomatis refresh menampilkan jadwal presentasi yang sudah dipilih  
+
+**Email notifikasi pilih jadwal:**  
+- Subject: `[RACD AIHO] Pilih Jadwal Presentasi Hasil AC – REQ-xxx`  
+- Kotak biru dengan 3-langkah instruksi  
+- Tombol CTA biru yang langsung ke `/cek-status?id=REQ-xxx`  
+- Dicatat di `log_aktivitas`
+
+**Endpoint baru:** `POST /api/fase6/notif-pilih-slot`  
+**File:** `backend/src/routes/fase_routes.js`, `backend/src/services/emailService.js`, `frontend/src/pages/DetailRequest.jsx`, `frontend/src/pages/CekStatus.jsx`  
+**Selesai:** Batch 10
+
+---
+
+### 📋 24. Export PDF Laporan per Periode
 **Deskripsi:** Export data request per periode menjadi PDF laporan yang rapi (header logo, tabel, summary).  
 **Status:** Backlog  
 **File:** TBD
