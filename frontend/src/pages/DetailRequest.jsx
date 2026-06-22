@@ -15,7 +15,7 @@ export default function DetailRequest() {
   const [activeTab, setActiveTab] = useState('info');
 
   const [grForm, setGrForm] = useState({ tanggal_gr: '', jam_gr: '', lokasi_gr: '' });
-  const [momForm, setMomForm] = useState({ mom_gr: '', kompetensi_alc: '', tanggal_online_test_peserta: '', jam_online_test_peserta: '', tanggal_psikotes: '', jam_psikotes: '', tanggal_ac: '', lokasi_ac: '' });
+  const [momForm, setMomForm] = useState({ mom_gr: '', kompetensi_alc: '', tanggal_psikotes: '', jam_psikotes: '', tanggal_ac: '', lokasi_ac: '' });
   const [jadwalAcForm, setJadwalAcForm] = useState({ ruangan_ac: '' });
   const [penugasanTim, setPenugasanTim] = useState([{ roleplayer: '', assessor: '', ruangan: '' }]);
   const [formsReady, setFormsReady] = useState(false);
@@ -48,7 +48,7 @@ export default function DetailRequest() {
       setRequest(r);
       // Pre-fill forms dengan data existing
       if (r.tanggal_gr) setGrForm({ tanggal_gr: r.tanggal_gr, jam_gr: r.jam_gr || '', lokasi_gr: r.lokasi_gr || '' });
-      if (r.mom_gr) setMomForm({ mom_gr: r.mom_gr, kompetensi_alc: r.kompetensi_alc || '', tanggal_online_test_peserta: r.tanggal_online_test_peserta || '', jam_online_test_peserta: r.jam_online_test_peserta || '', tanggal_psikotes: r.tanggal_psikotes || '', jam_psikotes: r.jam_psikotes || '', tanggal_ac: r.tanggal_ac || '', lokasi_ac: r.lokasi_ac || '' });
+      if (r.mom_gr) setMomForm({ mom_gr: r.mom_gr, kompetensi_alc: r.kompetensi_alc || '', tanggal_psikotes: r.tanggal_psikotes || '', jam_psikotes: r.jam_psikotes || '', tanggal_ac: r.tanggal_ac || '', lokasi_ac: r.lokasi_ac || '' });
       if (r.ruangan_ac) setJadwalAcForm({ ruangan_ac: r.ruangan_ac || '' });
       if (r.penugasan_tim && Array.isArray(r.penugasan_tim) && r.penugasan_tim.length > 0) setPenugasanTim(r.penugasan_tim);
       setFormsReady(true);
@@ -248,16 +248,6 @@ export default function DetailRequest() {
                     value={momForm.kompetensi_alc}
                     onChange={e => setMomForm({...momForm, kompetensi_alc: e.target.value})} /></div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div><label className="form-label">Tanggal Online Test Peserta</label>
-                    <input type="date" className="form-input"
-                      value={momForm.tanggal_online_test_peserta}
-                      onChange={e => setMomForm({...momForm, tanggal_online_test_peserta: e.target.value})} /></div>
-                  <div><label className="form-label">Rentang Jam Online Test</label>
-                    <input className="form-input" placeholder="contoh: 08.00–10.00"
-                      value={momForm.jam_online_test_peserta}
-                      onChange={e => setMomForm({...momForm, jam_online_test_peserta: e.target.value})} /></div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
                   <div><label className="form-label">Tanggal Psikotes</label>
                     <input type="date" className="form-input"
                       value={momForm.tanggal_psikotes}
@@ -381,7 +371,7 @@ export default function DetailRequest() {
             <div className="card">
               <h3 className="font-semibold text-gray-900 mb-4">Jadwal Presentasi Hasil AC</h3>
               {request.tanggal_presentasi ? (
-                <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
+                <div className="p-4 bg-green-50 border border-green-200 rounded-xl mb-3">
                   <p className="text-sm font-semibold text-green-800 mb-2">✅ HC telah memilih slot presentasi</p>
                   <div className="space-y-1 text-sm">
                     <p><span className="text-gray-500">Tanggal:</span> <strong>{request.tanggal_presentasi}</strong></p>
@@ -390,7 +380,7 @@ export default function DetailRequest() {
                   </div>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-3 mb-3">
                   <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-xl text-sm text-yellow-700">
                     <p className="font-medium mb-1">⏳ HC belum memilih slot presentasi</p>
                     <p className="text-xs text-yellow-600">Kirim notifikasi ke HC agar mereka memilih jadwal melalui halaman Cek Status.</p>
@@ -400,12 +390,6 @@ export default function DetailRequest() {
                     disabled={submitting}
                     className="btn-primary w-full flex items-center justify-center gap-2">
                     {submitting ? '⏳ Mengirim...' : '📧 Kirim Notifikasi Pilih Jadwal ke HC'}
-                  </button>
-                  <button
-                    onClick={kirimReminderBookingJadwal}
-                    disabled={submitting}
-                    className="w-full py-2 px-4 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2">
-                    {submitting ? '⏳ Mengirim...' : '🔔 Kirim Reminder Booking Jadwal'}
                   </button>
                   <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-500">
                     <p className="font-medium mb-1">Atau bagikan link langsung:</p>
@@ -422,6 +406,12 @@ export default function DetailRequest() {
                   </div>
                 </div>
               )}
+              <button
+                onClick={kirimReminderBookingJadwal}
+                disabled={submitting}
+                className="w-full py-2 px-4 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2">
+                {submitting ? '⏳ Mengirim...' : '🔔 Kirim Reminder Booking Jadwal'}
+              </button>
             </div>
 
             <div className="card">

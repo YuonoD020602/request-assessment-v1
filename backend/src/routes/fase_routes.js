@@ -115,7 +115,7 @@ fase3Router.post('/jadwal-gr', authMiddleware, picOnly, async (req, res) => {
 });
 
 fase3Router.post('/input-mom', authMiddleware, picOnly, async (req, res) => {
-  const { id_request, mom_gr, kompetensi_alc, tanggal_online_test_peserta, jam_online_test_peserta, tanggal_psikotes, jam_psikotes, tanggal_ac, lokasi_ac } = req.body;
+  const { id_request, mom_gr, kompetensi_alc, tanggal_psikotes, jam_psikotes, tanggal_ac, lokasi_ac } = req.body;
   if (!id_request || !mom_gr) return res.status(400).json({ error: 'Field wajib belum lengkap' });
 
   const { data: request } = await supabase.from('requests').select('*').eq('id_request', id_request).single();
@@ -124,8 +124,6 @@ fase3Router.post('/input-mom', authMiddleware, picOnly, async (req, res) => {
   await supabase.from('requests').update({
     mom_gr,
     kompetensi_alc: kompetensi_alc || null,
-    tanggal_online_test_peserta: tanggal_online_test_peserta || null,
-    jam_online_test_peserta: jam_online_test_peserta || null,
     tanggal_psikotes: tanggal_psikotes || null,
     jam_psikotes: jam_psikotes || null,
     tanggal_ac: tanggal_ac || null,
@@ -141,10 +139,8 @@ fase3Router.post('/input-mom', authMiddleware, picOnly, async (req, res) => {
     idRequest: id_request, namaPeserta: request.nama_peserta,
     momText: mom_gr, namaPerusahaan: request.nama_perusahaan,
     kompetensiALC: kompetensi_alc || request.kompetensi_alc || null,
-    tanggalOnlineTest: tanggal_online_test_peserta || request.tanggal_online_test_peserta || null,
-    jamOnlineTest: jam_online_test_peserta || request.jam_online_test_peserta || null,
-    tanggalPsikotes: tanggal_psikotes || request.tanggal_psikotes || null,
-    jamPsikotes: jam_psikotes || request.jam_psikotes || null,
+    tanggalOnlineTest: tanggal_psikotes || request.tanggal_psikotes || null,
+    jamOnlineTest: jam_psikotes || request.jam_psikotes || null,
     tanggalAC: tanggal_ac || request.tanggal_ac || config.tanggal_pelaksanaan_ac || null,
     lokasiAC: lokasi_ac || request.lokasi_ac || null,
     linkFormStar: config.link_form_star || null,
