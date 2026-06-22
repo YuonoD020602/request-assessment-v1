@@ -15,9 +15,10 @@ export default function DetailRequest() {
   const [activeTab, setActiveTab] = useState('info');
 
   const [grForm, setGrForm] = useState({ tanggal_gr: '', jam_gr: '', lokasi_gr: '' });
-  const [momForm, setMomForm] = useState({ mom_gr: '' });
+  const [momForm, setMomForm] = useState({ mom_gr: '', kompetensi_alc: '', tanggal_online_test_peserta: '', jam_online_test_peserta: '' });
   const [psikotesForm, setPsikotesForm] = useState({ tanggal_psikotes: '', jam_psikotes: '' });
-  const [jadwalAcForm, setJadwalAcForm] = useState({ tanggal_ac: '', jam_ac: '', lokasi_ac: '' });
+  const [jadwalAcForm, setJadwalAcForm] = useState({ tanggal_ac: '', jam_ac: '', lokasi_ac: '', ruangan_ac: '' });
+  const [penugasanTim, setPenugasanTim] = useState([{ roleplayer: '', assessor: '', ruangan: '' }]);
   const [formsReady, setFormsReady] = useState(false);
   const [fileLaporan, setFileLaporan] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -43,9 +44,10 @@ export default function DetailRequest() {
       setRequest(r);
       // Pre-fill forms dengan data existing
       if (r.tanggal_gr) setGrForm({ tanggal_gr: r.tanggal_gr, jam_gr: r.jam_gr || '', lokasi_gr: r.lokasi_gr || '' });
-      if (r.mom_gr) setMomForm({ mom_gr: r.mom_gr });
+      if (r.mom_gr) setMomForm({ mom_gr: r.mom_gr, kompetensi_alc: r.kompetensi_alc || '', tanggal_online_test_peserta: r.tanggal_online_test_peserta || '', jam_online_test_peserta: r.jam_online_test_peserta || '' });
       if (r.tanggal_psikotes) setPsikotesForm({ tanggal_psikotes: r.tanggal_psikotes, jam_psikotes: r.jam_psikotes || '' });
-      if (r.tanggal_ac && r.jam_ac) setJadwalAcForm({ tanggal_ac: r.tanggal_ac, jam_ac: r.jam_ac, lokasi_ac: r.lokasi_ac || '' });
+      if (r.tanggal_ac && r.jam_ac) setJadwalAcForm({ tanggal_ac: r.tanggal_ac, jam_ac: r.jam_ac, lokasi_ac: r.lokasi_ac || '', ruangan_ac: r.ruangan_ac || '' });
+      if (r.penugasan_tim && Array.isArray(r.penugasan_tim) && r.penugasan_tim.length > 0) setPenugasanTim(r.penugasan_tim);
       setFormsReady(true);
     } catch { toast.error('Request tidak ditemukan'); navigate('/dashboard'); }
     finally { setLoading(false); }
@@ -83,7 +85,7 @@ export default function DetailRequest() {
   const submitJadwalAC = async (e) => {
     e.preventDefault(); setSubmitting(true);
     try {
-      await api.post('/api/fase4/jadwal-ac', { id_request: idRequest, ...jadwalAcForm });
+      await api.post('/api/fase4/jadwal-ac', { id_request: idRequest, ...jadwalAcForm, penugasan_tim: penugasanTim });
       toast.success('Jadwal AC berhasil disimpan!'); refresh();
     } catch (err) { toast.error(err.response?.data?.error || 'Gagal'); }
     finally { setSubmitting(false); }
@@ -208,7 +210,21 @@ export default function DetailRequest() {
                 <div><label className="form-label">Isi MOM *</label>
                   <textarea className="form-input" rows={6} required placeholder="Tulis ringkasan MOM GR di sini..."
                     value={momForm.mom_gr}
-                    onChange={e => setMomForm({mom_gr: e.target.value})} /></div>
+                    onChange={e => setMomForm({...momForm, mom_gr: e.target.value})} /></div>
+                <div><label className="form-label">Kompetensi yang Diuji (ALC)</label>
+                  <input className="form-input" placeholder="contoh: Planning & Organizing, Communication, Leadership"
+                    value={momForm.kompetensi_alc}
+                    onChange={e => setMomForm({...momForm, kompetensi_alc: e.target.value})} /></div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div><label className="form-label">Tanggal Online Test Peserta</label>
+                    <input type="date" className="form-input"
+                      value={momForm.tanggal_online_test_peserta}
+                      onChange={e => setMomForm({...momForm, tanggal_online_test_peserta: e.target.value})} /></div>
+                  <div><label className="form-label">Rentang Jam Online Test</label>
+                    <input className="form-input" placeholder="contoh: 08.00–10.00"
+                      value={momForm.jam_online_test_peserta}
+                      onChange={e => setMomForm({...momForm, jam_online_test_peserta: e.target.value})} /></div>
+                </div>
                 <button type="submit" className="btn-primary" disabled={submitting}>{submitting ? '...' : 'Kirim MOM'}</button>
               </form>
             </div>
@@ -264,6 +280,44 @@ export default function DetailRequest() {
                 <div><label className="form-label">Tanggal AC *</label><input type="date" className="form-input" required value={jadwalAcForm.tanggal_ac} onChange={e => setJadwalAcForm({...jadwalAcForm, tanggal_ac: e.target.value})} /></div>
                 <div><label className="form-label">Jam AC *</label><input type="time" className="form-input" required value={jadwalAcForm.jam_ac} onChange={e => setJadwalAcForm({...jadwalAcForm, jam_ac: e.target.value})} /></div>
                 <div className="col-span-2"><label className="form-label">Lokasi / Link AC *</label><input className="form-input" required value={jadwalAcForm.lokasi_ac} onChange={e => setJadwalAcForm({...jadwalAcForm, lokasi_ac: e.target.value})} /></div>
+                <div className="col-span-2"><label className="form-label">Ruangan AC</label><input className="form-input" placeholder="contoh: Ruang Meeting Lantai 3 – Astra International" value={jadwalAcForm.ruangan_ac} onChange={e => setJadwalAcForm({...jadwalAcForm, ruangan_ac: e.target.value})} /></div>
+
+                {/* Penugasan Tim */}
+                <div className="col-span-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="form-label mb-0">Penugasan Tim (Roleplayer – Assessor – Ruangan)</label>
+                    <button type="button"
+                      onClick={() => setPenugasanTim([...penugasanTim, { roleplayer: '', assessor: '', ruangan: '' }])}
+                      className="flex items-center gap-1 text-xs font-semibold text-blue-600 border border-blue-200 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
+                      Tambah Baris
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {penugasanTim.map((p, idx) => (
+                      <div key={idx} className="flex items-center gap-2 p-3 bg-gray-50 rounded-xl">
+                        <div className="w-6 h-6 rounded-lg bg-slate-200 flex items-center justify-center flex-shrink-0">
+                          <span className="text-xs font-bold text-slate-600">{idx + 1}</span>
+                        </div>
+                        <input className="form-input flex-1 text-sm" placeholder="Nama Roleplayer"
+                          value={p.roleplayer}
+                          onChange={e => { const u = [...penugasanTim]; u[idx].roleplayer = e.target.value; setPenugasanTim(u); }} />
+                        <input className="form-input flex-1 text-sm" placeholder="Nama Assessor"
+                          value={p.assessor}
+                          onChange={e => { const u = [...penugasanTim]; u[idx].assessor = e.target.value; setPenugasanTim(u); }} />
+                        <input className="form-input flex-1 text-sm" placeholder="Ruangan"
+                          value={p.ruangan}
+                          onChange={e => { const u = [...penugasanTim]; u[idx].ruangan = e.target.value; setPenugasanTim(u); }} />
+                        <button type="button"
+                          onClick={() => { if (penugasanTim.length === 1) return; setPenugasanTim(penugasanTim.filter((_, i) => i !== idx)); }}
+                          className="w-7 h-7 flex items-center justify-center text-red-300 hover:text-white hover:bg-red-500 rounded-lg transition-all flex-shrink-0">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="col-span-2"><button type="submit" className="btn-primary" disabled={submitting}>{submitting ? '...' : request.tanggal_ac && request.jam_ac ? 'Update & Kirim Ulang Notifikasi AC' : 'Simpan Jadwal AC'}</button></div>
               </form>
             </div>

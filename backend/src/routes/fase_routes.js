@@ -87,13 +87,19 @@ fase3Router.post('/jadwal-gr', authMiddleware, picOnly, async (req, res) => {
 });
 
 fase3Router.post('/input-mom', authMiddleware, picOnly, async (req, res) => {
-  const { id_request, mom_gr } = req.body;
+  const { id_request, mom_gr, kompetensi_alc, tanggal_online_test_peserta, jam_online_test_peserta } = req.body;
   if (!id_request || !mom_gr) return res.status(400).json({ error: 'Field wajib belum lengkap' });
 
   const { data: request } = await supabase.from('requests').select('*').eq('id_request', id_request).single();
   if (!request) return res.status(404).json({ error: 'Request tidak ditemukan' });
 
-  await supabase.from('requests').update({ mom_gr, status: 'GR Selesai - Menunggu Dokumen' }).eq('id_request', id_request);
+  await supabase.from('requests').update({
+    mom_gr,
+    kompetensi_alc: kompetensi_alc || null,
+    tanggal_online_test_peserta: tanggal_online_test_peserta || null,
+    jam_online_test_peserta: jam_online_test_peserta || null,
+    status: 'GR Selesai - Menunggu Dokumen'
+  }).eq('id_request', id_request);
 
   const { data: cfgData } = await supabase.from('konfigurasi').select('key, value');
   const config = Object.fromEntries(cfgData.map(c => [c.key, c.value]));
@@ -200,7 +206,7 @@ fase4Router.post('/psikotes', authMiddleware, picOnly, async (req, res) => {
 });
 
 fase4Router.post('/jadwal-ac', authMiddleware, picOnly, async (req, res) => {
-  const { id_request, tanggal_ac, jam_ac, lokasi_ac } = req.body;
+  const { id_request, tanggal_ac, jam_ac, lokasi_ac, ruangan_ac, penugasan_tim } = req.body;
   if (!id_request || !tanggal_ac || !jam_ac || !lokasi_ac) {
     return res.status(400).json({ error: 'Field wajib belum lengkap' });
   }
@@ -212,7 +218,12 @@ fase4Router.post('/jadwal-ac', authMiddleware, picOnly, async (req, res) => {
   const config = Object.fromEntries(cfgData.map(c => [c.key, c.value]));
 
   const isRevisiAC = !!(request.tanggal_ac && request.jam_ac);
-  await supabase.from('requests').update({ tanggal_ac, jam_ac, lokasi_ac, status: 'AC Dijadwalkan' }).eq('id_request', id_request);
+  await supabase.from('requests').update({
+    tanggal_ac, jam_ac, lokasi_ac,
+    ruangan_ac: ruangan_ac || null,
+    penugasan_tim: penugasan_tim || null,
+    status: 'AC Dijadwalkan'
+  }).eq('id_request', id_request);
 
   // Kirim notifikasi jadwal AC ke HC, User/Atasan, dan seluruh tim pelaksana
   const tim = getTimPelaksana(config);
