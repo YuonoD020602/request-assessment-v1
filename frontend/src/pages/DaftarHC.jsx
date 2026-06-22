@@ -174,9 +174,6 @@ export function DaftarHC() {
                 <button onClick={() => { const empty = { pendaftaran: '', getting_requirement: '', pengisian_form: '', online_test: '', pelaksanaan_ac: '', pemaparan: '' }; setJadwalBatch(empty); localStorage.removeItem(JADWAL_KEY); }} className="text-sm text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-5 py-2.5 rounded-xl font-medium transition-colors">
                   Reset/Hapus Data
                 </button>
-                <button onClick={() => setShowJadwalForm(false)} className="text-sm text-gray-500 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 px-5 py-2.5 rounded-xl font-medium transition-colors">
-                  Tutup
-                </button>
               </div>
             </div>
           </div>
