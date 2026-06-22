@@ -248,7 +248,8 @@ const kirimEmailRejectedHC = async ({ namaHC, emailHC, idRequest, catatanReject 
 // ============================================================
 // FASE 3: Email Undangan GR (+ .ics kalender)
 // ============================================================
-const kirimEmailUndanganGR = async ({ namaTo, emailTo, idRequest, tanggalGR, jamGR, lokasiGR, namaPeserta, periodeAC }) => {
+const kirimEmailUndanganGR = async ({ namaTo, emailTo, idRequest, tanggalGR, jamGR, lokasiGR, namaPeserta, periodeAC, linkCekStatus: linkCekStatusParam }) => {
+  const linkCekStatus = linkCekStatusParam || `${process.env.FRONTEND_URL}/cek-status?id=${idRequest}`;
   const icsContent = generateICS({
     uid: `gr-${idRequest}`,
     summary: `Getting Requirement AC – ${namaPeserta}`,
@@ -277,6 +278,8 @@ const kirimEmailUndanganGR = async ({ namaTo, emailTo, idRequest, tanggalGR, jam
           <tr><td style="padding: 6px 12px 6px 0; font-weight: bold; white-space: nowrap;">Lokasi</td><td style="padding: 6px 0;">: ${lokasiGR}</td></tr>
         </table>
         <p style="color: #555; font-size: 13px;">File kalender (.ics) terlampir. Buka untuk menambahkan ke kalender Anda.</p>
+        <p style="margin-top: 16px; font-size: 13px; color: #555;">Pantau status request Anda:<br/>
+        <a href="${linkCekStatus}" style="color: #2563eb;">${linkCekStatus}</a></p>
         <p>Terima kasih</p>
       </div>
     `
@@ -287,7 +290,8 @@ const kirimEmailUndanganGR = async ({ namaTo, emailTo, idRequest, tanggalGR, jam
 // ============================================================
 // FASE 3: Email MOM GR ke PIC HC
 // ============================================================
-const kirimEmailMOM = async ({ namaTo, emailTo, idRequest, namaPeserta, momText, namaPerusahaan, kompetensiALC, tanggalOnlineTest, jamOnlineTest, tanggalAC, lokasiAC, linkFormStar, linkFormDataKaryawan, isTimPelaksana = false, linkKeperluan = null }) => {
+const kirimEmailMOM = async ({ namaTo, emailTo, idRequest, namaPeserta, momText, namaPerusahaan, kompetensiALC, tanggalOnlineTest, jamOnlineTest, tanggalPsikotes, jamPsikotes, tanggalAC, lokasiAC, linkFormStar, linkFormDataKaryawan, isTimPelaksana = false, linkKeperluan = null }) => {
+  const linkCekStatus = `${process.env.FRONTEND_URL}/cek-status?id=${idRequest}`;
   if (isTimPelaksana) {
     const linkKeperluanHtml = linkKeperluan
       ? `<p><strong>Link Keperluan Asesmen:</strong> <a href="${linkKeperluan}">${linkKeperluan}</a></p>`
@@ -317,6 +321,9 @@ const kirimEmailMOM = async ({ namaTo, emailTo, idRequest, namaPeserta, momText,
   const onlineTestInfo = tanggalOnlineTest
     ? `${formatTanggal(tanggalOnlineTest)}<br/>${jamOnlineTest || '-'} WIB`
     : '-';
+  const psikotesInfo = tanggalPsikotes
+    ? `${formatTanggal(tanggalPsikotes)}<br/>${jamPsikotes || '-'} WIB`
+    : '-';
   const acTanggalInfo = tanggalAC ? formatTanggal(tanggalAC) : '-';
 
   await sendEmail({
@@ -332,6 +339,7 @@ const kirimEmailMOM = async ({ namaTo, emailTo, idRequest, namaPeserta, momText,
             <th style="${TH_STYLE}" rowspan="2">Nama Peserta</th>
             <th style="${TH_STYLE}" rowspan="2">Kompetensi ALC yang akan diukur</th>
             <th style="${TH_STYLE}" rowspan="2">Pelaksanaan Online Tes Astra Ignite &amp; Astra Spark</th>
+            <th style="${TH_STYLE}" rowspan="2">Pelaksanaan Psikotes</th>
             <th style="${TH_STYLE}" colspan="3">Pelaksanaan Assessment Center</th>
           </tr>
           <tr>
@@ -343,8 +351,9 @@ const kirimEmailMOM = async ({ namaTo, emailTo, idRequest, namaPeserta, momText,
             <td style="${TD_CENTER}">${namaPeserta}</td>
             <td style="${TD_CENTER}">${kompetensiALC || '-'}</td>
             <td style="${TD_CENTER}">${onlineTestInfo}</td>
+            <td style="${TD_CENTER}">${psikotesInfo}</td>
             <td style="${TD_CENTER}">${acTanggalInfo}</td>
-            <td style="${TD_CENTER}">08.00 &ndash; 17.00 WIB<br/><span style="font-size:11px;">(peserta diminta hadir 15 menit sebelum kegiatan berlangsung)</span></td>
+            <td style="${TD_CENTER}">08.00 &ndash; 15.00 WIB<br/><span style="font-size:11px;">(peserta diminta hadir 15 menit sebelum kegiatan berlangsung)</span></td>
             <td style="${TD_CENTER}">${lokasiAC || 'Astra International Head Office – Gedung AMDI A, Sunter'}<br/><span style="font-size:11px;">(ruangan akan diinformasikan H-1)</span></td>
           </tr>
         </table>
@@ -363,6 +372,8 @@ const kirimEmailMOM = async ({ namaTo, emailTo, idRequest, namaPeserta, momText,
         ${linkFormStar ? `<p>Link Form STAR: <a href="${linkFormStar}" style="color: #2563eb;">${linkFormStar}</a></p>` : ''}
 
         <p>Demikian informasi ini saya sampaikan.</p>
+        <p style="margin-top: 16px; font-size: 13px; color: #555;">Pantau status request Anda:<br/>
+        <a href="${linkCekStatus}" style="color: #2563eb;">${linkCekStatus}</a></p>
         <p>Terima kasih.</p>
       </div>
     `
@@ -505,7 +516,8 @@ const kirimReminderAC = async ({ namaTo, emailTo, idRequest, namaPeserta, tangga
 // ============================================================
 // FASE 5: Reminder H-1 untuk Peserta (dikirim ke PIC HC untuk diteruskan)
 // ============================================================
-const kirimReminderACPeserta = async ({ namaHC, emailHC, idRequest, namaPeserta, tanggalAC, ruanganAC, lokasiAC }) => {
+const kirimReminderACPeserta = async ({ namaHC, emailHC, idRequest, namaPeserta, tanggalAC, ruanganAC, lokasiAC, linkCekStatus: linkCekStatusParam }) => {
+  const linkCekStatus = linkCekStatusParam || `${process.env.FRONTEND_URL}/cek-status?id=${idRequest}`;
   const tempat = ruanganAC
     ? `${ruanganAC}, Gedung AMDI A Lt 1, Astra International Head Office – Sunter (offline)`
     : lokasiAC || 'Gedung AMDI A Lt 1, Astra International Head Office – Sunter (offline)';
@@ -531,6 +543,8 @@ const kirimReminderACPeserta = async ({ namaHC, emailHC, idRequest, namaPeserta,
         </ol>
         <p>Kegiatan ini tidak membutuhkan persiapan khusus. Untuk kelancaran kegiatan, peserta diharapkan untuk dapat beristirahat dengan cukup sebelum mengikuti kegiatan Assessment Center dan diharapkan untuk <strong><em>tidak membawa laptop pribadi/kantor guna menjaga konsentrasi</em></strong> selama proses Assessment Center.</p>
         <p>Demikian informasi yang dapat kami sampaikan.</p>
+        <p style="margin-top: 16px; font-size: 13px; color: #555;">Pantau status request Anda:<br/>
+        <a href="${linkCekStatus}" style="color: #2563eb;">${linkCekStatus}</a></p>
         <p>Terima kasih</p>
       </div>
     `

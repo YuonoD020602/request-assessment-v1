@@ -352,19 +352,6 @@ export default function FormPengajuan() {
                       </label>
                     </div>
                   </div>
-                  <div className="col-span-2 pt-2 border-t">
-                    <label className="form-label">
-                      Upload Form Pengajuan Potential Review & Profiling (PDF) <span className="text-red-500">*</span>
-                    </label>
-                    <input type="file" accept=".pdf" className="form-input"
-                      onChange={e => handleDokumenChange(idx, e.target.files[0])} />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Unduh template Form Pengajuan dari link yang dikirim di email pembukaan, isi, lalu upload PDF-nya di sini.
-                    </p>
-                    {peserta.dokumen_pdf && (
-                      <p className="text-xs text-green-600 mt-1">✓ {peserta.dokumen_pdf.name}</p>
-                    )}
-                  </div>
                 </div>
               ))}
             </div>

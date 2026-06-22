@@ -15,19 +15,23 @@ export default function DetailRequest() {
   const [activeTab, setActiveTab] = useState('info');
 
   const [grForm, setGrForm] = useState({ tanggal_gr: '', jam_gr: '', lokasi_gr: '' });
-  const [momForm, setMomForm] = useState({ mom_gr: '', kompetensi_alc: '', tanggal_online_test_peserta: '', jam_online_test_peserta: '' });
-  const [psikotesForm, setPsikotesForm] = useState({ tanggal_psikotes: '', jam_psikotes: '' });
-  const [jadwalAcForm, setJadwalAcForm] = useState({ tanggal_ac: '', jam_ac: '', lokasi_ac: '', ruangan_ac: '' });
+  const [momForm, setMomForm] = useState({ mom_gr: '', kompetensi_alc: '', tanggal_online_test_peserta: '', jam_online_test_peserta: '', tanggal_psikotes: '', jam_psikotes: '', tanggal_ac: '', lokasi_ac: '' });
+  const [jadwalAcForm, setJadwalAcForm] = useState({ ruangan_ac: '' });
   const [penugasanTim, setPenugasanTim] = useState([{ roleplayer: '', assessor: '', ruangan: '' }]);
   const [formsReady, setFormsReady] = useState(false);
   const [fileLaporan, setFileLaporan] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [logList, setLogList] = useState([]);
+  const [configData, setConfigData] = useState({});
 
   useEffect(() => {
     fetchRequest();
     fetchLog();
-    api.get('/api/config').then(res => setConfig(res.data.data || {})).catch(() => {});
+    api.get('/api/config').then(res => {
+      const d = res.data.data || {};
+      setConfig(d);
+      setConfigData(d);
+    }).catch(() => {});
   }, [idRequest]);
 
   const fetchLog = async () => {
@@ -44,9 +48,8 @@ export default function DetailRequest() {
       setRequest(r);
       // Pre-fill forms dengan data existing
       if (r.tanggal_gr) setGrForm({ tanggal_gr: r.tanggal_gr, jam_gr: r.jam_gr || '', lokasi_gr: r.lokasi_gr || '' });
-      if (r.mom_gr) setMomForm({ mom_gr: r.mom_gr, kompetensi_alc: r.kompetensi_alc || '', tanggal_online_test_peserta: r.tanggal_online_test_peserta || '', jam_online_test_peserta: r.jam_online_test_peserta || '' });
-      if (r.tanggal_psikotes) setPsikotesForm({ tanggal_psikotes: r.tanggal_psikotes, jam_psikotes: r.jam_psikotes || '' });
-      if (r.tanggal_ac && r.jam_ac) setJadwalAcForm({ tanggal_ac: r.tanggal_ac, jam_ac: r.jam_ac, lokasi_ac: r.lokasi_ac || '', ruangan_ac: r.ruangan_ac || '' });
+      if (r.mom_gr) setMomForm({ mom_gr: r.mom_gr, kompetensi_alc: r.kompetensi_alc || '', tanggal_online_test_peserta: r.tanggal_online_test_peserta || '', jam_online_test_peserta: r.jam_online_test_peserta || '', tanggal_psikotes: r.tanggal_psikotes || '', jam_psikotes: r.jam_psikotes || '', tanggal_ac: r.tanggal_ac || '', lokasi_ac: r.lokasi_ac || '' });
+      if (r.ruangan_ac) setJadwalAcForm({ ruangan_ac: r.ruangan_ac || '' });
       if (r.penugasan_tim && Array.isArray(r.penugasan_tim) && r.penugasan_tim.length > 0) setPenugasanTim(r.penugasan_tim);
       setFormsReady(true);
     } catch { toast.error('Request tidak ditemukan'); navigate('/dashboard'); }
@@ -73,20 +76,29 @@ export default function DetailRequest() {
     finally { setSubmitting(false); }
   };
 
-  const submitPsikotes = async (e) => {
-    e.preventDefault(); setSubmitting(true);
-    try {
-      await api.post('/api/fase4/psikotes', { id_request: idRequest, ...psikotesForm });
-      toast.success('Jadwal psikotes berhasil dikirim!'); refresh();
-    } catch (err) { toast.error(err.response?.data?.error || 'Gagal'); }
-    finally { setSubmitting(false); }
-  };
-
   const submitJadwalAC = async (e) => {
     e.preventDefault(); setSubmitting(true);
     try {
       await api.post('/api/fase4/jadwal-ac', { id_request: idRequest, ...jadwalAcForm, penugasan_tim: penugasanTim });
       toast.success('Jadwal AC berhasil disimpan!'); refresh();
+    } catch (err) { toast.error(err.response?.data?.error || 'Gagal'); }
+    finally { setSubmitting(false); }
+  };
+
+  const kirimReminderManual = async () => {
+    setSubmitting(true);
+    try {
+      await api.post('/api/fase4/kirim-reminder-manual', { id_request: idRequest });
+      toast.success('Reminder berhasil dikirim ke HC!'); refresh();
+    } catch (err) { toast.error(err.response?.data?.error || 'Gagal'); }
+    finally { setSubmitting(false); }
+  };
+
+  const kirimReminderBookingJadwal = async () => {
+    setSubmitting(true);
+    try {
+      await api.post('/api/fase5/kirim-reminder-booking', { id_request: idRequest });
+      toast.success('Reminder booking jadwal berhasil dikirim!'); refresh();
     } catch (err) { toast.error(err.response?.data?.error || 'Gagal'); }
     finally { setSubmitting(false); }
   };
@@ -120,6 +132,26 @@ export default function DetailRequest() {
 
   if (loading) return <Layout><div className="text-center py-20 text-gray-400">Memuat...</div></Layout>;
   if (!request) return null;
+
+  // Build assessor & roleplayer options from configData
+  const assessorOptions = (() => {
+    const opts = [];
+    let i = 1;
+    while (configData[`assessor_${i}_nama`]) {
+      opts.push(configData[`assessor_${i}_nama`]);
+      i++;
+    }
+    return opts;
+  })();
+  const roleplayerOptions = (() => {
+    const opts = [];
+    let i = 1;
+    while (configData[`roleplayer_${i}_nama`]) {
+      opts.push(configData[`roleplayer_${i}_nama`]);
+      i++;
+    }
+    return opts;
+  })();
 
   const tabs = [
     { id: 'info', label: 'Info' },
@@ -225,6 +257,26 @@ export default function DetailRequest() {
                       value={momForm.jam_online_test_peserta}
                       onChange={e => setMomForm({...momForm, jam_online_test_peserta: e.target.value})} /></div>
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div><label className="form-label">Tanggal Psikotes</label>
+                    <input type="date" className="form-input"
+                      value={momForm.tanggal_psikotes}
+                      onChange={e => setMomForm({...momForm, tanggal_psikotes: e.target.value})} /></div>
+                  <div><label className="form-label">Jam Psikotes</label>
+                    <input className="form-input" placeholder="contoh: 08.00–10.00"
+                      value={momForm.jam_psikotes}
+                      onChange={e => setMomForm({...momForm, jam_psikotes: e.target.value})} /></div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div><label className="form-label">Tanggal AC</label>
+                    <input type="date" className="form-input"
+                      value={momForm.tanggal_ac}
+                      onChange={e => setMomForm({...momForm, tanggal_ac: e.target.value})} /></div>
+                  <div><label className="form-label">Lokasi AC</label>
+                    <input className="form-input" placeholder="Gedung AMDI A, Sunter"
+                      value={momForm.lokasi_ac}
+                      onChange={e => setMomForm({...momForm, lokasi_ac: e.target.value})} /></div>
+                </div>
                 <button type="submit" className="btn-primary" disabled={submitting}>{submitting ? '...' : 'Kirim MOM'}</button>
               </form>
             </div>
@@ -248,25 +300,10 @@ export default function DetailRequest() {
             </div>
 
             <div className="card">
-              <h3 className="font-semibold text-gray-900 mb-4">Input Jadwal Psikotes</h3>
-              {request.tanggal_psikotes && (
+              <h3 className="font-semibold text-gray-900 mb-4">Penugasan Tim & Ruangan AC</h3>
+              {request.tanggal_ac && (
                 <div className="mb-4 p-3 bg-green-50 rounded-lg text-sm text-green-700">
-                  ✓ Jadwal psikotes: {request.tanggal_psikotes} {request.jam_psikotes}
-                </div>
-              )}
-              <form onSubmit={submitPsikotes} className="grid grid-cols-2 gap-4">
-                <div><label className="form-label">Tanggal *</label><input type="date" className="form-input" required value={psikotesForm.tanggal_psikotes} onChange={e => setPsikotesForm({...psikotesForm, tanggal_psikotes: e.target.value})} /></div>
-                <div><label className="form-label">Rentang Jam Psikotes *</label><input className="form-input" required placeholder="contoh: 08.00–10.00" value={psikotesForm.jam_psikotes} onChange={e => setPsikotesForm({...psikotesForm, jam_psikotes: e.target.value})} /></div>
-                <div className="col-span-2 p-3 bg-blue-50 rounded-lg text-sm text-blue-700">Peserta akan diarahkan cek email dari astra.recruitment@ai.astra.co.id</div>
-                <div className="col-span-2"><button type="submit" className="btn-primary" disabled={submitting}>{submitting ? '...' : request.tanggal_psikotes ? 'Update & Kirim Ulang Jadwal Psikotes' : 'Kirim Jadwal Psikotes'}</button></div>
-              </form>
-            </div>
-
-            <div className="card">
-              <h3 className="font-semibold text-gray-900 mb-4">Input Jadwal Assessment Center</h3>
-              {request.tanggal_ac && request.jam_ac && (
-                <div className="mb-4 p-3 bg-green-50 rounded-lg text-sm text-green-700">
-                  ✓ Jadwal AC: {request.tanggal_ac} {request.jam_ac} – {request.lokasi_ac}
+                  ✓ Jadwal AC: {request.tanggal_ac} 08.00–15.00 WIB – {request.lokasi_ac}
                 </div>
               )}
               {config.link_keperluan_asesmen && (
@@ -277,9 +314,6 @@ export default function DetailRequest() {
                 </div>
               )}
               <form onSubmit={submitJadwalAC} className="grid grid-cols-2 gap-4">
-                <div><label className="form-label">Tanggal AC *</label><input type="date" className="form-input" required value={jadwalAcForm.tanggal_ac} onChange={e => setJadwalAcForm({...jadwalAcForm, tanggal_ac: e.target.value})} /></div>
-                <div><label className="form-label">Jam AC *</label><input type="time" className="form-input" required value={jadwalAcForm.jam_ac} onChange={e => setJadwalAcForm({...jadwalAcForm, jam_ac: e.target.value})} /></div>
-                <div className="col-span-2"><label className="form-label">Lokasi / Link AC *</label><input className="form-input" required value={jadwalAcForm.lokasi_ac} onChange={e => setJadwalAcForm({...jadwalAcForm, lokasi_ac: e.target.value})} /></div>
                 <div className="col-span-2"><label className="form-label">Ruangan AC</label><input className="form-input" placeholder="contoh: Ruang Meeting Lantai 3 – Astra International" value={jadwalAcForm.ruangan_ac} onChange={e => setJadwalAcForm({...jadwalAcForm, ruangan_ac: e.target.value})} /></div>
 
                 {/* Penugasan Tim */}
@@ -299,12 +333,18 @@ export default function DetailRequest() {
                         <div className="w-6 h-6 rounded-lg bg-slate-200 flex items-center justify-center flex-shrink-0">
                           <span className="text-xs font-bold text-slate-600">{idx + 1}</span>
                         </div>
-                        <input className="form-input flex-1 text-sm" placeholder="Nama Roleplayer"
+                        <select className="form-input flex-1 text-sm"
                           value={p.roleplayer}
-                          onChange={e => { const u = [...penugasanTim]; u[idx].roleplayer = e.target.value; setPenugasanTim(u); }} />
-                        <input className="form-input flex-1 text-sm" placeholder="Nama Assessor"
+                          onChange={e => { const u = [...penugasanTim]; u[idx].roleplayer = e.target.value; setPenugasanTim(u); }}>
+                          <option value="">-- Roleplayer --</option>
+                          {roleplayerOptions.map(n => <option key={n} value={n}>{n}</option>)}
+                        </select>
+                        <select className="form-input flex-1 text-sm"
                           value={p.assessor}
-                          onChange={e => { const u = [...penugasanTim]; u[idx].assessor = e.target.value; setPenugasanTim(u); }} />
+                          onChange={e => { const u = [...penugasanTim]; u[idx].assessor = e.target.value; setPenugasanTim(u); }}>
+                          <option value="">-- Assessor --</option>
+                          {assessorOptions.map(n => <option key={n} value={n}>{n}</option>)}
+                        </select>
                         <input className="form-input flex-1 text-sm" placeholder="Ruangan"
                           value={p.ruangan}
                           onChange={e => { const u = [...penugasanTim]; u[idx].ruangan = e.target.value; setPenugasanTim(u); }} />
@@ -318,8 +358,19 @@ export default function DetailRequest() {
                   </div>
                 </div>
 
-                <div className="col-span-2"><button type="submit" className="btn-primary" disabled={submitting}>{submitting ? '...' : request.tanggal_ac && request.jam_ac ? 'Update & Kirim Ulang Notifikasi AC' : 'Simpan Jadwal AC'}</button></div>
+                <div className="col-span-2"><button type="submit" className="btn-primary" disabled={submitting}>{submitting ? '...' : 'Simpan Penugasan Tim'}</button></div>
               </form>
+
+              {request.tanggal_ac && (
+                <div className="mt-4">
+                  <button
+                    onClick={kirimReminderManual}
+                    disabled={submitting}
+                    className="btn-primary w-full flex items-center justify-center gap-2">
+                    {submitting ? '⏳ Mengirim...' : '📧 Kirim Reminder Sekarang'}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -349,6 +400,12 @@ export default function DetailRequest() {
                     disabled={submitting}
                     className="btn-primary w-full flex items-center justify-center gap-2">
                     {submitting ? '⏳ Mengirim...' : '📧 Kirim Notifikasi Pilih Jadwal ke HC'}
+                  </button>
+                  <button
+                    onClick={kirimReminderBookingJadwal}
+                    disabled={submitting}
+                    className="w-full py-2 px-4 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2">
+                    {submitting ? '⏳ Mengirim...' : '🔔 Kirim Reminder Booking Jadwal'}
                   </button>
                   <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-500">
                     <p className="font-medium mb-1">Atau bagikan link langsung:</p>

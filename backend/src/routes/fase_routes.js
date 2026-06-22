@@ -6,7 +6,8 @@ const {
   kirimEmailUndanganGR, kirimEmailMOM,
   kirimNotifikasiDokumenDiterima, kirimJadwalPsikotes,
   kirimUndanganPresentasi, kirimNotifikasiPilihSlot, kirimLaporan,
-  kirimReminderAC, kirimReminderACAssessor, kirimReminderACRoleplayer
+  kirimReminderAC, kirimReminderACAssessor, kirimReminderACRoleplayer,
+  kirimReminderACPeserta
 } = require('../services/emailService');
 
 const delay = (ms) => new Promise(r => setTimeout(r, ms));
@@ -114,7 +115,7 @@ fase3Router.post('/jadwal-gr', authMiddleware, picOnly, async (req, res) => {
 });
 
 fase3Router.post('/input-mom', authMiddleware, picOnly, async (req, res) => {
-  const { id_request, mom_gr, kompetensi_alc, tanggal_online_test_peserta, jam_online_test_peserta } = req.body;
+  const { id_request, mom_gr, kompetensi_alc, tanggal_online_test_peserta, jam_online_test_peserta, tanggal_psikotes, jam_psikotes, tanggal_ac, lokasi_ac } = req.body;
   if (!id_request || !mom_gr) return res.status(400).json({ error: 'Field wajib belum lengkap' });
 
   const { data: request } = await supabase.from('requests').select('*').eq('id_request', id_request).single();
@@ -125,6 +126,10 @@ fase3Router.post('/input-mom', authMiddleware, picOnly, async (req, res) => {
     kompetensi_alc: kompetensi_alc || null,
     tanggal_online_test_peserta: tanggal_online_test_peserta || null,
     jam_online_test_peserta: jam_online_test_peserta || null,
+    tanggal_psikotes: tanggal_psikotes || null,
+    jam_psikotes: jam_psikotes || null,
+    tanggal_ac: tanggal_ac || null,
+    lokasi_ac: lokasi_ac || null,
     status: 'GR Selesai - Menunggu Dokumen'
   }).eq('id_request', id_request);
 
@@ -138,8 +143,10 @@ fase3Router.post('/input-mom', authMiddleware, picOnly, async (req, res) => {
     kompetensiALC: kompetensi_alc || request.kompetensi_alc || null,
     tanggalOnlineTest: tanggal_online_test_peserta || request.tanggal_online_test_peserta || null,
     jamOnlineTest: jam_online_test_peserta || request.jam_online_test_peserta || null,
-    tanggalAC: config.tanggal_pelaksanaan_ac || request.tanggal_ac || null,
-    lokasiAC: request.lokasi_ac || null,
+    tanggalPsikotes: tanggal_psikotes || request.tanggal_psikotes || null,
+    jamPsikotes: jam_psikotes || request.jam_psikotes || null,
+    tanggalAC: tanggal_ac || request.tanggal_ac || config.tanggal_pelaksanaan_ac || null,
+    lokasiAC: lokasi_ac || request.lokasi_ac || null,
     linkFormStar: config.link_form_star || null,
     linkFormDataKaryawan: config.link_form_data_karyawan || null,
     isTimPelaksana: false
@@ -250,8 +257,8 @@ fase4Router.post('/psikotes', authMiddleware, picOnly, async (req, res) => {
 });
 
 fase4Router.post('/jadwal-ac', authMiddleware, picOnly, async (req, res) => {
-  const { id_request, tanggal_ac, jam_ac, lokasi_ac, ruangan_ac, penugasan_tim } = req.body;
-  if (!id_request || !tanggal_ac || !jam_ac || !lokasi_ac) {
+  const { id_request, ruangan_ac, penugasan_tim } = req.body;
+  if (!id_request) {
     return res.status(400).json({ error: 'Field wajib belum lengkap' });
   }
 
@@ -261,17 +268,19 @@ fase4Router.post('/jadwal-ac', authMiddleware, picOnly, async (req, res) => {
   const { data: cfgData } = await supabase.from('konfigurasi').select('key, value');
   const config = Object.fromEntries(cfgData.map(c => [c.key, c.value]));
 
-  const isRevisiAC = !!(request.tanggal_ac && request.jam_ac);
   await supabase.from('requests').update({
-    tanggal_ac, jam_ac, lokasi_ac,
     ruangan_ac: ruangan_ac || null,
     penugasan_tim: penugasan_tim || null,
     status: 'AC Dijadwalkan'
   }).eq('id_request', id_request);
 
+  const tanggal_ac = request.tanggal_ac;
+  const lokasi_ac = request.lokasi_ac;
+  const jam_ac = '08.00 – 15.00';
+  const isRevisiAC = !!(request.ruangan_ac);
   const lokasiLengkap = ruangan_ac
-    ? `${ruangan_ac}, ${lokasi_ac}`
-    : lokasi_ac;
+    ? `${ruangan_ac}, ${lokasi_ac || ''}`
+    : lokasi_ac || '';
 
   // Kirim ke HC dan User/Atasan
   const penerimaHC = [
@@ -324,9 +333,77 @@ fase4Router.post('/jadwal-ac', authMiddleware, picOnly, async (req, res) => {
     await delay(400);
   }
 
-  const aktivitasAC = isRevisiAC ? 'Jadwal AC Direvisi' : 'Jadwal AC Diinput';
-  await supabase.from('log_aktivitas').insert({ id_request, aktivitas: aktivitasAC, detail: `${tanggal_ac} ${jam_ac} di ${lokasi_ac}` });
-  res.json({ success: true, message: isRevisiAC ? 'Jadwal AC berhasil diperbarui dan notifikasi revisi dikirim' : 'Jadwal AC berhasil disimpan dan notifikasi dikirim' });
+  const aktivitasAC = isRevisiAC ? 'Penugasan Tim Direvisi' : 'Penugasan Tim Diinput';
+  await supabase.from('log_aktivitas').insert({ id_request, aktivitas: aktivitasAC, detail: `Ruangan: ${ruangan_ac || '-'}, Penugasan tim diperbarui` });
+  res.json({ success: true, message: 'Penugasan tim berhasil disimpan' });
+});
+
+fase4Router.post('/kirim-reminder-manual', authMiddleware, picOnly, async (req, res) => {
+  const { id_request } = req.body;
+  if (!id_request) return res.status(400).json({ error: 'ID Request wajib diisi' });
+
+  const { data: request } = await supabase.from('requests').select('*').eq('id_request', id_request).single();
+  if (!request) return res.status(404).json({ error: 'Request tidak ditemukan' });
+
+  const { data: cfgData } = await supabase.from('konfigurasi').select('key, value');
+  const config = Object.fromEntries((cfgData || []).map(c => [c.key, c.value]));
+
+  await kirimReminderACPeserta({
+    namaHC: request.pic_hc,
+    emailHC: request.email_pic_hc,
+    idRequest: id_request,
+    namaPeserta: request.nama_peserta,
+    tanggalAC: request.tanggal_ac,
+    ruanganAC: request.ruangan_ac || null,
+    lokasiAC: request.lokasi_ac || null
+  });
+
+  await supabase.from('log_aktivitas').insert({ id_request, aktivitas: 'Reminder Manual Terkirim', detail: `Reminder AC dikirim manual ke ${request.email_pic_hc}` });
+  res.json({ success: true });
+});
+
+// ============================================================
+// FASE 5 ROUTER
+// ============================================================
+const fase5Router = express.Router();
+
+fase5Router.post('/kirim-reminder-booking', authMiddleware, picOnly, async (req, res) => {
+  const { id_request } = req.body;
+  if (!id_request) return res.status(400).json({ error: 'ID Request wajib diisi' });
+
+  const { data: request } = await supabase.from('requests').select('*').eq('id_request', id_request).single();
+  if (!request) return res.status(404).json({ error: 'Request tidak ditemukan' });
+
+  const { data: cfgData } = await supabase.from('konfigurasi').select('key, value');
+  const config = Object.fromEntries((cfgData || []).map(c => [c.key, c.value]));
+
+  const linkPilihSlot = `${process.env.FRONTEND_URL}/pilih-slot?id=${id_request}`;
+  const linkCekStatus = `${process.env.FRONTEND_URL}/cek-status?id=${id_request}`;
+
+  const { Resend } = require('resend');
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  await resend.emails.send({
+    from: 'RACD AIHO Assessment Center <noreply@lyraac.site>',
+    to: request.email_pic_hc,
+    subject: `[RACD AIHO] Reminder: Booking Jadwal Presentasi – ${id_request}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; font-size: 14px; color: #333; line-height: 1.6;">
+        <p>Kepada Yth.<br/>Bapak/Ibu ${request.pic_hc}</p>
+        <p>Sehubungan dengan telah selesainya Assessment Center untuk <strong>${request.nama_peserta}</strong> (${id_request}), kami mengingatkan Anda untuk segera <strong>melakukan booking jadwal Presentasi Hasil AC</strong>.</p>
+        <div style="margin: 20px 0; padding: 16px; background: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 4px;">
+          <p style="margin: 0 0 8px 0; font-weight: bold;">Klik tombol berikut untuk booking jadwal:</p>
+          <a href="${linkPilihSlot}" style="display: inline-block; background: #1d4ed8; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Booking Jadwal Presentasi &rarr;</a>
+        </div>
+        <p style="margin-top: 16px; font-size: 13px; color: #555;">Pantau status request Anda:<br/>
+        <a href="${linkCekStatus}" style="color: #2563eb;">${linkCekStatus}</a></p>
+        <p>Terima kasih</p>
+        <p>Hormat kami,<br/><strong>PIC Asesmen RACD AIHO</strong><br/>PT Astra International</p>
+      </div>
+    `
+  });
+
+  await supabase.from('log_aktivitas').insert({ id_request, aktivitas: 'Reminder Booking Jadwal Terkirim', detail: `Email reminder booking presentasi dikirim ke ${request.email_pic_hc}` });
+  res.json({ success: true });
 });
 
 // ============================================================
@@ -348,12 +425,16 @@ fase6Router.post('/jadwal-presentasi', authMiddleware, picOnly, async (req, res)
     status: 'Menunggu Presentasi'
   }).eq('id_request', id_request);
 
-  const penerima = [
+  const { data: cfgDataP } = await supabase.from('konfigurasi').select('key, value');
+  const configP = Object.fromEntries((cfgDataP || []).map(c => [c.key, c.value]));
+
+  const penerimaP = [
     { nama: request.pic_hc, email: request.email_pic_hc },
-    request.email_user ? { nama: request.user_atasan, email: request.email_user } : null
+    request.email_user ? { nama: request.user_atasan, email: request.email_user } : null,
+    ...getAssessors(configP)
   ].filter(Boolean);
 
-  for (const p of penerima) {
+  for (const p of penerimaP) {
     await kirimUndanganPresentasi({
       namaTo: p.nama, emailTo: p.email,
       idRequest: id_request, namaPeserta: request.nama_peserta,
@@ -437,4 +518,4 @@ fase6Router.get('/cek-file/:idRequest', authMiddleware, picOnly, async (req, res
   res.json({ found: found.length > 0, files: found });
 });
 
-module.exports = { fase3Router, fase4Router, fase6Router };
+module.exports = { fase3Router, fase4Router, fase5Router, fase6Router };
