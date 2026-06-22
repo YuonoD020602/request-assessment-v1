@@ -85,6 +85,15 @@ export default function DetailRequest() {
     finally { setSubmitting(false); }
   };
 
+  const kirimReminderDokumen = async () => {
+    setSubmitting(true);
+    try {
+      await api.post('/api/fase3/kirim-reminder-dokumen', { id_request: idRequest });
+      toast.success('Reminder dokumen berhasil dikirim ke HC!'); refresh();
+    } catch (err) { toast.error(err.response?.data?.error || 'Gagal'); }
+    finally { setSubmitting(false); }
+  };
+
   const kirimReminderManual = async () => {
     setSubmitting(true);
     try {
@@ -281,6 +290,25 @@ export default function DetailRequest() {
               <div className={`p-3 rounded-lg text-sm ${request.status_dokumen === 'Dokumen Diterima' ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-700'}`}>
                 {request.status_dokumen === 'Dokumen Diterima' ? '✓ Dokumen sudah diterima dari HC' : '⏳ Menunggu dokumen dari HC'}
               </div>
+              <div className="mt-3 space-y-1.5">
+                {[{ label: 'Form Data Karyawan', key: 'link_data_karyawan' }, { label: 'Form STAR', key: 'link_form_star' }].map(({ label, key }) => (
+                  <div key={key} className="flex items-center gap-2 text-sm">
+                    {request[key]
+                      ? <span className="text-green-600 font-bold">✓</span>
+                      : <span className="w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 inline-block" />}
+                    {request[key]
+                      ? <a href={request[key]} target="_blank" className="text-blue-600 hover:underline">{label}</a>
+                      : <span className="text-gray-400">{label} – belum diterima</span>}
+                  </div>
+                ))}
+              </div>
+              {request.status !== 'Dokumen Diterima' && request.mom_gr && (
+                <button onClick={kirimReminderDokumen} disabled={submitting}
+                  className="mt-3 flex items-center gap-2 text-sm font-semibold px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-xl transition-colors disabled:opacity-60">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                  Kirim Reminder Dokumen ke HC
+                </button>
+              )}
               {request.link_data_karyawan && (
                 <div className="mt-3 space-y-1 text-sm">
                   <a href={request.link_data_karyawan} target="_blank" className="text-blue-600 hover:underline block">📄 Data Karyawan</a>

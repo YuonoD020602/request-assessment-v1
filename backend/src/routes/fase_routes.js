@@ -7,7 +7,7 @@ const {
   kirimNotifikasiDokumenDiterima, kirimJadwalPsikotes,
   kirimUndanganPresentasi, kirimNotifikasiPilihSlot, kirimLaporan,
   kirimReminderAC, kirimReminderACAssessor, kirimReminderACRoleplayer,
-  kirimReminderACPeserta
+  kirimReminderACPeserta, kirimReminderDokumen
 } = require('../services/emailService');
 
 const delay = (ms) => new Promise(r => setTimeout(r, ms));
@@ -162,6 +162,32 @@ fase3Router.post('/input-mom', authMiddleware, picOnly, async (req, res) => {
 
   await supabase.from('log_aktivitas').insert({ id_request, aktivitas: 'MOM GR Dikirim', detail: 'MOM dikirim ke HC dan Tim Pelaksana' });
   res.json({ success: true, message: 'MOM berhasil dikirim' });
+});
+
+fase3Router.post('/kirim-reminder-dokumen', authMiddleware, picOnly, async (req, res) => {
+  const { id_request } = req.body;
+  if (!id_request) return res.status(400).json({ error: 'ID Request wajib diisi' });
+
+  const { data: request } = await supabase.from('requests').select('*').eq('id_request', id_request).single();
+  if (!request) return res.status(404).json({ error: 'Request tidak ditemukan' });
+
+  const { data: cfgData } = await supabase.from('konfigurasi').select('key, value');
+  const config = Object.fromEntries(cfgData.map(c => [c.key, c.value]));
+
+  await kirimReminderDokumen({
+    namaHC: request.pic_hc,
+    emailHC: request.email_pic_hc,
+    idRequest: id_request,
+    namaPeserta: request.nama_peserta,
+    namaPerusahaan: request.nama_perusahaan,
+    tanggalAC: request.tanggal_ac || null,
+    urlFormDokumen: `${process.env.FRONTEND_URL}/form-dokumen?id=${id_request}`,
+    linkFormDataKaryawan: config.link_form_data_karyawan || null,
+    linkFormStar: config.link_form_star || null,
+  });
+
+  await supabase.from('log_aktivitas').insert({ id_request, aktivitas: 'Reminder Dokumen Dikirim', detail: `Reminder dikirim ke ${request.email_pic_hc}` });
+  res.json({ success: true, message: 'Reminder dokumen berhasil dikirim ke HC' });
 });
 
 // ============================================================

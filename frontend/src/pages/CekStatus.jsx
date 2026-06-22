@@ -445,17 +445,38 @@ export function CekStatus() {
               <div className="bg-white/80 backdrop-blur-sm rounded-3xl border border-white shadow-sm p-5">
                 <div className="flex items-center gap-2 mb-4">
                   <div className="w-8 h-8 bg-amber-100 rounded-xl flex items-center justify-center text-sm">📋</div>
-                  <p className="font-bold text-gray-800 text-sm">Dokumen Anda diperlukan</p>
+                  <p className="font-bold text-gray-800 text-sm">Dokumen yang perlu dikirimkan</p>
                 </div>
-                <a href={`/form-dokumen?id=${result.id_request}`}
-                  className="flex items-center gap-3 p-4 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 rounded-2xl text-emerald-800 text-sm font-bold transition-colors group">
-                  <div className="w-9 h-9 bg-emerald-100 group-hover:bg-emerald-200 rounded-xl flex items-center justify-center text-lg transition-colors">📤</div>
-                  <div>
-                    <p className="font-bold">Upload Dokumen Lanjutan</p>
-                    <p className="text-xs text-emerald-600 font-normal mt-0.5">Link Data Karyawan + Form STAR</p>
-                  </div>
-                  <span className="ml-auto text-emerald-400">→</span>
-                </a>
+                <div className="space-y-2 mb-4">
+                  {[
+                    { label: 'Form Data Karyawan', done: !!result.link_data_karyawan, link: result.link_data_karyawan },
+                    { label: 'Form STAR', done: !!result.link_form_star, link: result.link_form_star },
+                  ].map(({ label, done, link }) => (
+                    <div key={label} className={`flex items-center gap-3 p-3 rounded-2xl border ${done ? 'bg-emerald-50 border-emerald-100' : 'bg-amber-50 border-amber-100'}`}>
+                      <div className={`w-7 h-7 rounded-xl flex items-center justify-center text-sm flex-shrink-0 ${done ? 'bg-emerald-100' : 'bg-amber-100'}`}>
+                        {done ? '✅' : '⏳'}
+                      </div>
+                      <div className="flex-1">
+                        <p className={`text-sm font-bold ${done ? 'text-emerald-700' : 'text-amber-700'}`}>{label}</p>
+                        <p className={`text-xs mt-0.5 ${done ? 'text-emerald-500' : 'text-amber-500'}`}>{done ? 'Sudah diterima' : 'Belum dikirim'}</p>
+                      </div>
+                      {done && link && (
+                        <a href={link} target="_blank" className="text-xs text-blue-600 font-bold hover:underline">Lihat →</a>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {(!result.link_data_karyawan || !result.link_form_star) && (
+                  <a href={`/form-dokumen?id=${result.id_request}`}
+                    className="flex items-center gap-3 p-4 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 rounded-2xl text-emerald-800 text-sm font-bold transition-colors group">
+                    <div className="w-9 h-9 bg-emerald-100 group-hover:bg-emerald-200 rounded-xl flex items-center justify-center text-lg transition-colors">📤</div>
+                    <div>
+                      <p className="font-bold">Upload Dokumen yang Belum Dikirim</p>
+                      <p className="text-xs text-emerald-600 font-normal mt-0.5">Form Data Karyawan + Form STAR</p>
+                    </div>
+                    <span className="ml-auto text-emerald-400">→</span>
+                  </a>
+                )}
               </div>
             )}
 

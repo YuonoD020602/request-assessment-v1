@@ -384,39 +384,53 @@ const kirimEmailMOM = async ({ namaTo, emailTo, idRequest, namaPeserta, momText,
 // ============================================================
 // FASE 4: Reminder Dokumen H-3
 // ============================================================
-const kirimReminderDokumen = async ({ namaHC, emailHC, idRequest, namaPeserta, urlFormDokumen }) => {
+const kirimReminderDokumen = async ({ namaHC, emailHC, idRequest, namaPeserta, namaPerusahaan, tanggalAC, urlFormDokumen, linkFormDataKaryawan, linkFormStar }) => {
+  const greeting = getGreeting();
+  const linkCekStatus = `${process.env.FRONTEND_URL}/cek-status?id=${idRequest}`;
+  const tanggalAcFormatted = tanggalAC ? formatTanggal(tanggalAC) : null;
+
   await sendEmail({
     to: emailHC,
-    subject: `[RACD AIHO] Reminder: Dokumen Belum Diterima – ${idRequest}`,
+    subject: `[RACD AIHO] Pengingat Kelengkapan Dokumen – ${idRequest}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; font-size: 14px; color: #333; line-height: 1.6;">
-        <p>Kepada Yth. Bapak/Ibu ${namaHC}</p>
-        <p>Dokumen untuk <strong>${namaPeserta}</strong> (${idRequest}) <strong>belum kami terima</strong>. AC tinggal <strong>3 hari lagi</strong>.</p>
-        <p><a href="${urlFormDokumen}" style="background:#3b82f6;color:white;padding:10px 24px;text-decoration:none;border-radius:6px;display:inline-block;">Upload Dokumen Sekarang</a></p>
-        <p>Hormat kami,<br/><strong>PIC Asesmen RACD AIHO</strong></p>
+        <p>Kepada Yth.<br/>Bapak/Ibu ${namaHC}</p>
+        <p>${greeting},</p>
+        <p>Sehubungan dengan pelaksanaan <em>Assessment Center</em> untuk peserta <strong>${namaPeserta}</strong>${namaPerusahaan ? ` dari <strong>${namaPerusahaan}</strong>` : ''} (${idRequest})${tanggalAcFormatted ? ` yang direncanakan pada <strong>${tanggalAcFormatted}</strong>` : ''}, kami ingin mengingatkan bahwa <strong>dokumen yang diperlukan belum kami terima</strong> hingga saat ini.</p>
+        <p>Adapun dokumen yang perlu disiapkan dan dikirimkan adalah sebagai berikut:</p>
+        <ol style="padding-left: 20px;">
+          <li><strong>Form Data Karyawan</strong> – diisi oleh peserta${linkFormDataKaryawan ? ` (<a href="${linkFormDataKaryawan}" style="color: #2563eb;">Unduh di sini</a>)` : ''}</li>
+          <li><strong>Form STAR</strong> – diisi oleh peserta${linkFormStar ? ` (<a href="${linkFormStar}" style="color: #2563eb;">Unduh di sini</a>)` : ''}</li>
+        </ol>
+        <p>Mohon untuk segera mengunggah kedua dokumen tersebut melalui tautan berikut agar proses asesmen dapat berjalan sesuai jadwal:</p>
+        <p style="margin: 16px 0;"><a href="${urlFormDokumen}" style="background: #1d4ed8; color: white; padding: 12px 28px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold;">Upload Dokumen Sekarang &rarr;</a></p>
+        <p style="margin-top: 16px; font-size: 13px; color: #555;">Pantau status pengajuan Anda:<br/>
+        <a href="${linkCekStatus}" style="color: #2563eb;">${linkCekStatus}</a></p>
+        <p>Demikian pengingat ini kami sampaikan. Apabila ada pertanyaan, jangan ragu untuk menghubungi kami.</p>
+        <p>Terima kasih atas perhatian dan kerja sama Bapak/Ibu.</p>
       </div>
     `
   });
-  await logEmail(idRequest, emailHC, 'Reminder Dokumen H-3');
+  await logEmail(idRequest, emailHC, 'Reminder Dokumen');
 };
 
 // ============================================================
 // FASE 4: Notifikasi Dokumen Diterima (ke Tim Pelaksana)
 // ============================================================
 const kirimNotifikasiDokumenDiterima = async ({ namaTo, emailTo, idRequest, namaPeserta, linkDokumen, jenisDokumen, linkKeperluan = null }) => {
-  const linkKeperluanHtml = linkKeperluan
-    ? `<p><strong>Link Keperluan Asesmen:</strong> <a href="${linkKeperluan}">${linkKeperluan}</a></p>`
-    : '';
+  const greeting = getGreeting();
   await sendEmail({
     to: emailTo,
     subject: `[RACD AIHO] Dokumen AC Tersedia – ${idRequest}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; font-size: 14px; color: #333; line-height: 1.6;">
-        <p>Kepada Yth. Bapak/Ibu ${namaTo}</p>
-        <p>Dokumen <strong>${jenisDokumen}</strong> untuk <strong>${namaPeserta}</strong> (${idRequest}) tersedia.</p>
-        <p><a href="${linkDokumen}" style="color: #2563eb;">Klik di sini untuk mengakses</a></p>
-        ${linkKeperluanHtml}
-        <p>Hormat kami,<br/><strong>PIC Asesmen RACD AIHO</strong></p>
+        <p>Kepada Yth.<br/>Bapak/Ibu ${namaTo}</p>
+        <p>${greeting},</p>
+        <p>Kami informasikan bahwa dokumen <strong>${jenisDokumen}</strong> untuk peserta <strong>${namaPeserta}</strong> (${idRequest}) telah diterima dan tersedia untuk diakses.</p>
+        <p>Silakan akses dokumen melalui tautan berikut sebagai bahan persiapan pelaksanaan <em>Assessment Center</em>:</p>
+        <p style="margin: 12px 0;"><a href="${linkDokumen}" style="color: #2563eb; font-weight: bold;">${linkDokumen}</a></p>
+        ${linkKeperluan ? `<p><strong>Link Keperluan Asesmen:</strong> <a href="${linkKeperluan}" style="color: #2563eb;">${linkKeperluan}</a></p>` : ''}
+        <p>Demikian informasi ini kami sampaikan. Terima kasih atas perhatian Bapak/Ibu.</p>
       </div>
     `
   });
