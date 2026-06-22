@@ -5,7 +5,8 @@ const { authMiddleware, picOnly } = require('../middleware/auth');
 const {
   kirimEmailUndanganGR, kirimEmailMOM,
   kirimNotifikasiDokumenDiterima, kirimJadwalPsikotes,
-  kirimUndanganPresentasi, kirimNotifikasiPilihSlot, kirimLaporan, kirimReminderAC
+  kirimUndanganPresentasi, kirimNotifikasiPilihSlot, kirimLaporan,
+  kirimReminderAC, kirimReminderACAssessor, kirimReminderACRoleplayer
 } = require('../services/emailService');
 
 const delay = (ms) => new Promise(r => setTimeout(r, ms));
@@ -35,6 +36,28 @@ const getTimPelaksana = (config) => {
   }
 
   return [...assessors, ...admins, ...roleplayers];
+};
+
+// Helper: ambil assessor dari config
+const getAssessors = (config) => {
+  const result = [];
+  let i = 1;
+  while (config[`assessor_${i}_email`]) {
+    result.push({ nama: config[`assessor_${i}_nama`], email: config[`assessor_${i}_email`] });
+    i++;
+  }
+  return result;
+};
+
+// Helper: ambil roleplayer dari config
+const getRoleplayers = (config) => {
+  const result = [];
+  let i = 1;
+  while (config[`roleplayer_${i}_email`]) {
+    result.push({ nama: config[`roleplayer_${i}_nama`], email: config[`roleplayer_${i}_email`] });
+    i++;
+  }
+  return result;
 };
 
 // Helper: ambil semua admin dari config secara dinamis
@@ -67,6 +90,9 @@ fase3Router.post('/jadwal-gr', authMiddleware, picOnly, async (req, res) => {
     status: 'Menunggu GR'
   }).eq('id_request', id_request);
 
+  const { data: cfgData } = await supabase.from('konfigurasi').select('key, value');
+  const config = Object.fromEntries((cfgData || []).map(c => [c.key, c.value]));
+
   const penerima = [
     { nama: request.pic_hc, email: request.email_pic_hc },
     request.email_user ? { nama: request.user_atasan, email: request.email_user } : null
@@ -77,7 +103,8 @@ fase3Router.post('/jadwal-gr', authMiddleware, picOnly, async (req, res) => {
       namaTo: p.nama, emailTo: p.email,
       idRequest: id_request, tanggalGR: tanggal_gr,
       jamGR: jam_gr, lokasiGR: lokasi_gr,
-      namaPeserta: request.nama_peserta
+      namaPeserta: request.nama_peserta,
+      periodeAC: config.periode_ac || ''
     });
     await delay(400);
   }
@@ -104,12 +131,28 @@ fase3Router.post('/input-mom', authMiddleware, picOnly, async (req, res) => {
   const { data: cfgData } = await supabase.from('konfigurasi').select('key, value');
   const config = Object.fromEntries(cfgData.map(c => [c.key, c.value]));
 
-  await kirimEmailMOM({ namaTo: request.pic_hc, emailTo: request.email_pic_hc, idRequest: id_request, namaPeserta: request.nama_peserta, momText: mom_gr, isTimPelaksana: false });
+  await kirimEmailMOM({
+    namaTo: request.pic_hc, emailTo: request.email_pic_hc,
+    idRequest: id_request, namaPeserta: request.nama_peserta,
+    momText: mom_gr, namaPerusahaan: request.nama_perusahaan,
+    kompetensiALC: kompetensi_alc || request.kompetensi_alc || null,
+    tanggalOnlineTest: tanggal_online_test_peserta || request.tanggal_online_test_peserta || null,
+    jamOnlineTest: jam_online_test_peserta || request.jam_online_test_peserta || null,
+    tanggalAC: config.tanggal_pelaksanaan_ac || request.tanggal_ac || null,
+    lokasiAC: request.lokasi_ac || null,
+    linkFormStar: config.link_form_star || null,
+    isTimPelaksana: false
+  });
   await delay(400);
 
   const tim = getTimPelaksana(config);
   for (const t of tim) {
-    await kirimEmailMOM({ namaTo: t.nama, emailTo: t.email, idRequest: id_request, namaPeserta: request.nama_peserta, momText: mom_gr, isTimPelaksana: true, linkKeperluan: config.link_keperluan_asesmen || null });
+    await kirimEmailMOM({
+      namaTo: t.nama, emailTo: t.email,
+      idRequest: id_request, namaPeserta: request.nama_peserta,
+      momText: mom_gr, isTimPelaksana: true,
+      linkKeperluan: config.link_keperluan_asesmen || null
+    });
     await delay(400);
   }
 
@@ -225,14 +268,15 @@ fase4Router.post('/jadwal-ac', authMiddleware, picOnly, async (req, res) => {
     status: 'AC Dijadwalkan'
   }).eq('id_request', id_request);
 
-  // Kirim notifikasi jadwal AC ke HC, User/Atasan, dan seluruh tim pelaksana
-  const tim = getTimPelaksana(config);
+  const lokasiLengkap = ruangan_ac
+    ? `${ruangan_ac}, ${lokasi_ac}`
+    : lokasi_ac;
+
+  // Kirim ke HC dan User/Atasan
   const penerimaHC = [
     { nama: request.pic_hc, email: request.email_pic_hc },
     request.email_user ? { nama: request.user_atasan, email: request.email_user } : null
   ].filter(Boolean);
-  const lokasiLengkap = `${lokasi_ac} pukul ${jam_ac} WIB`;
-
   for (const p of penerimaHC) {
     await kirimReminderAC({
       namaTo: p.nama, emailTo: p.email,
@@ -242,9 +286,35 @@ fase4Router.post('/jadwal-ac', authMiddleware, picOnly, async (req, res) => {
     });
     await delay(400);
   }
-  for (const t of tim) {
+
+  // Kirim ke Assessor (template assessor)
+  const assessors = getAssessors(config);
+  for (const a of assessors) {
+    await kirimReminderACAssessor({
+      namaTo: a.nama, emailTo: a.email,
+      idRequest: id_request, namaPeserta: request.nama_peserta,
+      tanggalAC: tanggal_ac, ruanganAC: ruangan_ac || null, lokasiAC: lokasi_ac
+    });
+    await delay(400);
+  }
+
+  // Kirim ke Roleplayer (template roleplayer dengan tabel penugasan)
+  const roleplayers = getRoleplayers(config);
+  for (const r of roleplayers) {
+    await kirimReminderACRoleplayer({
+      namaTo: r.nama, emailTo: r.email,
+      idRequest: id_request, namaPeserta: request.nama_peserta,
+      tanggalAC: tanggal_ac, jamAC: jam_ac,
+      penugasanTim: penugasan_tim || []
+    });
+    await delay(400);
+  }
+
+  // Kirim ke Admin AC
+  const admins = getAdmins(config);
+  for (const a of admins) {
     await kirimReminderAC({
-      namaTo: t.nama, emailTo: t.email,
+      namaTo: a.nama, emailTo: a.email,
       idRequest: id_request, namaPeserta: request.nama_peserta,
       tanggalAC: tanggal_ac, lokasiAC: lokasiLengkap,
       isHariH: false, attachCalendar: true, isRevisi: isRevisiAC,
@@ -286,6 +356,7 @@ fase6Router.post('/jadwal-presentasi', authMiddleware, picOnly, async (req, res)
     await kirimUndanganPresentasi({
       namaTo: p.nama, emailTo: p.email,
       idRequest: id_request, namaPeserta: request.nama_peserta,
+      namaPerusahaan: request.nama_perusahaan,
       tanggal: tanggal_presentasi, jam: jam_presentasi, lokasi: lokasi_presentasi
     });
     await delay(400);

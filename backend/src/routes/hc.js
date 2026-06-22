@@ -67,7 +67,16 @@ router.post('/kirim-pembukaan', authMiddleware, picOnly, async (req, res) => {
           ? new Date(config.tanggal_tutup).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
           : '-',
         kuota: config.kuota_maks || '8',
-        linkFormPengajuan: config.link_form_pengajuan || null
+        linkFormPengajuan: config.link_form_pengajuan || null,
+        jadwalBatch: {
+          tanggal_buka: config.tanggal_buka || null,
+          tanggal_tutup: config.tanggal_tutup || null,
+          tanggal_gr: config.tanggal_gr || null,
+          tanggal_pengisian_form: config.tanggal_pengisian_form || null,
+          tanggal_online_test: config.tanggal_online_test || null,
+          tanggal_pelaksanaan_ac: config.tanggal_pelaksanaan_ac || null,
+          tanggal_pemaparan: config.tanggal_pemaparan || null,
+        }
       });
       berhasil++;
     } catch (e) {
