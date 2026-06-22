@@ -6,7 +6,7 @@ export function FormDokumen() {
   const [searchParams] = useSearchParams();
   const idRequest = searchParams.get('id');
 
-  const [form, setForm] = useState({ link_form_potrev: '', link_data_karyawan: '', link_form_star: '' });
+  const [form, setForm] = useState({ link_data_karyawan: '', link_form_star: '' });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -68,11 +68,6 @@ export function FormDokumen() {
               <p className="font-medium">ID Request: <span className="font-mono">{idRequest}</span></p>
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="form-label">Link Google Drive – Form Potential Review *</label>
-                <input className="form-input" placeholder="https://drive.google.com/..." required
-                  value={form.link_form_potrev} onChange={e => setForm({...form, link_form_potrev: e.target.value})} />
-              </div>
               <div>
                 <label className="form-label">Link Google Drive – Data Karyawan *</label>
                 <input className="form-input" placeholder="https://drive.google.com/..." required

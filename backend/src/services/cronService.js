@@ -2,25 +2,28 @@ const supabase = require('../supabase');
 const {
   kirimReminderDokumen,
   kirimReminderAC,
+  kirimReminderACPeserta,
+  kirimReminderACAssessor,
+  kirimReminderACRoleplayer,
   kirimJadwalPsikotes
 } = require('./emailService');
 
-const getTimPelaksana = (config) => {
+const getAssessors = (config) => {
   const result = [];
   let i = 1;
   while (config[`assessor_${i}_email`]) {
     result.push({ nama: config[`assessor_${i}_nama`], email: config[`assessor_${i}_email`] });
     i++;
   }
-  let j = 1;
-  while (config[`admin_ac_${j}_email`]) {
-    result.push({ nama: config[`admin_ac_${j}_nama`], email: config[`admin_ac_${j}_email`] });
-    j++;
-  }
-  let k = 1;
-  while (config[`roleplayer_${k}_email`]) {
-    result.push({ nama: config[`roleplayer_${k}_nama`], email: config[`roleplayer_${k}_email`] });
-    k++;
+  return result;
+};
+
+const getRoleplayers = (config) => {
+  const result = [];
+  let i = 1;
+  while (config[`roleplayer_${i}_email`]) {
+    result.push({ nama: config[`roleplayer_${i}_nama`], email: config[`roleplayer_${i}_email`] });
+    i++;
   }
   return result;
 };
@@ -33,6 +36,10 @@ const getAdmins = (config) => {
     i++;
   }
   return admins;
+};
+
+const getTimPelaksana = (config) => {
+  return [...getAssessors(config), ...getAdmins(config), ...getRoleplayers(config)];
 };
 
 const runDailyReminders = async () => {
@@ -132,25 +139,50 @@ const runDailyReminders = async () => {
       const { data: cfg } = await supabase.from('konfigurasi').select('key, value');
       const config = Object.fromEntries(cfg.map(c => [c.key, c.value]));
 
-      const penerima = [
-        { nama: req.pic_hc, email: req.email_pic_hc },
-        req.email_user ? { nama: req.user_atasan, email: req.email_user } : null,
-        ...getTimPelaksana(config)
-      ].filter(Boolean);
+      // H-1 ke HC (template peserta — untuk diteruskan)
+      await kirimReminderACPeserta({
+        namaHC: req.pic_hc, emailHC: req.email_pic_hc,
+        idRequest: req.id_request, namaPeserta: req.nama_peserta,
+        tanggalAC: req.tanggal_ac, ruanganAC: req.ruangan_ac || null,
+        lokasiAC: req.lokasi_ac
+      });
 
-      for (const p of penerima) {
-        if (p.email) {
+      // H-1 ke Assessor
+      for (const a of getAssessors(config)) {
+        if (a.email) {
+          await kirimReminderACAssessor({
+            namaTo: a.nama, emailTo: a.email,
+            idRequest: req.id_request, namaPeserta: req.nama_peserta,
+            tanggalAC: req.tanggal_ac, ruanganAC: req.ruangan_ac || null,
+            lokasiAC: req.lokasi_ac
+          });
+        }
+      }
+
+      // H-1 ke Roleplayer (dengan tabel penugasan)
+      for (const r of getRoleplayers(config)) {
+        if (r.email) {
+          await kirimReminderACRoleplayer({
+            namaTo: r.nama, emailTo: r.email,
+            idRequest: req.id_request, namaPeserta: req.nama_peserta,
+            tanggalAC: req.tanggal_ac, jamAC: req.jam_ac,
+            penugasanTim: req.penugasan_tim || []
+          });
+        }
+      }
+
+      // H-1 ke Admin AC
+      for (const a of getAdmins(config)) {
+        if (a.email) {
           await kirimReminderAC({
-            namaTo: p.nama,
-            emailTo: p.email,
-            idRequest: req.id_request,
-            namaPeserta: req.nama_peserta,
-            tanggalAC: req.tanggal_ac,
-            lokasiAC: req.lokasi_ac,
+            namaTo: a.nama, emailTo: a.email,
+            idRequest: req.id_request, namaPeserta: req.nama_peserta,
+            tanggalAC: req.tanggal_ac, lokasiAC: req.lokasi_ac,
             isHariH: false
           });
         }
       }
+
       console.log(`[CRON] Reminder AC H-1 untuk ${req.id_request}`);
     }
 
