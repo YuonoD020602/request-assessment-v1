@@ -444,6 +444,43 @@ Peningkatan tampilan visual menyeluruh tanpa mengubah fungsi sistem. Seluruh hal
 
 ---
 
+### ✅ 26. Update Template Email Sesuai PDF Resmi + Field Baru
+**Deskripsi:** Menyesuaikan seluruh template email dengan dokumen PDF template resmi (7 template). Menambahkan field baru di web dan database untuk mendukung data yang dibutuhkan template.
+
+**Tahap 1 — Field Baru di Web + DB Migration:**
+- Konfigurasi: field `link_form_star`, `link_form_data_karyawan` di section URL & Link
+- DetailRequest (Fase 3 MOM): field `kompetensi_alc`, `tanggal_online_test_peserta`, `jam_online_test_peserta`
+- DetailRequest (Fase 4 AC): field `ruangan_ac`, tabel dinamis `penugasan_tim` (roleplayer-assessor-ruangan)
+- SQL migration: kolom baru di tabel `requests` (`kompetensi_alc`, `tanggal_online_test_peserta`, `jam_online_test_peserta`, `ruangan_ac`, `penugasan_tim` JSONB)
+
+**Tahap 2 — Rewrite Semua Template Email:**
+- `kirimEmailPembukaan`: tabel jadwal rencana 6 tahap (text-based rentang waktu)
+- `kirimEmailMOM`: tabel peserta lengkap (kompetensi ALC, online test, jadwal AC), 6 poin informasi, link form STAR + form data karyawan
+- `kirimJadwalAC` → split jadi 3 fungsi role-specific: assessor, roleplayer (+ tabel penugasan), admin
+- `kirimReminderAC` → split jadi 3: `kirimReminderACPeserta`, `kirimReminderACAssessor`, `kirimReminderACRoleplayer`
+- `kirimUndanganPresentasi`: tambah nama perusahaan
+- Helper baru: `getGreeting()`, `formatTanggal()`, style constants (`TABLE_STYLE`, `TH_STYLE`, `TD_STYLE`)
+- Cron service updated: H-1 reminder kirim email role-specific
+
+**Tahap 3 — Refactor Jadwal Batch + UI Fix:**
+- Jadwal batch dipindah dari Konfigurasi ke DaftarHC (form muncul saat kirim email pembukaan)
+- Form jadwal rencana langsung tampil (tidak hidden behind button)
+- Field `link_form_data_karyawan` ditambahkan terpisah dari `link_form_star`
+- Backend hc.js: baca `jadwal_batch` dari request body (bukan config)
+
+**File:**
+- `backend/src/services/emailService.js` (rewrite total)
+- `backend/src/services/cronService.js` (update reminder)
+- `backend/src/routes/fase_routes.js` (field baru + role-specific email)
+- `backend/src/routes/hc.js` (jadwal_batch dari body)
+- `frontend/src/pages/Konfigurasi.jsx` (link form data karyawan)
+- `frontend/src/pages/DaftarHC.jsx` (jadwal rencana form)
+- `frontend/src/pages/DetailRequest.jsx` (field baru MOM + AC)
+
+**Selesai:** Batch 12
+
+---
+
 ### 📋 24. Export PDF Laporan per Periode
 **Deskripsi:** Export data request per periode menjadi PDF laporan yang rapi (header logo, tabel, summary).  
 **Status:** Backlog  
