@@ -1,6 +1,6 @@
 # CATATAN REVISI — Request Assessment V1
 **Project:** RACD AIHO – PT Astra International  
-**Terakhir diperbarui:** 20 Juni 2026 (Batch 11)
+**Terakhir diperbarui:** 22 Juni 2026 (Batch 13)
 
 ---
 
@@ -34,6 +34,13 @@
 | 22 | Slot Presentasi: Hapus cascade (reset request) + tombol Bebaskan slot | ✅ Selesai | Batch 10 |
 | 23 | HC pilih slot presentasi via Cek Status + email notifikasi pilih jadwal di Fase 6 | ✅ Selesai | Batch 10 |
 | 25 | Visual overhaul menyeluruh — sidebar, dashboard, semua halaman admin, form, cek status, pilih slot | ✅ Selesai | Batch 11 |
+| 26 | Update template email sesuai PDF resmi + field baru (MOM, AC, jadwal batch) | ✅ Selesai | Batch 12 |
+| 27 | DaftarHC: jadwal form persist setelah kirim + simpan ke localStorage | ✅ Selesai | Batch 13 |
+| 28 | Hapus field redundant online test di MOM (psikotes = online test) | ✅ Selesai | Batch 13 |
+| 29 | Reminder Dokumen Manual: tombol di Fase 4 + email formal + route baru | ✅ Selesai | Batch 13 |
+| 30 | Cek Status: checklist dua dokumen (Form Data Karyawan + Form STAR) | ✅ Selesai | Batch 13 |
+| 31 | Fase 6: tombol Reminder Booking Jadwal selalu terlihat | ✅ Selesai | Batch 13 |
+| 32 | Format email formal: kirimReminderDokumen + kirimNotifikasiDokumenDiterima | ✅ Selesai | Batch 13 |
 | 24 | Export PDF laporan per periode | 📋 Backlog | - |
 
 ---
@@ -481,6 +488,91 @@ Peningkatan tampilan visual menyeluruh tanpa mengubah fungsi sistem. Seluruh hal
 
 ---
 
+---
+
+### ✅ 27–32. Perbaikan & Fitur Baru (Batch 13)
+**Tanggal:** 22 Juni 2026
+
+#### 27. DaftarHC: Jadwal Form Persists + Simpan ke localStorage
+
+**Masalah:** Setelah klik "Kirim ke X HC", form jadwal auto-hilang dan data terhapus. PIC harus isi ulang jika ingin lihat atau kirim lagi.
+
+**Solusi:**
+- Hapus `setShowJadwalForm(false)` dari `handleKirimPembukaan` — form tetap terbuka setelah kirim
+- State `jadwalBatch` diinisialisasi dari `localStorage` saat pertama render
+- Tombol **Simpan** (hijau) → simpan data ke `localStorage` (persist walau refresh/close browser)
+- Tombol **Reset/Hapus Data** (merah) → clear semua field + hapus dari localStorage
+- Tombol "Batal" / "Tutup" dihapus sepenuhnya
+
+**File:** `frontend/src/pages/DaftarHC.jsx`
+
+---
+
+#### 28. Hapus Field Redundant Online Test di MOM
+
+**Masalah:** Form MOM memiliki field "Tanggal Online Test Peserta" dan "Jam Online Test Peserta" yang identik dengan Psikotes, menyebabkan kebingungan dan data ganda.
+
+**Solusi:**
+- Hapus `tanggal_online_test_peserta` dan `jam_online_test_peserta` dari state `momForm`, form UI, dan backend
+- Data psikotes (`tanggal_psikotes`, `jam_psikotes`) sekarang melayani double duty: dipakai untuk kolom "Online Test" di tabel MOM email
+- Backend `kirimEmailMOM` meneruskan: `tanggalOnlineTest: tanggal_psikotes`
+
+**File:** `frontend/src/pages/DetailRequest.jsx`, `backend/src/routes/fase_routes.js`
+
+---
+
+#### 29. Reminder Dokumen Manual (Tombol + Email Formal + Route)
+
+**Latar belakang:** HC terkadang lupa mengirim dokumen meski sudah cek status. PIC perlu cara untuk mengingatkan tanpa menunggu cron otomatis.
+
+**Fitur baru:**
+- Tab Fase 4 DetailRequest: tombol **"Kirim Reminder Dokumen ke HC"** (amber) muncul selama `status_dokumen !== 'Dokumen Diterima'` dan MOM sudah dikirim
+- Klik tombol → email formal dikirim ke HC berisi: salam resmi, konteks AC, daftar 2 dokumen bernomor dengan link unduh, tombol upload, link cek status, penutup formal
+- Email subject: `[RACD AIHO] Pengingat Kelengkapan Dokumen – {id_request}`
+- Endpoint baru: `POST /api/fase3/kirim-reminder-dokumen`
+
+**File:** `frontend/src/pages/DetailRequest.jsx`, `backend/src/routes/fase_routes.js`, `backend/src/services/emailService.js`
+
+---
+
+#### 30. Cek Status: Checklist Dua Dokumen
+
+**Fitur baru:** Saat status `GR Selesai - Menunggu Dokumen` atau `Menunggu GR`, halaman Cek Status menampilkan checklist visual dua dokumen:
+- **Form Data Karyawan** — ✅ Sudah diterima / ⏳ Belum dikirim
+- **Form STAR** — ✅ Sudah diterima / ⏳ Belum dikirim
+- Tombol Upload hanya muncul jika masih ada dokumen yang belum dikirim
+
+Checklist juga ditambahkan di tab Fase 4 DetailRequest (sisi PIC).
+
+**File:** `frontend/src/pages/CekStatus.jsx`, `frontend/src/pages/DetailRequest.jsx`
+
+---
+
+#### 31. Fase 6: Tombol Reminder Booking Jadwal Selalu Terlihat
+
+**Masalah:** Tombol "Kirim Reminder Booking Jadwal" tersembunyi karena berada di dalam conditional `tanggal_presentasi` — tidak muncul setelah HC memilih slot.
+
+**Solusi:** Pindahkan tombol ke luar conditional sehingga selalu terlihat di Fase 6, terlepas dari apakah HC sudah memilih slot atau belum.
+
+**File:** `frontend/src/pages/DetailRequest.jsx`
+
+---
+
+#### 32. Format Email Formal
+
+**Masalah:** Dua fungsi email masih menggunakan format informal/minimal: `kirimReminderDokumen` dan `kirimNotifikasiDokumenDiterima`.
+
+**Solusi:** Keduanya diperbarui mengikuti struktur formal yang sama dengan email-email lain (`kirimEmailPembukaan`, `kirimEmailMOM`):
+- Salam: `Kepada Yth. Bapak/Ibu [nama]`
+- Pembuka: `${getGreeting()},`
+- Isi terstruktur dengan paragraf + list bernomor (jika relevan)
+- Penutup: `Demikian ... Terima kasih atas perhatian dan kerja sama Bapak/Ibu.`
+- Link cek status disertakan di reminder dokumen
+
+**File:** `backend/src/services/emailService.js`
+
+---
+
 ### 📋 24. Export PDF Laporan per Periode
 **Deskripsi:** Export data request per periode menjadi PDF laporan yang rapi (header logo, tabel, summary).  
 **Status:** Backlog  
@@ -507,7 +599,7 @@ Peningkatan tampilan visual menyeluruh tanpa mengubah fungsi sistem. Seluruh hal
 - **Backend:** Node.js + Express → Railway
 - **Database:** Supabase (PostgreSQL)
 - **Email:** Resend (domain: lyraac.site, verified)
-- **Branch kerja:** `claude/gifted-knuth-epwary` → merge ke `main`
+- **Branch kerja:** langsung ke `main`
 
 ### Email
 - Delay ke Outlook/non-Gmail: normal untuk domain baru (domain warming)
