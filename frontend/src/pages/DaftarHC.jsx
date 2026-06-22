@@ -14,10 +14,19 @@ export function DaftarHC() {
   const [logPembukaan, setLogPembukaan] = useState([]);
   const [showLog, setShowLog] = useState(false);
   const [showJadwalForm, setShowJadwalForm] = useState(true);
-  const [jadwalBatch, setJadwalBatch] = useState({
-    pendaftaran: '', getting_requirement: '', pengisian_form: '',
-    online_test: '', pelaksanaan_ac: '', pemaparan: ''
+  const JADWAL_KEY = 'jadwalBatch_pembukaan';
+  const [jadwalBatch, setJadwalBatch] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(JADWAL_KEY)) || { pendaftaran: '', getting_requirement: '', pengisian_form: '', online_test: '', pelaksanaan_ac: '', pemaparan: '' }; }
+    catch { return { pendaftaran: '', getting_requirement: '', pengisian_form: '', online_test: '', pelaksanaan_ac: '', pemaparan: '' }; }
   });
+  const [jadwalSaved, setJadwalSaved] = useState(false);
+
+  const handleSimpanJadwal = () => {
+    localStorage.setItem(JADWAL_KEY, JSON.stringify(jadwalBatch));
+    setJadwalSaved(true);
+    toast.success('Jadwal tersimpan');
+    setTimeout(() => setJadwalSaved(false), 2000);
+  };
 
   useEffect(() => { fetchHC(); fetchLog(); }, []);
 
@@ -158,7 +167,11 @@ export function DaftarHC() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                   {sending ? 'Mengirim...' : `Kirim ke ${hcList.length} HC`}
                 </button>
-                <button onClick={() => setJadwalBatch({ pendaftaran: '', getting_requirement: '', pengisian_form: '', online_test: '', pelaksanaan_ac: '', pemaparan: '' })} className="text-sm text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-5 py-2.5 rounded-xl font-medium transition-colors">
+                <button onClick={handleSimpanJadwal} className={`flex items-center gap-2 text-sm font-bold px-5 py-2.5 rounded-xl transition-colors ${jadwalSaved ? 'bg-emerald-100 text-emerald-700' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}`}>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                  {jadwalSaved ? 'Tersimpan!' : 'Simpan'}
+                </button>
+                <button onClick={() => { const empty = { pendaftaran: '', getting_requirement: '', pengisian_form: '', online_test: '', pelaksanaan_ac: '', pemaparan: '' }; setJadwalBatch(empty); localStorage.removeItem(JADWAL_KEY); }} className="text-sm text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-5 py-2.5 rounded-xl font-medium transition-colors">
                   Reset/Hapus Data
                 </button>
                 <button onClick={() => setShowJadwalForm(false)} className="text-sm text-gray-500 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 px-5 py-2.5 rounded-xl font-medium transition-colors">
