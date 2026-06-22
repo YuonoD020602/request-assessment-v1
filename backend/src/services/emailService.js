@@ -287,7 +287,7 @@ const kirimEmailUndanganGR = async ({ namaTo, emailTo, idRequest, tanggalGR, jam
 // ============================================================
 // FASE 3: Email MOM GR ke PIC HC
 // ============================================================
-const kirimEmailMOM = async ({ namaTo, emailTo, idRequest, namaPeserta, momText, namaPerusahaan, kompetensiALC, tanggalOnlineTest, jamOnlineTest, tanggalAC, lokasiAC, linkFormStar, isTimPelaksana = false, linkKeperluan = null }) => {
+const kirimEmailMOM = async ({ namaTo, emailTo, idRequest, namaPeserta, momText, namaPerusahaan, kompetensiALC, tanggalOnlineTest, jamOnlineTest, tanggalAC, lokasiAC, linkFormStar, linkFormDataKaryawan, isTimPelaksana = false, linkKeperluan = null }) => {
   if (isTimPelaksana) {
     const linkKeperluanHtml = linkKeperluan
       ? `<p><strong>Link Keperluan Asesmen:</strong> <a href="${linkKeperluan}">${linkKeperluan}</a></p>`
@@ -359,6 +359,7 @@ const kirimEmailMOM = async ({ namaTo, emailTo, idRequest, namaPeserta, momText,
           <li>Presentasi hasil Assessment Center akan dipresentasikan H+2 minggu pelaksanaan, tanggal akan disepakati kemudian.</li>
         </ol>
 
+        ${linkFormDataKaryawan ? `<p>Link Form Data Karyawan: <a href="${linkFormDataKaryawan}" style="color: #2563eb;">${linkFormDataKaryawan}</a></p>` : ''}
         ${linkFormStar ? `<p>Link Form STAR: <a href="${linkFormStar}" style="color: #2563eb;">${linkFormStar}</a></p>` : ''}
 
         <p>Demikian informasi ini saya sampaikan.</p>

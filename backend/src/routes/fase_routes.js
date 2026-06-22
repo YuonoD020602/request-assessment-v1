@@ -141,6 +141,7 @@ fase3Router.post('/input-mom', authMiddleware, picOnly, async (req, res) => {
     tanggalAC: config.tanggal_pelaksanaan_ac || request.tanggal_ac || null,
     lokasiAC: request.lokasi_ac || null,
     linkFormStar: config.link_form_star || null,
+    linkFormDataKaryawan: config.link_form_data_karyawan || null,
     isTimPelaksana: false
   });
   await delay(400);

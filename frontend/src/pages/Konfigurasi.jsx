@@ -44,6 +44,7 @@ const CONFIG_GROUPS_STATIC = [
       { key: 'link_keperluan_asesmen', label: 'Link Keperluan Asesmen (dikirim ke Tim Pelaksana)', type: 'url', full: true },
       { key: 'link_form_pengajuan', label: 'Link Template Form Pengajuan Potential Review & Profiling', type: 'url', full: true },
       { key: 'link_form_star', label: 'Link Form STAR (dikirim ke HC & Peserta via MoM)', type: 'url', full: true },
+      { key: 'link_form_data_karyawan', label: 'Link Form Data Karyawan (dikirim ke HC & Peserta via MoM)', type: 'url', full: true },
     ]
   }
 ];

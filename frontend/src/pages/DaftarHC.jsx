@@ -13,7 +13,7 @@ export function DaftarHC() {
   const [hasilPengiriman, setHasilPengiriman] = useState(null);
   const [logPembukaan, setLogPembukaan] = useState([]);
   const [showLog, setShowLog] = useState(false);
-  const [showJadwalForm, setShowJadwalForm] = useState(false);
+  const [showJadwalForm, setShowJadwalForm] = useState(true);
   const [jadwalBatch, setJadwalBatch] = useState({
     pendaftaran: '', getting_requirement: '', pengisian_form: '',
     online_test: '', pelaksanaan_ac: '', pemaparan: ''
@@ -54,10 +54,6 @@ export function DaftarHC() {
       toast.success('HC dihapus');
       fetchHC();
     } catch { toast.error('Gagal hapus'); }
-  };
-
-  const handleBukaJadwalForm = () => {
-    setShowJadwalForm(true);
   };
 
   const handleKirimPembukaan = async () => {
@@ -105,7 +101,7 @@ export function DaftarHC() {
               </p>
             </div>
             <div className="flex gap-3">
-              <button onClick={handleBukaJadwalForm} disabled={sending || hcList.length === 0}
+              <button onClick={() => setShowJadwalForm(!showJadwalForm)} disabled={sending || hcList.length === 0}
                 className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white text-sm font-semibold px-4 py-2.5 rounded-xl border border-white/20 transition-all disabled:opacity-50">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                 {sending ? 'Mengirim...' : 'Kirim Email Pembukaan'}
