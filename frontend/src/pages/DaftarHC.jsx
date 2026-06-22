@@ -64,7 +64,6 @@ export function DaftarHC() {
       const res = await api.post('/api/hc/kirim-pembukaan', { jadwal_batch: jadwalBatch });
       const { berhasil, gagal, total, gagalList } = res.data;
       setHasilPengiriman({ berhasil, gagal, total, gagalList });
-      setShowJadwalForm(false);
       fetchLog();
       if (gagal === 0) {
         toast.success(`Email berhasil dikirim ke semua ${berhasil} HC`);
@@ -159,8 +158,11 @@ export function DaftarHC() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                   {sending ? 'Mengirim...' : `Kirim ke ${hcList.length} HC`}
                 </button>
+                <button onClick={() => setJadwalBatch({ pendaftaran: '', getting_requirement: '', pengisian_form: '', online_test: '', pelaksanaan_ac: '', pemaparan: '' })} className="text-sm text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-5 py-2.5 rounded-xl font-medium transition-colors">
+                  Reset/Hapus Data
+                </button>
                 <button onClick={() => setShowJadwalForm(false)} className="text-sm text-gray-500 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 px-5 py-2.5 rounded-xl font-medium transition-colors">
-                  Batal
+                  Tutup
                 </button>
               </div>
             </div>
