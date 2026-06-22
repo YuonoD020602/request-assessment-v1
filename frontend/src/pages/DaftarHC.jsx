@@ -13,6 +13,11 @@ export function DaftarHC() {
   const [hasilPengiriman, setHasilPengiriman] = useState(null);
   const [logPembukaan, setLogPembukaan] = useState([]);
   const [showLog, setShowLog] = useState(false);
+  const [showJadwalForm, setShowJadwalForm] = useState(false);
+  const [jadwalBatch, setJadwalBatch] = useState({
+    pendaftaran: '', getting_requirement: '', pengisian_form: '',
+    online_test: '', pelaksanaan_ac: '', pemaparan: ''
+  });
 
   useEffect(() => { fetchHC(); fetchLog(); }, []);
 
@@ -51,14 +56,19 @@ export function DaftarHC() {
     } catch { toast.error('Gagal hapus'); }
   };
 
+  const handleBukaJadwalForm = () => {
+    setShowJadwalForm(true);
+  };
+
   const handleKirimPembukaan = async () => {
     if (!confirm(`Kirim email pembukaan layanan ke ${hcList.length} HC?`)) return;
     setSending(true);
     setHasilPengiriman(null);
     try {
-      const res = await api.post('/api/hc/kirim-pembukaan');
+      const res = await api.post('/api/hc/kirim-pembukaan', { jadwal_batch: jadwalBatch });
       const { berhasil, gagal, total, gagalList } = res.data;
       setHasilPengiriman({ berhasil, gagal, total, gagalList });
+      setShowJadwalForm(false);
       fetchLog();
       if (gagal === 0) {
         toast.success(`Email berhasil dikirim ke semua ${berhasil} HC`);
@@ -95,7 +105,7 @@ export function DaftarHC() {
               </p>
             </div>
             <div className="flex gap-3">
-              <button onClick={handleKirimPembukaan} disabled={sending || hcList.length === 0}
+              <button onClick={handleBukaJadwalForm} disabled={sending || hcList.length === 0}
                 className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white text-sm font-semibold px-4 py-2.5 rounded-xl border border-white/20 transition-all disabled:opacity-50">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                 {sending ? 'Mengirim...' : 'Kirim Email Pembukaan'}
@@ -108,6 +118,58 @@ export function DaftarHC() {
             </div>
           </div>
         </div>
+
+        {/* Form Jadwal Rencana untuk Email Pembukaan */}
+        {showJadwalForm && (
+          <div className="bg-white rounded-2xl border border-blue-100 shadow-sm overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-50 bg-gradient-to-r from-blue-50 to-indigo-50">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-gray-800">Jadwal Rencana Pelaksanaan</p>
+                  <p className="text-xs text-gray-400">Isi rentang waktu yang akan ditampilkan di email pembukaan</p>
+                </div>
+              </div>
+              <button onClick={() => setShowJadwalForm(false)} className="text-gray-400 hover:text-gray-600 p-1">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { key: 'pendaftaran', label: 'Pendaftaran Potential Review & Profiling' },
+                  { key: 'getting_requirement', label: 'Pelaksanaan Getting Requirement' },
+                  { key: 'pengisian_form', label: 'Pengisian Form Data Karyawan dan Form STAR' },
+                  { key: 'online_test', label: 'Pelaksanaan Online Test Ignite-Spark' },
+                  { key: 'pelaksanaan_ac', label: 'Pelaksanaan Assessment Center' },
+                  { key: 'pemaparan', label: 'Pemaparan Hasil Assessment Center' },
+                ].map(item => (
+                  <div key={item.key}>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">{item.label}</label>
+                    <input className="form-input text-sm" placeholder="contoh: 1 - 15 Juli 2026"
+                      value={jadwalBatch[item.key]}
+                      onChange={e => setJadwalBatch({...jadwalBatch, [item.key]: e.target.value})} />
+                  </div>
+                ))}
+              </div>
+              <div className="p-3 bg-blue-50 rounded-xl text-xs text-blue-700">
+                <strong>Info:</strong> Field ini bersifat teks bebas (bukan date picker) agar bisa diisi rentang waktu seperti "1 - 15 Juli 2026". Jadwal ini hanya digunakan untuk tabel di email pembukaan.
+              </div>
+              <div className="flex gap-2">
+                <button onClick={handleKirimPembukaan} disabled={sending}
+                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-colors shadow-sm disabled:opacity-60">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                  {sending ? 'Mengirim...' : `Kirim ke ${hcList.length} HC`}
+                </button>
+                <button onClick={() => setShowJadwalForm(false)} className="text-sm text-gray-500 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 px-5 py-2.5 rounded-xl font-medium transition-colors">
+                  Batal
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Hasil Pengiriman Alert */}
         {hasilPengiriman && (

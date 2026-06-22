@@ -110,12 +110,12 @@ const kirimEmailPembukaan = async ({ namaHC, emailHC, periodeAC, tenggat, kuota,
   const greeting = getGreeting();
 
   const jadwalRows = [
-    ['Pendaftaran Potential Review &amp; Profiling', jadwalBatch.tanggal_buka ? formatTanggal(jadwalBatch.tanggal_buka) + (jadwalBatch.tanggal_tutup ? ` s/d ${formatTanggal(jadwalBatch.tanggal_tutup)}` : '') : tenggat || '-'],
-    ['Pelaksanaan Getting Requirement', jadwalBatch.tanggal_gr ? formatTanggal(jadwalBatch.tanggal_gr) : '-'],
-    ['Pengisian Form Data Karyawan dan Form STAR', jadwalBatch.tanggal_pengisian_form ? formatTanggal(jadwalBatch.tanggal_pengisian_form) : '-'],
-    ['Pelaksanaan Online Test Ignite-Spark', jadwalBatch.tanggal_online_test ? formatTanggal(jadwalBatch.tanggal_online_test) : '-'],
-    ['Pelaksanaan Assessment Center', jadwalBatch.tanggal_pelaksanaan_ac ? formatTanggal(jadwalBatch.tanggal_pelaksanaan_ac) : '-'],
-    ['Pemaparan Hasil Assessment Center', jadwalBatch.tanggal_pemaparan ? formatTanggal(jadwalBatch.tanggal_pemaparan) : '-'],
+    ['Pendaftaran Potential Review &amp; Profiling', jadwalBatch.pendaftaran || tenggat || '-'],
+    ['Pelaksanaan Getting Requirement', jadwalBatch.getting_requirement || '-'],
+    ['Pengisian Form Data Karyawan dan Form STAR', jadwalBatch.pengisian_form || '-'],
+    ['Pelaksanaan Online Test Ignite-Spark', jadwalBatch.online_test || '-'],
+    ['Pelaksanaan Assessment Center', jadwalBatch.pelaksanaan_ac || '-'],
+    ['Pemaparan Hasil Assessment Center', jadwalBatch.pemaparan || '-'],
   ].map(([k, r]) => `<tr><td style="${TD_STYLE}">${k}</td><td style="${TD_CENTER}">${r}</td></tr>`).join('');
 
   await sendEmail({

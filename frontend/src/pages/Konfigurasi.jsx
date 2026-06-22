@@ -19,22 +19,6 @@ const CONFIG_GROUPS_STATIC = [
     ]
   },
   {
-    title: 'Jadwal Batch',
-    desc: 'Tanggal-tanggal kunci per batch/periode pelaksanaan AC',
-    accent: 'from-cyan-500 to-blue-600',
-    iconBg: 'bg-cyan-50',
-    iconCls: 'text-cyan-500',
-    svg: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>,
-    keys: [
-      { key: 'tanggal_gr', label: 'Tanggal Getting Requirement (GR)', type: 'date' },
-      { key: 'tanggal_pengisian_form', label: 'Tanggal Pengisian Form STAR', type: 'date' },
-      { key: 'tanggal_online_test', label: 'Tanggal Online Test (Psikotes)', type: 'date' },
-      { key: 'tanggal_pelaksanaan_ac', label: 'Tanggal Pelaksanaan AC', type: 'date' },
-      { key: 'tanggal_pemaparan', label: 'Tanggal Pemaparan Hasil AC', type: 'date' },
-      { key: 'link_form_star', label: 'Link Form STAR (dikirim ke HC & Peserta)', type: 'url', full: true },
-    ]
-  },
-  {
     title: 'Approver',
     desc: 'Pejabat yang berwenang menyetujui request',
     accent: 'from-violet-500 to-purple-600',
@@ -59,6 +43,7 @@ const CONFIG_GROUPS_STATIC = [
       { key: 'file_zip_dokumen_url', label: 'URL ZIP Dokumen Lanjutan', type: 'url', full: true },
       { key: 'link_keperluan_asesmen', label: 'Link Keperluan Asesmen (dikirim ke Tim Pelaksana)', type: 'url', full: true },
       { key: 'link_form_pengajuan', label: 'Link Template Form Pengajuan Potential Review & Profiling', type: 'url', full: true },
+      { key: 'link_form_star', label: 'Link Form STAR (dikirim ke HC & Peserta via MoM)', type: 'url', full: true },
     ]
   }
 ];
