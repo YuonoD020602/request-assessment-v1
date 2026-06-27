@@ -200,9 +200,32 @@ router.get('/status/:idRequest', async (req, res) => {
 
   if (error || !data) return res.status(404).json({ error: 'ID Request tidak ditemukan' });
 
+  // Normalkan status agar tidak mundur dari data aktual
+  const STATUS_ORDER = [
+    'Submitted', 'Approved', 'Menunggu GR',
+    'GR Selesai - Menunggu Dokumen', 'Dokumen Diterima',
+    'Psikotes Dijadwalkan', 'AC Dijadwalkan',
+    'Menunggu Presentasi', 'Selesai'
+  ];
+  let effectiveStatus = data.status;
+  const statusIdx = STATUS_ORDER.indexOf(effectiveStatus);
+  if (data.status_dokumen === 'Dokumen Diterima' && statusIdx < STATUS_ORDER.indexOf('Dokumen Diterima')) {
+    effectiveStatus = 'Dokumen Diterima';
+  }
+  if (data.tanggal_psikotes && statusIdx < STATUS_ORDER.indexOf('Psikotes Dijadwalkan') && STATUS_ORDER.indexOf(effectiveStatus) < STATUS_ORDER.indexOf('Psikotes Dijadwalkan')) {
+    effectiveStatus = 'Psikotes Dijadwalkan';
+  }
+  if (data.tanggal_ac && statusIdx < STATUS_ORDER.indexOf('AC Dijadwalkan') && STATUS_ORDER.indexOf(effectiveStatus) < STATUS_ORDER.indexOf('AC Dijadwalkan')) {
+    effectiveStatus = 'AC Dijadwalkan';
+  }
+  if (data.tanggal_presentasi && statusIdx < STATUS_ORDER.indexOf('Menunggu Presentasi') && STATUS_ORDER.indexOf(effectiveStatus) < STATUS_ORDER.indexOf('Menunggu Presentasi')) {
+    effectiveStatus = 'Menunggu Presentasi';
+  }
+
   res.json({
     data: {
       ...data,
+      status: effectiveStatus,
       url_zip_dokumen: config.file_zip_dokumen_url || null,
       url_form_dokumen: `${process.env.FRONTEND_URL}/form-dokumen?id=${data.id_request}`
     }
