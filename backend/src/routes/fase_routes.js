@@ -72,6 +72,19 @@ const getAdmins = (config) => {
   return admins;
 };
 
+// Urutan status — digunakan untuk mencegah status mundur
+const STATUS_ORDER = [
+  'Submitted', 'Approved', 'Menunggu GR',
+  'GR Selesai - Menunggu Dokumen', 'Dokumen Diterima',
+  'Psikotes Dijadwalkan', 'AC Dijadwalkan',
+  'Menunggu Presentasi', 'Selesai'
+];
+const statusLebihMaju = (current, target) => {
+  const ci = STATUS_ORDER.indexOf(current);
+  const ti = STATUS_ORDER.indexOf(target);
+  return ci > ti; // current sudah lebih maju dari target
+};
+
 // ============================================================
 // FASE 3 ROUTER
 // ============================================================
@@ -88,7 +101,7 @@ fase3Router.post('/jadwal-gr', authMiddleware, picOnly, async (req, res) => {
 
   await supabase.from('requests').update({
     tanggal_gr, jam_gr, lokasi_gr,
-    status: 'Menunggu GR'
+    ...(statusLebihMaju(request.status, 'Menunggu GR') ? {} : { status: 'Menunggu GR' })
   }).eq('id_request', id_request);
 
   const { data: cfgData } = await supabase.from('konfigurasi').select('key, value');
@@ -128,7 +141,7 @@ fase3Router.post('/input-mom', authMiddleware, picOnly, async (req, res) => {
     jam_psikotes: jam_psikotes || null,
     tanggal_ac: tanggal_ac || null,
     lokasi_ac: lokasi_ac || null,
-    status: 'GR Selesai - Menunggu Dokumen'
+    ...(statusLebihMaju(request.status, 'GR Selesai - Menunggu Dokumen') ? {} : { status: 'GR Selesai - Menunggu Dokumen' })
   }).eq('id_request', id_request);
 
   const { data: cfgData } = await supabase.from('konfigurasi').select('key, value');
@@ -219,7 +232,7 @@ fase4Router.post('/dokumen', async (req, res) => {
   await supabase.from('requests').update({
     link_data_karyawan, link_form_star,
     status_dokumen: 'Dokumen Diterima',
-    status: 'Dokumen Diterima'
+    ...(statusLebihMaju(request.status, 'Dokumen Diterima') ? {} : { status: 'Dokumen Diterima' })
   }).eq('id_request', id_request);
 
   const { data: cfgData } = await supabase.from('konfigurasi').select('key, value');
@@ -260,11 +273,13 @@ fase4Router.post('/psikotes', authMiddleware, picOnly, async (req, res) => {
   const config = Object.fromEntries(cfgData.map(c => [c.key, c.value]));
 
   const isRevisi = !!(request.tanggal_psikotes);
-  const { error: updateErr } = await supabase.from('requests').update({ tanggal_psikotes, jam_psikotes, status: 'Psikotes Dijadwalkan' }).eq('id_request', id_request);
+  const statusUpdatePsikotes = statusLebihMaju(request.status, 'Psikotes Dijadwalkan') ? {} : { status: 'Psikotes Dijadwalkan' };
+  const { error: updateErr } = await supabase.from('requests').update({ tanggal_psikotes, jam_psikotes, ...statusUpdatePsikotes }).eq('id_request', id_request);
   if (updateErr) {
-    // Jika status constraint gagal, coba update field tanpa status lalu status terpisah
     await supabase.from('requests').update({ tanggal_psikotes, jam_psikotes }).eq('id_request', id_request);
-    await supabase.from('requests').update({ status: 'Psikotes Dijadwalkan' }).eq('id_request', id_request);
+    if (!statusLebihMaju(request.status, 'Psikotes Dijadwalkan')) {
+      await supabase.from('requests').update({ status: 'Psikotes Dijadwalkan' }).eq('id_request', id_request);
+    }
   }
 
   // Kirim ke HC, User/Atasan, dan semua Admin AC
@@ -305,7 +320,7 @@ fase4Router.post('/jadwal-ac', authMiddleware, picOnly, async (req, res) => {
   await supabase.from('requests').update({
     ruangan_ac: ruangan_ac || null,
     penugasan_tim: penugasan_tim || null,
-    status: 'AC Dijadwalkan'
+    ...(statusLebihMaju(request.status, 'AC Dijadwalkan') ? {} : { status: 'AC Dijadwalkan' })
   }).eq('id_request', id_request);
 
   const tanggal_ac = request.tanggal_ac;
@@ -456,7 +471,7 @@ fase6Router.post('/jadwal-presentasi', authMiddleware, picOnly, async (req, res)
 
   await supabase.from('requests').update({
     tanggal_presentasi, jam_presentasi, lokasi_presentasi,
-    status: 'Menunggu Presentasi'
+    ...(statusLebihMaju(request.status, 'Menunggu Presentasi') ? {} : { status: 'Menunggu Presentasi' })
   }).eq('id_request', id_request);
 
   const { data: cfgDataP } = await supabase.from('konfigurasi').select('key, value');
