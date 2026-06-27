@@ -290,11 +290,18 @@ const kirimEmailUndanganGR = async ({ namaTo, emailTo, idRequest, tanggalGR, jam
 // ============================================================
 // FASE 3: Email MOM GR ke PIC HC
 // ============================================================
-const kirimEmailMOM = async ({ namaTo, emailTo, idRequest, namaPeserta, momText, namaPerusahaan, kompetensiALC, tanggalOnlineTest, jamOnlineTest, tanggalPsikotes, jamPsikotes, tanggalAC, lokasiAC, linkFormStar, linkFormDataKaryawan, isTimPelaksana = false, linkKeperluan = null }) => {
+const kirimEmailMOM = async ({ namaTo, emailTo, idRequest, namaPeserta, momText, namaPerusahaan, kompetensiALC, tanggalOnlineTest, jamOnlineTest, tanggalPsikotes, jamPsikotes, tanggalAC, lokasiAC, linkFormStar, linkFormDataKaryawan, isTimPelaksana = false, linkKeperluan = null, roleTimPelaksana = null }) => {
   const linkCekStatus = `${process.env.FRONTEND_URL}/cek-status?id=${idRequest}`;
   if (isTimPelaksana) {
-    const linkKeperluanHtml = linkKeperluan
-      ? `<p><strong>Link Keperluan Asesmen:</strong> <a href="${linkKeperluan}">${linkKeperluan}</a></p>`
+    const isAdmin = roleTimPelaksana === 'admin';
+    const pesanTugas = isAdmin
+      ? `Mohon mempersiapkan psikotes pada platform psikotesnya.`
+      : `Mohon membaca dan memahami keperluan asesmen melalui link berikut.`;
+    const linkKeperluanHtml = (!isAdmin && linkKeperluan)
+      ? `<div style="margin: 16px 0;">
+           <a href="${linkKeperluan}" style="display:inline-block; background:#1d4ed8; color:white; padding:10px 24px; text-decoration:none; border-radius:6px; font-weight:bold; font-size:14px;">Lihat Keperluan Asesmen &rarr;</a>
+           <p style="margin: 6px 0 0 0; color:#666; font-size:12px;">Atau salin: ${linkKeperluan}</p>
+         </div>`
       : '';
 
     await sendEmail({
@@ -302,14 +309,16 @@ const kirimEmailMOM = async ({ namaTo, emailTo, idRequest, namaPeserta, momText,
       subject: `[RACD AIHO] Notifikasi GR Selesai – ${idRequest}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; font-size: 14px; color: #333; line-height: 1.6;">
+          <p>Kepada Yth.<br/>Bapak/Ibu ${namaTo}</p>
           <p>${getGreeting()} Bapak/Ibu,</p>
-          <p>GR untuk <strong>${namaPeserta}</strong> (${idRequest}) telah selesai dilaksanakan. Mohon mulai menyusun skenario AC.</p>
+          <p>Getting Requirement untuk peserta <strong>${namaPeserta}</strong> (${idRequest}) telah selesai dilaksanakan.</p>
+          <p>${pesanTugas}</p>
           ${linkKeperluanHtml}
           <div style="background:#f9f9f9; padding:12px; border-left:4px solid #3b82f6; margin: 12px 0;">
             <p style="margin: 0 0 4px 0; font-weight: bold; font-size: 13px;">Ringkasan MOM:</p>
             <p style="margin: 0; font-size: 13px;">${momText}</p>
           </div>
-          <p>Terima kasih.</p>
+          <p>Hormat kami,<br/><strong>PIC Asesmen RACD AIHO</strong><br/>PT Astra International</p>
         </div>
       `
     });
@@ -672,29 +681,22 @@ const kirimUndanganPresentasi = async ({ namaTo, emailTo, idRequest, namaPeserta
 // ============================================================
 // FASE 6: Notifikasi Pilih Slot Presentasi ke HC
 // ============================================================
-const kirimNotifikasiPilihSlot = async ({ namaHC, emailHC, idRequest, namaPeserta, linkCekStatus }) => {
+const kirimNotifikasiPilihSlot = async ({ namaHC, emailHC, idRequest, namaPeserta, linkPilihSlot }) => {
   await sendEmail({
     to: emailHC,
     subject: `[RACD AIHO] Pilih Jadwal Presentasi Hasil AC – ${idRequest}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; font-size: 14px; color: #333; line-height: 1.6;">
         <p>Kepada Yth.<br/>Bapak/Ibu ${namaHC}</p>
+        <p>${getGreeting()} Bapak/Ibu,</p>
         <p>Assessment Center untuk <strong>${namaPeserta}</strong> (${idRequest}) telah selesai dilaksanakan.</p>
-        <p>Selanjutnya, Anda perlu <strong>memilih jadwal Presentasi Hasil AC</strong> sesuai slot yang tersedia.</p>
-        <div style="margin: 20px 0; padding: 16px; background: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 4px;">
-          <p style="margin: 0 0 8px 0; font-weight: bold;">Cara memilih jadwal presentasi:</p>
-          <ol style="margin: 0; padding-left: 20px;">
-            <li>Klik tombol di bawah untuk membuka halaman Cek Status</li>
-            <li>Scroll ke bawah ke bagian <strong>"Pilih Jadwal Presentasi"</strong></li>
-            <li>Pilih slot yang tersedia dan konfirmasi</li>
-          </ol>
-        </div>
+        <p>Selanjutnya, Anda perlu <strong>memilih jadwal Presentasi Hasil AC</strong> sesuai slot yang tersedia. Klik tombol di bawah untuk langsung membuka halaman pemilihan jadwal.</p>
         <div style="text-align: center; margin: 24px 0;">
-          <a href="${linkCekStatus}" style="background: #1d4ed8; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 15px;">
+          <a href="${linkPilihSlot}" style="background: #1d4ed8; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 15px;">
             Pilih Jadwal Presentasi &rarr;
           </a>
         </div>
-        <p style="color: #666; font-size: 12px;">Atau salin link berikut ke browser: ${linkCekStatus}</p>
+        <p style="color: #666; font-size: 12px;">Atau salin link berikut ke browser: ${linkPilihSlot}</p>
         <p>Hormat kami,<br/><strong>PIC Asesmen RACD AIHO</strong><br/>PT Astra International</p>
       </div>
     `

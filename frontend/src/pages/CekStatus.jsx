@@ -125,7 +125,7 @@ export function CekStatus() {
 
   const sm = result ? getStatusMeta(result.status) : null;
   const hasPsikotes = !!result?.tanggal_psikotes;
-  const hasAC = !!(result?.tanggal_ac && result?.jam_ac);
+  const hasAC = !!result?.tanggal_ac;
   const hasPresentasi = !!result?.tanggal_presentasi;
   const showPresentasiStep = hasPresentasi || ['Menunggu Presentasi', 'Selesai'].includes(result?.status);
   const showJadwalSection = ['Approved','Menunggu GR','GR Selesai - Menunggu Dokumen','Dokumen Diterima','Psikotes Dijadwalkan','AC Dijadwalkan','Menunggu Presentasi','Selesai'].includes(result?.status);
@@ -325,7 +325,7 @@ export function CekStatus() {
                   <TimelineStep num="2" icon="🏢" label="Jadwal Assessment Center" done={hasAC} active={!hasAC} last={!showPresentasiStep}>
                     {hasAC ? (
                       <div>
-                        <p className="font-bold text-gray-900">{result.tanggal_ac} · {result.jam_ac} WIB</p>
+                        <p className="font-bold text-gray-900">{result.tanggal_ac}{result.jam_ac ? ` · ${result.jam_ac} WIB` : ' · 08.00 – 15.00 WIB'}</p>
                         {result.lokasi_ac && <p className="text-xs text-gray-500 mt-1">📍 {result.lokasi_ac}</p>}
                       </div>
                     ) : <p className="text-sm text-gray-400 italic">Belum dijadwalkan</p>}
@@ -351,7 +351,7 @@ export function CekStatus() {
             )}
 
             {/* ── Pilih Slot Presentasi ── */}
-            {result.tanggal_ac && result.jam_ac && !result.tanggal_presentasi && (
+            {result.tanggal_ac && !result.tanggal_presentasi && (
               <div className="rounded-3xl overflow-hidden shadow-lg border border-indigo-100">
                 <div className="relative overflow-hidden bg-gradient-to-r from-indigo-700 to-blue-700 px-6 py-5">
                   <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px)', backgroundSize: '18px 18px' }} />

@@ -126,12 +126,12 @@ router.post('/:id/book', async (req, res) => {
     await delay(400);
   }
 
-  // Kirim notif ke semua admin AC
+  // Kirim undangan presentasi ke semua assessor
   let k = 1;
-  while (config[`admin_ac_${k}_email`]) {
+  while (config[`assessor_${k}_email`]) {
     await kirimUndanganPresentasi({
-      namaTo: config[`admin_ac_${k}_nama`],
-      emailTo: config[`admin_ac_${k}_email`],
+      namaTo: config[`assessor_${k}_nama`],
+      emailTo: config[`assessor_${k}_email`],
       idRequest: id_request, namaPeserta: request.nama_peserta,
       tanggal: slot.tanggal, jam: slot.jam, lokasi: slot.lokasi || '-'
     });

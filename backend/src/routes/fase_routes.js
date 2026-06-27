@@ -149,13 +149,25 @@ fase3Router.post('/input-mom', authMiddleware, picOnly, async (req, res) => {
   });
   await delay(400);
 
-  const tim = getTimPelaksana(config);
-  for (const t of tim) {
+  const assessors = getAssessors(config);
+  const roleplayers = getRoleplayers(config);
+  const admins = getAdmins(config);
+
+  for (const t of [...assessors, ...roleplayers]) {
     await kirimEmailMOM({
       namaTo: t.nama, emailTo: t.email,
       idRequest: id_request, namaPeserta: request.nama_peserta,
-      momText: mom_gr, isTimPelaksana: true,
+      momText: mom_gr, isTimPelaksana: true, roleTimPelaksana: 'assessor',
       linkKeperluan: config.link_keperluan_asesmen || null
+    });
+    await delay(400);
+  }
+
+  for (const t of admins) {
+    await kirimEmailMOM({
+      namaTo: t.nama, emailTo: t.email,
+      idRequest: id_request, namaPeserta: request.nama_peserta,
+      momText: mom_gr, isTimPelaksana: true, roleTimPelaksana: 'admin'
     });
     await delay(400);
   }
@@ -477,13 +489,13 @@ fase6Router.post('/notif-pilih-slot', authMiddleware, picOnly, async (req, res) 
   const { data: request } = await supabase.from('requests').select('*').eq('id_request', id_request).single();
   if (!request) return res.status(404).json({ error: 'Request tidak ditemukan' });
 
-  const linkCekStatus = `${process.env.FRONTEND_URL}/cek-status?id=${id_request}`;
+  const linkPilihSlot = `${process.env.FRONTEND_URL}/pilih-slot?id=${id_request}`;
   await kirimNotifikasiPilihSlot({
     namaHC: request.pic_hc,
     emailHC: request.email_pic_hc,
     idRequest: id_request,
     namaPeserta: request.nama_peserta,
-    linkCekStatus
+    linkPilihSlot
   });
 
   await supabase.from('log_aktivitas').insert({ id_request, aktivitas: 'Notifikasi Pilih Slot Dikirim', detail: `Email notifikasi pilih slot presentasi dikirim ke ${request.email_pic_hc}` });
