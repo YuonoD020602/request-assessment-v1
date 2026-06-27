@@ -1,6 +1,6 @@
 # CATATAN REVISI — Request Assessment V1
 **Project:** RACD AIHO – PT Astra International  
-**Terakhir diperbarui:** 22 Juni 2026 (Batch 13)
+**Terakhir diperbarui:** 27 Juni 2026 (Batch 14)
 
 ---
 
@@ -41,6 +41,13 @@
 | 30 | Cek Status: checklist dua dokumen (Form Data Karyawan + Form STAR) | ✅ Selesai | Batch 13 |
 | 31 | Fase 6: tombol Reminder Booking Jadwal selalu terlihat | ✅ Selesai | Batch 13 |
 | 32 | Format email formal: kirimReminderDokumen + kirimNotifikasiDokumenDiterima | ✅ Selesai | Batch 13 |
+| 33 | Email MOM Tim Pelaksana dibedakan per role (Assessor/Roleplayer vs Administrator) | ✅ Selesai | Batch 14 |
+| 34 | CekStatus: field status_dokumen, link_data_karyawan, link_form_star ditambahkan ke SELECT | ✅ Selesai | Batch 14 |
+| 35 | CekStatus: hasAC hanya cek tanggal_ac (jam_ac tidak pernah disimpan ke DB) | ✅ Selesai | Batch 14 |
+| 36 | Notifikasi Pilih Jadwal: link email langsung ke /pilih-slot (bukan cek-status) | ✅ Selesai | Batch 14 |
+| 37 | Booking slot presentasi: undangan presentasi dikirim ke Assessor, bukan Administrator | ✅ Selesai | Batch 14 |
+| 38 | Fix status mundur: semua route fase kini tidak downgrade status yang sudah lebih maju | ✅ Selesai | Batch 14 |
+| 39 | Normalkan status di endpoint publik berdasarkan data aktual (auto-koreksi data lama) | ✅ Selesai | Batch 14 |
 | 24 | Export PDF laporan per periode | 📋 Backlog | - |
 
 ---
@@ -570,6 +577,102 @@ Checklist juga ditambahkan di tab Fase 4 DetailRequest (sisi PIC).
 - Link cek status disertakan di reminder dokumen
 
 **File:** `backend/src/services/emailService.js`
+
+---
+
+---
+
+### ✅ 33–39. Perbaikan & Fitur Baru (Batch 14)
+**Tanggal:** 27 Juni 2026
+
+#### 33. Email MOM Tim Pelaksana Dibedakan per Role
+
+**Masalah:** Semua tim pelaksana (Assessor, Roleplayer, Administrator) menerima email MOM yang identik: teks "Mohon mulai menyusun skenario AC" + link keperluan asesmen.
+
+**Solusi:**
+- `kirimEmailMOM` menerima parameter `roleTimPelaksana` (`'assessor'` | `'admin'`)
+- **Assessor & Roleplayer:** Teks "Mohon membaca dan memahami keperluan asesmen" + tombol link keperluan asesmen
+- **Administrator:** Teks "Mohon mempersiapkan psikotes pada platform psikotesnya" — tanpa link keperluan asesmen
+- Route `/input-mom` di fase_routes.js memisahkan loop pengiriman: assessors+roleplayers dalam satu loop, admins dalam loop terpisah
+
+**File:** `backend/src/services/emailService.js`, `backend/src/routes/fase_routes.js`
+
+---
+
+#### 34. CekStatus: Field Dokumen Ditambahkan ke SELECT
+
+**Masalah:** Endpoint `GET /api/requests/status/:idRequest` tidak mengembalikan `link_data_karyawan`, `link_form_star`, dan `status_dokumen` — sehingga checklist dokumen di CekStatus selalu menampilkan "Belum dikirim" meski dokumen sudah ada.
+
+**Solusi:** Tambahkan tiga field tersebut ke SELECT query.
+
+**File:** `backend/src/routes/requests.js`
+
+---
+
+#### 35. CekStatus: Fix hasAC — Cukup Cek tanggal_ac
+
+**Masalah:** `hasAC = !!(result?.tanggal_ac && result?.jam_ac)` — `jam_ac` tidak pernah disimpan ke DB (hanya statis `08.00–15.00 WIB`), sehingga `hasAC` selalu false dan jadwal AC tidak pernah tampil di timeline CekStatus.
+
+**Solusi:**
+- `hasAC = !!result?.tanggal_ac` (cukup cek tanggal_ac saja)
+- Kondisi tampil section pilih slot diubah dari `tanggal_ac && jam_ac` menjadi `tanggal_ac` saja
+- Jika `jam_ac` null → ditampilkan default `08.00 – 15.00 WIB`
+
+**File:** `frontend/src/pages/CekStatus.jsx`
+
+---
+
+#### 36. Notifikasi Pilih Jadwal: Link Langsung ke /pilih-slot
+
+**Masalah:** Email "Notifikasi Pilih Jadwal Presentasi ke HC" mengirim link ke `/cek-status?id=xxx` dengan instruksi 3 langkah yang membingungkan. HC harus scroll sendiri untuk menemukan section pilih slot.
+
+**Solusi:**
+- Email sekarang mengirim link langsung ke `/pilih-slot?id=xxx`
+- Teks dipersingkat: satu paragraf + satu tombol CTA yang langsung membuka halaman pemilihan
+- Route `/notif-pilih-slot` diupdate untuk membangun `linkPilihSlot` bukan `linkCekStatus`
+- Parameter fungsi `kirimNotifikasiPilihSlot` diubah dari `linkCekStatus` ke `linkPilihSlot`
+
+**File:** `backend/src/services/emailService.js`, `backend/src/routes/fase_routes.js`
+
+---
+
+#### 37. Booking Slot: Undangan Presentasi ke Assessor, bukan Administrator
+
+**Masalah:** Saat HC memilih slot presentasi, fungsi `kirimUndanganPresentasi` dikirim ke semua `admin_ac_*` — padahal undangan presentasi seharusnya ke Assessor yang akan hadir mereview.
+
+**Solusi:** Loop di route `POST /api/slots/:id/book` diubah dari `config[admin_ac_${k}_email]` menjadi `config[assessor_${k}_email]`. Administrator tidak lagi menerima undangan presentasi.
+
+**File:** `backend/src/routes/slots.js`
+
+---
+
+#### 38. Fix Status Mundur Saat Route Fase Dipanggil Ulang
+
+**Masalah:** Semua route fase (MOM, jadwal psikotes, jadwal AC, dll.) selalu melakukan `update status = 'xxx'` tanpa mengecek status saat ini. Jika PIC mengirim ulang MOM setelah dokumen sudah diterima, status mundur ke `GR Selesai - Menunggu Dokumen`.
+
+**Solusi:**
+- Tambah konstanta `STATUS_ORDER` (urutan 9 status dari Submitted → Selesai)
+- Helper `statusLebihMaju(current, target)` → return true jika current sudah lebih maju dari target
+- Setiap route menggunakan spread conditional: `...(statusLebihMaju(request.status, 'XXX') ? {} : { status: 'XXX' })`
+- Route yang dilindungi: `jadwal-gr`, `input-mom`, `dokumen` (upload HC), `jadwal-psikotes`, `jadwal-ac`, `jadwal-presentasi`
+
+**File:** `backend/src/routes/fase_routes.js`
+
+---
+
+#### 39. Normalkan Status di Endpoint Publik (Auto-Koreksi Data Lama)
+
+**Masalah:** Data lama di DB memiliki inkonsistensi — `status_dokumen = 'Dokumen Diterima'` tapi `status` utama masih `GR Selesai - Menunggu Dokumen`. Tampilan CekStatus menunjukkan status yang ketinggalan dari data aktual.
+
+**Solusi:** Endpoint `GET /api/requests/status/:idRequest` menghitung `effectiveStatus` sebelum merespons:
+- Jika `status_dokumen = 'Dokumen Diterima'` dan status DB lebih awal → `effectiveStatus = 'Dokumen Diterima'`
+- Jika `tanggal_psikotes` ada dan status DB lebih awal → `effectiveStatus = 'Psikotes Dijadwalkan'`
+- Jika `tanggal_ac` ada dan status DB lebih awal → `effectiveStatus = 'AC Dijadwalkan'`
+- Jika `tanggal_presentasi` ada dan status DB lebih awal → `effectiveStatus = 'Menunggu Presentasi'`
+
+Fix ini berjalan di layer baca (tidak mengubah DB) — semua data lama otomatis terkoreksi tanpa migrasi.
+
+**File:** `backend/src/routes/requests.js`
 
 ---
 
