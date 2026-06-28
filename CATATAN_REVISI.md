@@ -1,6 +1,6 @@
 # CATATAN REVISI — Request Assessment V1
 **Project:** RACD AIHO – PT Astra International  
-**Terakhir diperbarui:** 27 Juni 2026 (Batch 14)
+**Terakhir diperbarui:** 28 Juni 2026 (Batch 15)
 
 ---
 
@@ -48,6 +48,10 @@
 | 37 | Booking slot presentasi: undangan presentasi dikirim ke Assessor, bukan Administrator | ✅ Selesai | Batch 14 |
 | 38 | Fix status mundur: semua route fase kini tidak downgrade status yang sudah lebih maju | ✅ Selesai | Batch 14 |
 | 39 | Normalkan status di endpoint publik berdasarkan data aktual (auto-koreksi data lama) | ✅ Selesai | Batch 14 |
+| 40 | Email reminder Assessor kini pakai tabel penugasan (sama dengan Roleplayer) | ✅ Selesai | Batch 15 |
+| 41 | Kirim reminder manual: sekarang dikirim ke HC, Assessor, dan Roleplayer | ✅ Selesai | Batch 15 |
+| 42 | Cron Hari-H: ganti loop generic dengan email per-role (Assessor/Roleplayer/Admin) | ✅ Selesai | Batch 15 |
+| 43 | Hapus label "H-1" dari subject dan log email reminder — reminder bisa dikirim sewaktu-waktu | ✅ Selesai | Batch 15 |
 | 24 | Export PDF laporan per periode | 📋 Backlog | - |
 
 ---
@@ -673,6 +677,65 @@ Checklist juga ditambahkan di tab Fase 4 DetailRequest (sisi PIC).
 Fix ini berjalan di layer baca (tidak mengubah DB) — semua data lama otomatis terkoreksi tanpa migrasi.
 
 **File:** `backend/src/routes/requests.js`
+
+---
+
+---
+
+### ✅ 40–43. Perbaikan Email Reminder (Batch 15)
+**Tanggal:** 28 Juni 2026
+
+#### 40. Email Reminder Assessor: Format Tabel Penugasan
+
+**Masalah:** `kirimReminderACAssessor` menggunakan tabel sederhana (Hari/Tanggal, Tempat, Pukul) — berbeda dengan `kirimReminderACRoleplayer` yang sudah menampilkan tabel penugasan lengkap (Nama Roleplayer, Nama Asesor, Ruangan, Hari/Tanggal, Waktu).
+
+**Solusi:**
+- Ubah signature `kirimReminderACAssessor` dari `{ruanganAC, lokasiAC}` menjadi `{jamAC, penugasanTim}`
+- Tampilan email sekarang identik dengan Roleplayer: tabel 5 kolom berisi data `penugasan_tim` dari DB
+- Greeting tetap "Bapak/Ibu Assessor"
+- Caller di cron H-1 dan cron Hari-H diupdate ke params baru
+
+**File:** `backend/src/services/emailService.js`, `backend/src/services/cronService.js`
+
+---
+
+#### 41. Kirim Reminder Manual: Dikirim ke HC, Assessor, dan Roleplayer
+
+**Masalah:** Route `POST /api/fase4/kirim-reminder-manual` hanya mengirim `kirimReminderACPeserta` ke HC. Assessor dan Roleplayer tidak menerima reminder saat PIC klik tombol manual.
+
+**Solusi:**
+- Setelah kirim ke HC, loop semua `getAssessors(config)` → kirim `kirimReminderACAssessor` (tabel penugasan)
+- Loop semua `getRoleplayers(config)` → kirim `kirimReminderACRoleplayer` (tabel penugasan)
+- Delay 300ms antar email untuk menghindari rate limit
+- Log aktivitas diupdate: "Reminder AC dikirim manual ke HC, Assessor, dan Roleplayer"
+
+**File:** `backend/src/routes/fase_routes.js`
+
+---
+
+#### 42. Cron Hari-H: Email Per-Role (Assessor/Roleplayer/Admin)
+
+**Masalah:** Cron Hari-H menggunakan `getTimPelaksana()` yang menggabungkan semua role, lalu mengirim `kirimReminderAC` generik ke semuanya — padahal masing-masing role butuh format email berbeda.
+
+**Solusi:** Ganti satu loop generic dengan tiga loop terpisah:
+- **Assessor** → `kirimReminderACAssessor` (tabel penugasan)
+- **Roleplayer** → `kirimReminderACRoleplayer` (tabel penugasan)
+- **Administrator AC** → `kirimReminderAC` (format generik, `isHariH: true`)
+
+**File:** `backend/src/services/cronService.js`
+
+---
+
+#### 43. Hapus Label "H-1" dari Subject dan Log Email Reminder
+
+**Masalah:** Subject email reminder menyebut "H-1" secara eksplisit — membuat email terkesan hanya boleh dikirim sehari sebelum pelaksanaan, padahal reminder bisa dikirim kapan saja (manual maupun cron).
+
+**Solusi:**
+- `kirimReminderACPeserta`: subject "Reminder H-1 Pelaksanaan AC" → "Reminder Pelaksanaan AC"
+- `kirimReminderAC` (Admin): `subjectPrefix` "Reminder Besok" → "Reminder"
+- Log aktivitas: "Reminder AC H-1 Peserta" → "Reminder AC Peserta", "Reminder AC H-1" → "Reminder AC"
+
+**File:** `backend/src/services/emailService.js`
 
 ---
 
