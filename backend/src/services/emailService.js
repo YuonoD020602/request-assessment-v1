@@ -578,10 +578,17 @@ const kirimReminderACPeserta = async ({ namaHC, emailHC, idRequest, namaPeserta,
 // ============================================================
 // FASE 5: Reminder H-1/H-3 untuk Assessor
 // ============================================================
-const kirimReminderACAssessor = async ({ namaTo, emailTo, idRequest, namaPeserta, tanggalAC, ruanganAC, lokasiAC }) => {
-  const tempat = ruanganAC
-    ? `${ruanganAC}, Gedung AMDI A Lt 1, Astra International Head Office – Sunter (offline)`
-    : lokasiAC || 'Gedung AMDI A Lt 1, Astra International Head Office – Sunter (offline)';
+const kirimReminderACAssessor = async ({ namaTo, emailTo, idRequest, namaPeserta, tanggalAC, jamAC, penugasanTim }) => {
+  const rows = (penugasanTim || []).map(p =>
+    `<tr><td style="${TD_CENTER}">${p.roleplayer || '-'}</td><td style="${TD_CENTER}">${p.assessor || '-'}</td><td style="${TD_CENTER}">${p.ruangan || '-'}</td><td style="${TD_CENTER}">${formatTanggal(tanggalAC)}</td><td style="${TD_CENTER}">${jamAC || '08.00 – 15.00'} WIB</td></tr>`
+  ).join('');
+
+  const tableHtml = rows
+    ? `<table style="${TABLE_STYLE} margin: 16px 0;">
+        <tr><th style="${TH_STYLE}">Nama Roleplayer</th><th style="${TH_STYLE}">Nama Asesor</th><th style="${TH_STYLE}">Ruangan</th><th style="${TH_STYLE}">Hari / Tanggal</th><th style="${TH_STYLE}">Waktu</th></tr>
+        ${rows}
+      </table>`
+    : '<p style="color: #999;">Penugasan tim belum diatur.</p>';
 
   await sendEmail({
     to: emailTo,
@@ -590,11 +597,7 @@ const kirimReminderACAssessor = async ({ namaTo, emailTo, idRequest, namaPeserta
       <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; font-size: 14px; color: #333; line-height: 1.6;">
         <p>${getGreeting()} Bapak/Ibu Assessor</p>
         <p>Sehubungan dengan pelaksanaan Assessment Center yang diselenggarakan oleh PT Astra International, Tbk, berikut kami informasikan detail kegiatan pelaksanaan Assessment Center :</p>
-        <table style="margin: 16px 0 16px 24px; border: none;">
-          <tr><td style="padding: 6px 12px 6px 0; font-weight: bold; white-space: nowrap;">Hari / Tanggal</td><td style="padding: 6px 0;">: <strong>${formatTanggal(tanggalAC)}</strong></td></tr>
-          <tr><td style="padding: 6px 12px 6px 0; font-weight: bold; white-space: nowrap;">Tempat</td><td style="padding: 6px 0;">: <strong>${tempat}</strong></td></tr>
-          <tr><td style="padding: 6px 12px 6px 0; font-weight: bold; white-space: nowrap;">Pukul</td><td style="padding: 6px 0;">: <strong>08.00 – 15.00 WIB</strong></td></tr>
-        </table>
+        ${tableHtml}
         <p>Demikian informasi yang dapat kami sampaikan.</p>
         <p>Terima kasih</p>
       </div>

@@ -153,8 +153,8 @@ const runDailyReminders = async () => {
           await kirimReminderACAssessor({
             namaTo: a.nama, emailTo: a.email,
             idRequest: req.id_request, namaPeserta: req.nama_peserta,
-            tanggalAC: req.tanggal_ac, ruanganAC: req.ruangan_ac || null,
-            lokasiAC: req.lokasi_ac
+            tanggalAC: req.tanggal_ac, jamAC: req.jam_ac,
+            penugasanTim: req.penugasan_tim || []
           });
         }
       }
@@ -200,17 +200,37 @@ const runDailyReminders = async () => {
       const { data: cfg } = await supabase.from('konfigurasi').select('key, value');
       const config = Object.fromEntries(cfg.map(c => [c.key, c.value]));
 
-      const timPelaksana = getTimPelaksana(config);
+      // Hari H ke Assessor (tabel penugasan)
+      for (const a of getAssessors(config)) {
+        if (a.email) {
+          await kirimReminderACAssessor({
+            namaTo: a.nama, emailTo: a.email,
+            idRequest: req.id_request, namaPeserta: req.nama_peserta,
+            tanggalAC: req.tanggal_ac, jamAC: req.jam_ac,
+            penugasanTim: req.penugasan_tim || []
+          });
+        }
+      }
 
-      for (const p of timPelaksana) {
-        if (p.email) {
+      // Hari H ke Roleplayer (tabel penugasan)
+      for (const r of getRoleplayers(config)) {
+        if (r.email) {
+          await kirimReminderACRoleplayer({
+            namaTo: r.nama, emailTo: r.email,
+            idRequest: req.id_request, namaPeserta: req.nama_peserta,
+            tanggalAC: req.tanggal_ac, jamAC: req.jam_ac,
+            penugasanTim: req.penugasan_tim || []
+          });
+        }
+      }
+
+      // Hari H ke Admin AC
+      for (const a of getAdmins(config)) {
+        if (a.email) {
           await kirimReminderAC({
-            namaTo: p.nama,
-            emailTo: p.email,
-            idRequest: req.id_request,
-            namaPeserta: req.nama_peserta,
-            tanggalAC: req.tanggal_ac,
-            lokasiAC: req.lokasi_ac,
+            namaTo: a.nama, emailTo: a.email,
+            idRequest: req.id_request, namaPeserta: req.nama_peserta,
+            tanggalAC: req.tanggal_ac, lokasiAC: req.lokasi_ac,
             isHariH: true
           });
         }

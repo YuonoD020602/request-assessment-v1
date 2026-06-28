@@ -407,7 +407,34 @@ fase4Router.post('/kirim-reminder-manual', authMiddleware, picOnly, async (req, 
     lokasiAC: request.lokasi_ac || null
   });
 
-  await supabase.from('log_aktivitas').insert({ id_request, aktivitas: 'Reminder Manual Terkirim', detail: `Reminder AC dikirim manual ke ${request.email_pic_hc}` });
+  const assessors = getAssessors(config);
+  const roleplayers = getRoleplayers(config);
+
+  for (const a of assessors) {
+    if (a.email) {
+      await kirimReminderACAssessor({
+        namaTo: a.nama, emailTo: a.email,
+        idRequest: id_request, namaPeserta: request.nama_peserta,
+        tanggalAC: request.tanggal_ac, jamAC: request.jam_ac,
+        penugasanTim: request.penugasan_tim || []
+      });
+      await delay(300);
+    }
+  }
+
+  for (const r of roleplayers) {
+    if (r.email) {
+      await kirimReminderACRoleplayer({
+        namaTo: r.nama, emailTo: r.email,
+        idRequest: id_request, namaPeserta: request.nama_peserta,
+        tanggalAC: request.tanggal_ac, jamAC: request.jam_ac,
+        penugasanTim: request.penugasan_tim || []
+      });
+      await delay(300);
+    }
+  }
+
+  await supabase.from('log_aktivitas').insert({ id_request, aktivitas: 'Reminder Manual Terkirim', detail: `Reminder AC dikirim manual ke HC, Assessor, dan Roleplayer` });
   res.json({ success: true });
 });
 
