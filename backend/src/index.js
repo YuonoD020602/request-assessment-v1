@@ -24,6 +24,7 @@ const PORT = process.env.PORT || 3001;
 app.use(cors({
   origin: [
     process.env.FRONTEND_URL,
+    'https://request-ac.powerappsportals.com',
     'http://localhost:3000',
     'http://localhost:5173'
   ],
