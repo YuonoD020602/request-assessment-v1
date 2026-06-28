@@ -510,7 +510,7 @@ const kirimReminderAC = async ({ namaTo, emailTo, idRequest, namaPeserta, tangga
   const revisiHtml = isRevisi
     ? '<div style="background:#fff3cd;border-left:4px solid #f59e0b;padding:10px;margin-bottom:12px;"><strong>Jadwal AC telah diperbarui. Harap abaikan jadwal sebelumnya.</strong></div>'
     : '';
-  const subjectPrefix = isHariH ? 'Hari Ini' : isRevisi ? '[REVISI] Jadwal' : attachCalendar ? 'Jadwal' : 'Reminder Besok';
+  const subjectPrefix = isHariH ? 'Hari Ini' : isRevisi ? '[REVISI] Jadwal' : attachCalendar ? 'Jadwal' : 'Reminder';
 
   await sendEmail({
     to: emailTo,
@@ -533,7 +533,7 @@ const kirimReminderAC = async ({ namaTo, emailTo, idRequest, namaPeserta, tangga
       </div>
     `
   });
-  await logEmail(idRequest, emailTo, isHariH ? 'Reminder AC Hari H' : isRevisi ? 'Revisi Jadwal AC' : attachCalendar ? 'Jadwal AC' : 'Reminder AC H-1');
+  await logEmail(idRequest, emailTo, isHariH ? 'Reminder AC Hari H' : isRevisi ? 'Revisi Jadwal AC' : attachCalendar ? 'Jadwal AC' : 'Reminder AC');
 };
 
 // ============================================================
@@ -547,7 +547,7 @@ const kirimReminderACPeserta = async ({ namaHC, emailHC, idRequest, namaPeserta,
 
   await sendEmail({
     to: emailHC,
-    subject: `[RACD AIHO] Reminder H-1 Pelaksanaan AC – ${idRequest} (untuk diteruskan ke peserta)`,
+    subject: `[RACD AIHO] Reminder Pelaksanaan AC – ${idRequest} (untuk diteruskan ke peserta)`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; font-size: 14px; color: #333; line-height: 1.6;">
         <p>${getGreeting()} Bapak/Ibu Peserta Assessment Center,</p>
@@ -572,7 +572,7 @@ const kirimReminderACPeserta = async ({ namaHC, emailHC, idRequest, namaPeserta,
       </div>
     `
   });
-  await logEmail(idRequest, emailHC, 'Reminder AC H-1 Peserta');
+  await logEmail(idRequest, emailHC, 'Reminder AC Peserta');
 };
 
 // ============================================================
