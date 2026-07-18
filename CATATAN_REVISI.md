@@ -1,6 +1,6 @@
 # CATATAN REVISI — Request Assessment V1
 **Project:** RACD AIHO – PT Astra International  
-**Terakhir diperbarui:** 28 Juni 2026 (Batch 15)
+**Terakhir diperbarui:** 18 Juli 2026 (Batch 16)
 
 ---
 
@@ -52,6 +52,17 @@
 | 41 | Kirim reminder manual: sekarang dikirim ke HC, Assessor, dan Roleplayer | ✅ Selesai | Batch 15 |
 | 42 | Cron Hari-H: ganti loop generic dengan email per-role (Assessor/Roleplayer/Admin) | ✅ Selesai | Batch 15 |
 | 43 | Hapus label "H-1" dari subject dan log email reminder — reminder bisa dikirim sewaktu-waktu | ✅ Selesai | Batch 15 |
+| 44 | Nama pengirim personal + Reply-To ke email kantor PIC (yuono.raharjo@ai.astra.co.id) | ✅ Selesai | Batch 16 |
+| 45 | Migrasi hosting: Railway upgrade Hobby + endpoint /health & /api/cron/run-daily (guard anti-duplikat) | ✅ Selesai | Batch 16 |
+| 46 | Fix: kirim ulang MOM tidak lagi menimpa/menghapus jadwal psikotes & AC tersimpan | ✅ Selesai | Batch 16 |
+| 47 | Fix: booking slot presentasi dibatasi — wajib jadwal AC ada, tolak Rejected/Selesai/sudah booking | ✅ Selesai | Batch 16 |
+| 48 | Fix: Bebaskan/Hapus slot tidak memundurkan status request Selesai | ✅ Selesai | Batch 16 |
+| 49 | Status efektif dinormalkan juga di pencarian by-email (konsisten dengan by-ID) | ✅ Selesai | Batch 16 |
+| 50 | Alur psikotes: ditetapkan wajib di MOM (Fase 3), Fase 4 mengikuti (pre-fill + terkunci sebelum MOM) | ✅ Selesai | Batch 16 |
+| 51 | Fase 4: section Jadwal Psikotes baru di UI (sebelumnya route ada tapi tidak ada form pemanggilnya) | ✅ Selesai | Batch 16 |
+| 52 | Gabung 2 tombol Fase 6 jadi satu "Kirim/Ingatkan Booking Jadwal" (hapus route reminder-booking) | ✅ Selesai | Batch 16 |
+| 53 | Kontak admin (yuono.raharjo@ai.astra.co.id) di penutup semua email + footer semua halaman + titik error publik | ✅ Selesai | Batch 16 |
+| 54 | FormDokumen & CekStatus: hapus sisa ketergantungan jam_ac; grid form responsif mobile | ✅ Selesai | Batch 16 |
 | 24 | Export PDF laporan per periode | 📋 Backlog | - |
 
 ---
@@ -736,6 +747,60 @@ Fix ini berjalan di layer baca (tidak mengubah DB) — semua data lama otomatis 
 - Log aktivitas: "Reminder AC H-1 Peserta" → "Reminder AC Peserta", "Reminder AC H-1" → "Reminder AC"
 
 **File:** `backend/src/services/emailService.js`
+
+---
+
+---
+
+### ✅ 44–54. Audit Alur, Hosting, Kontak Admin (Batch 16)
+**Tanggal:** 18 Juli 2026
+
+#### 44. Nama Pengirim Personal + Reply-To Email Kantor
+Semua email sistem kini terkirim sebagai **"Yuono Dwi Raharjo - RACD AIHO"** dengan Reply-To ke `yuono.raharjo@ai.astra.co.id` — balasan HC masuk ke inbox kantor PIC, bukan noreply. Bisa dioverride via env `FROM_NAME` / `REPLY_TO_EMAIL`.
+**File:** `emailService.js`, `fase_routes.js`
+
+#### 45. Hosting: Railway Hobby + Endpoint Cron Eksternal
+Trial Railway habis → akun diupgrade ke **Hobby ($5/bln)** memakai kartu debit virtual Bank Jago. Ditambahkan `GET /health` (keep-alive/monitoring) dan `GET /api/cron/run-daily?key=CRON_SECRET` (pemicu reminder dari luar) dengan **guard anti-duplikat** (reminder maksimal 1× per hari WIB meski dipicu ganda). `render.yaml` disertakan sebagai cadangan bila kelak pindah ke Render.
+**File:** `index.js`, `render.yaml`
+
+#### 46. Kirim Ulang MOM Tidak Menimpa Jadwal
+Sebelumnya `/input-mom` menulis `tanggal_psikotes: x || null` — kirim ulang MOM dengan field kosong **menghapus** jadwal yang sudah terkirim ke peserta. Kini field kosong dilewati (tidak menimpa), dan tanggal+jam psikotes menjadi **wajib** di MOM.
+**File:** `fase_routes.js`
+
+#### 47. Guard Booking Slot Presentasi
+Booking kini ditolak jika: jadwal AC belum ada, status `Rejected`/`Selesai`, atau request sudah punya jadwal presentasi. Sebelumnya HC bisa booking di status apapun dan status melompat ke `Menunggu Presentasi`.
+**File:** `slots.js`
+
+#### 48. Bebaskan/Hapus Slot Aman untuk Request Selesai
+Sebelumnya selalu reset status → `AC Dijadwalkan` — bisa memundurkan request `Selesai`. Kini request Selesai tidak disentuh (jadwal presentasi jadi arsip), hanya slot-nya yang dibebaskan.
+**File:** `slots.js`
+
+#### 49. Status Efektif di Pencarian by-Email
+Normalisasi status (helper `hitungStatusEfektif`) kini dipakai kedua endpoint publik — hasil cari by-ID dan by-email selalu konsisten.
+**File:** `requests.js`
+
+#### 50–51. Alur Psikotes: MOM Menetapkan, Fase 4 Mengikuti
+- Jadwal psikotes **ditetapkan di MOM (Fase 3)** — field wajib, diumumkan di email MOM
+- **Fase 4 punya section Jadwal Psikotes baru** (sebelumnya route `/api/fase4/psikotes` ada tapi tidak pernah bisa dipanggil dari UI!) — pre-fill otomatis dari MOM, terkunci sebelum MOM terkirim, tombol mengirim email jadwal resmi ke Peserta & User
+- Label `[REVISI]` hanya muncul bila jadwal benar-benar berubah dari yang tersimpan
+**File:** `DetailRequest.jsx`, `fase_routes.js`
+
+#### 52. Satu Tombol Booking Jadwal di Fase 6
+Tombol "Kirim Notifikasi Pilih Jadwal" dan "Kirim Reminder Booking Jadwal" (dua email berbeda, tujuan sama) digabung menjadi **"Kirim / Ingatkan Booking Jadwal ke HC"**. Route `fase5/kirim-reminder-booking` dihapus; link salin manual kini mengarah ke `/pilih-slot?id=`.
+**File:** `DetailRequest.jsx`, `fase_routes.js`
+
+#### 53. Kontak Admin di Semua Titik
+- **Semua email**: blok kontak otomatis ditambahkan di akhir setiap email (via `sendEmail` helper + `kirimLaporan`)
+- **Semua halaman**: komponen `FooterContact` — halaman admin via `Layout`, halaman publik dipasang satu-satu
+- **Titik error publik**: pesan "ID tidak ditemukan" (CekStatus) dan halaman token approval invalid menampilkan email kontak
+**File:** `emailService.js`, `FooterContact.jsx` (baru), `Layout.jsx`, semua halaman publik
+
+#### 54. Sisa jam_ac + Responsif Mobile
+- `FormDokumen`: jadwal AC tampil cukup dengan `tanggal_ac` (default 08.00–15.00 WIB) — sebelumnya tidak pernah tampil karena menunggu `jam_ac` yang tak pernah disimpan
+- `CekStatus`: auto-load slot tidak lagi mensyaratkan `jam_ac`
+- Grid form `grid-cols-2` → `grid-cols-1 md:grid-cols-2` (Konfigurasi, DaftarHC, DetailRequest)
+- `.gitignore`: `node_modules/` & `frontend/dist/`
+**File:** `FormDokumen.jsx`, `CekStatus.jsx`, dll.
 
 ---
 
