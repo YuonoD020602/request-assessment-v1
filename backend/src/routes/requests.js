@@ -101,7 +101,7 @@ router.post('/submit', upload.any(), async (req, res) => {
   }
 
   const { data: cfgData } = await supabase.from('konfigurasi').select('key, value');
-  const config = Object.fromEntries(cfgData.map(c => [c.key, c.value]));
+  const config = Object.fromEntries((cfgData || []).map(c => [c.key, c.value]));
 
   // Cek rentang tanggal pendaftaran
   const today = new Date();
@@ -129,7 +129,7 @@ router.post('/submit', upload.any(), async (req, res) => {
 
   for (let idx = 0; idx < peserta.length; idx++) {
     const p = peserta[idx];
-    const idRequest = generatedIds[idx];
+    let idRequest = generatedIds[idx];
 
     // Upload dokumen PDF peserta ke Supabase Storage
     const dokumenFile = req.files?.find(f => f.fieldname === `dokumen_pdf_${idx}`);
@@ -157,8 +157,25 @@ router.post('/submit', upload.any(), async (req, res) => {
       dokumen_peserta_url: dokumenPesertaUrl
     });
 
+    // Retry sekali bila ID tabrakan (dua submit bersamaan menghasilkan ID sama)
     if (error) {
-      return res.status(500).json({ error: `Gagal menyimpan pengajuan untuk ${p.nama_peserta}` });
+      const [idBaru] = await generateIdRequests(1);
+      idRequest = idBaru;
+      const { error: error2 } = await supabase.from('requests').insert({
+        ...dataHC,
+        nama_peserta: p.nama_peserta, email_peserta: p.email_peserta,
+        posisi_current: p.posisi_current, dept: p.dept, div: p.div,
+        gol_current: p.gol_current, posisi_target: p.posisi_target,
+        gol_target: p.gol_target, jumlah_bawahan: p.jumlah_bawahan,
+        jumlah_peers: p.jumlah_peers, masa_kerja: p.masa_kerja,
+        tujuan_ac: p.tujuan_ac, jenis_assessment: p.jenis_assessment,
+        terakhir_assessment: p.terakhir_assessment,
+        id_request: idRequest, status: 'Pending - Menunggu Review',
+        dokumen_peserta_url: dokumenPesertaUrl
+      });
+      if (error2) {
+        return res.status(500).json({ error: `Gagal menyimpan pengajuan untuk ${p.nama_peserta}` });
+      }
     }
 
     // Generate PDF ringkasan data peserta

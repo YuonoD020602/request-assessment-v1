@@ -75,15 +75,25 @@ const getAdmins = (config) => {
 
 // Urutan status — digunakan untuk mencegah status mundur
 const STATUS_ORDER = [
-  'Submitted', 'Approved', 'Menunggu GR',
+  'Pending - Menunggu Review', 'Approved', 'Menunggu GR',
   'GR Selesai - Menunggu Dokumen', 'Dokumen Diterima',
   'Psikotes Dijadwalkan', 'AC Dijadwalkan',
   'Menunggu Presentasi', 'Selesai'
 ];
 const statusLebihMaju = (current, target) => {
+  if (current === 'Rejected') return true; // Rejected final — jangan pernah ditimpa
   const ci = STATUS_ORDER.indexOf(current);
+  if (ci === -1) return true; // status tak dikenal: jangan diubah (konservatif)
   const ti = STATUS_ORDER.indexOf(target);
   return ci > ti; // current sudah lebih maju dari target
+};
+
+// Guard alur: route fase hanya sah untuk request yang sudah Approved & belum Rejected
+const bolehProsesFase = (request) => {
+  if (!request) return { ok: false, error: 'Request tidak ditemukan' };
+  if (request.status === 'Rejected') return { ok: false, error: 'Request sudah ditolak (Rejected) — tidak dapat diproses.' };
+  if (request.status === 'Pending - Menunggu Review') return { ok: false, error: 'Request belum di-approve — tunggu persetujuan approver terlebih dahulu.' };
+  return { ok: true };
 };
 
 // ============================================================
@@ -99,6 +109,8 @@ fase3Router.post('/jadwal-gr', authMiddleware, picOnly, async (req, res) => {
 
   const { data: request, error } = await supabase.from('requests').select('*').eq('id_request', id_request).single();
   if (error || !request) return res.status(404).json({ error: 'Request tidak ditemukan' });
+  const cekFase = bolehProsesFase(request);
+  if (!cekFase.ok) return res.status(400).json({ error: cekFase.error });
 
   await supabase.from('requests').update({
     tanggal_gr, jam_gr, lokasi_gr,
@@ -134,6 +146,8 @@ fase3Router.post('/input-mom', authMiddleware, picOnly, async (req, res) => {
 
   const { data: request } = await supabase.from('requests').select('*').eq('id_request', id_request).single();
   if (!request) return res.status(404).json({ error: 'Request tidak ditemukan' });
+  const cekFase = bolehProsesFase(request);
+  if (!cekFase.ok) return res.status(400).json({ error: cekFase.error });
 
   // Jadwal psikotes wajib ada: dari input ini atau sudah tersimpan sebelumnya
   if (!(tanggal_psikotes || request.tanggal_psikotes) || !(jam_psikotes || request.jam_psikotes)) {
@@ -153,7 +167,7 @@ fase3Router.post('/input-mom', authMiddleware, picOnly, async (req, res) => {
   }).eq('id_request', id_request);
 
   const { data: cfgData } = await supabase.from('konfigurasi').select('key, value');
-  const config = Object.fromEntries(cfgData.map(c => [c.key, c.value]));
+  const config = Object.fromEntries((cfgData || []).map(c => [c.key, c.value]));
 
   for (const hcu of [...getSemuaHC(request), ...getSemuaUser(request)]) {
     await kirimEmailMOM({
@@ -205,9 +219,11 @@ fase3Router.post('/kirim-reminder-dokumen', authMiddleware, picOnly, async (req,
 
   const { data: request } = await supabase.from('requests').select('*').eq('id_request', id_request).single();
   if (!request) return res.status(404).json({ error: 'Request tidak ditemukan' });
+  const cekFase = bolehProsesFase(request);
+  if (!cekFase.ok) return res.status(400).json({ error: cekFase.error });
 
   const { data: cfgData } = await supabase.from('konfigurasi').select('key, value');
-  const config = Object.fromEntries(cfgData.map(c => [c.key, c.value]));
+  const config = Object.fromEntries((cfgData || []).map(c => [c.key, c.value]));
 
   for (const hc of getSemuaHC(request)) {
     await kirimReminderDokumen({
@@ -241,6 +257,9 @@ fase4Router.post('/dokumen', async (req, res) => {
 
   const { data: request, error } = await supabase.from('requests').select('*').eq('id_request', id_request).single();
   if (error || !request) return res.status(404).json({ error: 'ID Request tidak ditemukan' });
+  // Route ini publik — wajib dipagari ketat (Rejected/belum approve tidak boleh)
+  const cekFase = bolehProsesFase(request);
+  if (!cekFase.ok) return res.status(400).json({ error: cekFase.error });
 
   await supabase.from('requests').update({
     link_data_karyawan, link_form_star,
@@ -249,7 +268,7 @@ fase4Router.post('/dokumen', async (req, res) => {
   }).eq('id_request', id_request);
 
   const { data: cfgData } = await supabase.from('konfigurasi').select('key, value');
-  const config = Object.fromEntries(cfgData.map(c => [c.key, c.value]));
+  const config = Object.fromEntries((cfgData || []).map(c => [c.key, c.value]));
 
   const dokumen = [
     { jenis: 'Data Karyawan', link: link_data_karyawan },
@@ -281,9 +300,11 @@ fase4Router.post('/psikotes', authMiddleware, picOnly, async (req, res) => {
 
   const { data: request } = await supabase.from('requests').select('*').eq('id_request', id_request).single();
   if (!request) return res.status(404).json({ error: 'Request tidak ditemukan' });
+  const cekFase = bolehProsesFase(request);
+  if (!cekFase.ok) return res.status(400).json({ error: cekFase.error });
 
   const { data: cfgData } = await supabase.from('konfigurasi').select('key, value');
-  const config = Object.fromEntries(cfgData.map(c => [c.key, c.value]));
+  const config = Object.fromEntries((cfgData || []).map(c => [c.key, c.value]));
 
   // Revisi hanya jika jadwal BERUBAH dari yang tersimpan (jadwal awal berasal
   // dari MOM Fase 3, jadi kirim resmi pertama dari Fase 4 bukan revisi)
@@ -329,9 +350,11 @@ fase4Router.post('/jadwal-ac', authMiddleware, picOnly, async (req, res) => {
 
   const { data: request } = await supabase.from('requests').select('*').eq('id_request', id_request).single();
   if (!request) return res.status(404).json({ error: 'Request tidak ditemukan' });
+  const cekFase = bolehProsesFase(request);
+  if (!cekFase.ok) return res.status(400).json({ error: cekFase.error });
 
   const { data: cfgData } = await supabase.from('konfigurasi').select('key, value');
-  const config = Object.fromEntries(cfgData.map(c => [c.key, c.value]));
+  const config = Object.fromEntries((cfgData || []).map(c => [c.key, c.value]));
 
   await supabase.from('requests').update({
     ruangan_ac: ruangan_ac || null,
@@ -362,13 +385,14 @@ fase4Router.post('/jadwal-ac', authMiddleware, picOnly, async (req, res) => {
     await delay(400);
   }
 
-  // Kirim ke Assessor (template assessor)
+  // Kirim ke Assessor (tabel penugasan — sama seperti roleplayer)
   const assessors = getAssessors(config);
   for (const a of assessors) {
     await kirimReminderACAssessor({
       namaTo: a.nama, emailTo: a.email,
       idRequest: id_request, namaPeserta: request.nama_peserta,
-      tanggalAC: tanggal_ac, ruanganAC: ruangan_ac || null, lokasiAC: lokasi_ac
+      tanggalAC: tanggal_ac, jamAC: null,
+      penugasanTim: penugasan_tim || request.penugasan_tim || []
     });
     await delay(400);
   }
@@ -409,6 +433,8 @@ fase4Router.post('/kirim-reminder-manual', authMiddleware, picOnly, async (req, 
 
   const { data: request } = await supabase.from('requests').select('*').eq('id_request', id_request).single();
   if (!request) return res.status(404).json({ error: 'Request tidak ditemukan' });
+  const cekFase = bolehProsesFase(request);
+  if (!cekFase.ok) return res.status(400).json({ error: cekFase.error });
 
   const { data: cfgData } = await supabase.from('konfigurasi').select('key, value');
   const config = Object.fromEntries((cfgData || []).map(c => [c.key, c.value]));
@@ -477,6 +503,8 @@ fase6Router.post('/jadwal-presentasi', authMiddleware, picOnly, async (req, res)
 
   const { data: request } = await supabase.from('requests').select('*').eq('id_request', id_request).single();
   if (!request) return res.status(404).json({ error: 'Request tidak ditemukan' });
+  const cekFase = bolehProsesFase(request);
+  if (!cekFase.ok) return res.status(400).json({ error: cekFase.error });
 
   await supabase.from('requests').update({
     tanggal_presentasi, jam_presentasi, lokasi_presentasi,
@@ -512,6 +540,8 @@ fase6Router.post('/notif-pilih-slot', authMiddleware, picOnly, async (req, res) 
 
   const { data: request } = await supabase.from('requests').select('*').eq('id_request', id_request).single();
   if (!request) return res.status(404).json({ error: 'Request tidak ditemukan' });
+  const cekFase = bolehProsesFase(request);
+  if (!cekFase.ok) return res.status(400).json({ error: cekFase.error });
 
   const linkPilihSlot = `${process.env.FRONTEND_URL}/pilih-slot?id=${id_request}`;
   for (const hc of getSemuaHC(request)) {
@@ -536,6 +566,8 @@ fase6Router.post('/kirim-laporan', authMiddleware, picOnly, upload.single('pdf')
 
   const { data: request } = await supabase.from('requests').select('*').eq('id_request', id_request).single();
   if (!request) return res.status(404).json({ error: 'Request tidak ditemukan' });
+  const cekFase = bolehProsesFase(request);
+  if (!cekFase.ok) return res.status(400).json({ error: cekFase.error });
 
   const fileBuffer = req.file.buffer;
   const filePath = `${id_request}/laporan_${Date.now()}.pdf`;

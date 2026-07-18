@@ -62,7 +62,15 @@ router.post('/approve', async (req, res) => {
     return res.status(400).json({ error: 'Link approval sudah kadaluarsa' });
   }
 
-  // Invalidasi semua token untuk request ini (approve & reject)
+  // Invalidasi atomik: hanya satu pemroses yang menang (cegah race approve vs reject)
+  const { data: klaim } = await supabase.from('token_approval')
+    .update({ sudah_digunakan: true })
+    .eq('token', token)
+    .eq('sudah_digunakan', false)
+    .select();
+  if (!klaim || klaim.length === 0) {
+    return res.status(400).json({ error: 'Token sudah digunakan' });
+  }
   await supabase.from('token_approval').update({ sudah_digunakan: true }).eq('id_request', tokenData.id_request);
 
   // Update status request
@@ -77,7 +85,7 @@ router.post('/approve', async (req, res) => {
   // Ambil data request dan config
   const { data: request } = await supabase.from('requests').select('*').eq('id_request', tokenData.id_request).single();
   const { data: cfgData } = await supabase.from('konfigurasi').select('key, value');
-  const config = Object.fromEntries(cfgData.map(c => [c.key, c.value]));
+  const config = Object.fromEntries((cfgData || []).map(c => [c.key, c.value]));
 
   // Kirim email ke HC
   for (const hc of getSemuaHC(request)) {
@@ -122,7 +130,15 @@ router.post('/reject', async (req, res) => {
     return res.status(400).json({ error: 'Link approval sudah kadaluarsa' });
   }
 
-  // Invalidasi semua token untuk request ini (approve & reject)
+  // Invalidasi atomik: hanya satu pemroses yang menang (cegah race approve vs reject)
+  const { data: klaim } = await supabase.from('token_approval')
+    .update({ sudah_digunakan: true })
+    .eq('token', token)
+    .eq('sudah_digunakan', false)
+    .select();
+  if (!klaim || klaim.length === 0) {
+    return res.status(400).json({ error: 'Token sudah digunakan' });
+  }
   await supabase.from('token_approval').update({ sudah_digunakan: true }).eq('id_request', tokenData.id_request);
 
   // Update status

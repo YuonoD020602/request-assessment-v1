@@ -32,10 +32,18 @@ const generatePDFPengajuan = (dataHC, peserta, idRequest) => {
 
     const rowHC = [
       ['Nama Perusahaan', dataHC.nama_perusahaan],
-      ['Nama PIC HC', dataHC.pic_hc],
-      ['Email PIC HC', dataHC.email_pic_hc],
-      ['Nama User/Atasan', dataHC.user_atasan || '-'],
-      ['Email User/Atasan', dataHC.email_user || '-'],
+      ['Nama PIC HC 1', dataHC.pic_hc],
+      ['Email PIC HC 1', dataHC.email_pic_hc],
+      ...(dataHC.hc_tambahan || []).flatMap((h, i) => [
+        [`Nama PIC HC ${i + 2}`, h.nama || '-'],
+        [`Email PIC HC ${i + 2}`, h.email || '-'],
+      ]),
+      ['Nama User/Atasan 1', dataHC.user_atasan || '-'],
+      ['Email User/Atasan 1', dataHC.email_user || '-'],
+      ...(dataHC.user_tambahan || []).flatMap((u, i) => [
+        [`Nama User/Atasan ${i + 2}`, u.nama || '-'],
+        [`Email User/Atasan ${i + 2}`, u.email || '-'],
+      ]),
     ];
 
     rowHC.forEach(([label, value]) => {

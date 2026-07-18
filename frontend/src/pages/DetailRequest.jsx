@@ -245,8 +245,8 @@ export default function DetailRequest() {
               <form onSubmit={submitGR} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div><label className="form-label">Tanggal GR *</label><input type="date" className="form-input" required value={grForm.tanggal_gr} onChange={e => setGrForm({...grForm, tanggal_gr: e.target.value})} /></div>
                 <div><label className="form-label">Jam GR *</label><input type="time" className="form-input" required value={grForm.jam_gr} onChange={e => setGrForm({...grForm, jam_gr: e.target.value})} /></div>
-                <div className="col-span-2"><label className="form-label">Lokasi / Link Meet *</label><input className="form-input" required value={grForm.lokasi_gr} onChange={e => setGrForm({...grForm, lokasi_gr: e.target.value})} /></div>
-                <div className="col-span-2"><button type="submit" className="btn-primary" disabled={submitting}>{submitting ? '...' : request.tanggal_gr ? 'Update & Kirim Ulang Undangan GR' : 'Kirim Undangan GR'}</button></div>
+                <div className="md:col-span-2"><label className="form-label">Lokasi / Link Meet *</label><input className="form-input" required value={grForm.lokasi_gr} onChange={e => setGrForm({...grForm, lokasi_gr: e.target.value})} /></div>
+                <div className="md:col-span-2"><button type="submit" className="btn-primary" disabled={submitting}>{submitting ? '...' : request.tanggal_gr ? 'Update & Kirim Ulang Undangan GR' : 'Kirim Undangan GR'}</button></div>
               </form>
             </div>
 
@@ -363,10 +363,10 @@ export default function DetailRequest() {
                 </div>
               )}
               <form onSubmit={submitJadwalAC} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="col-span-2"><label className="form-label">Ruangan AC</label><input className="form-input" placeholder="contoh: Ruang Meeting Lantai 3 – Astra International" value={jadwalAcForm.ruangan_ac} onChange={e => setJadwalAcForm({...jadwalAcForm, ruangan_ac: e.target.value})} /></div>
+                <div className="md:col-span-2"><label className="form-label">Ruangan AC</label><input className="form-input" placeholder="contoh: Ruang Meeting Lantai 3 – Astra International" value={jadwalAcForm.ruangan_ac} onChange={e => setJadwalAcForm({...jadwalAcForm, ruangan_ac: e.target.value})} /></div>
 
                 {/* Penugasan Tim */}
-                <div className="col-span-2">
+                <div className="md:col-span-2">
                   <div className="flex items-center justify-between mb-2">
                     <label className="form-label mb-0">Penugasan Tim (Roleplayer – Assessor – Ruangan)</label>
                     <button type="button"
@@ -407,7 +407,7 @@ export default function DetailRequest() {
                   </div>
                 </div>
 
-                <div className="col-span-2"><button type="submit" className="btn-primary" disabled={submitting}>{submitting ? '...' : 'Simpan Penugasan Tim'}</button></div>
+                <div className="md:col-span-2"><button type="submit" className="btn-primary" disabled={submitting}>{submitting ? '...' : 'Simpan Penugasan Tim'}</button></div>
               </form>
 
               {request.tanggal_ac && (

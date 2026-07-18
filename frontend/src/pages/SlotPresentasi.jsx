@@ -169,6 +169,7 @@ export default function SlotPresentasi() {
               <p className="text-xs text-gray-400">Tambahkan slot presentasi di atas</p>
             </div>
           ) : (
+            <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100">
@@ -220,6 +221,7 @@ export default function SlotPresentasi() {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       </div>

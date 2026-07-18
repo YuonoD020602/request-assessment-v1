@@ -1,12 +1,16 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
 
 export default function PilihSlot() {
+  // Link dari email membawa ?id=REQ-... — langsung terisi otomatis
+  const [searchParams] = useSearchParams();
+  const initId = (searchParams.get('id') || '').trim().toUpperCase();
   const [slots, setSlots] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [idRequest, setIdRequest] = useState('');
-  const [idInput, setIdInput] = useState('');
+  const [idRequest, setIdRequest] = useState(initId);
+  const [idInput, setIdInput] = useState(initId);
   const [booking, setBooking] = useState(false);
   const [booked, setBooked] = useState(null);
 
@@ -169,7 +173,7 @@ export default function PilihSlot() {
                     className={`flex items-center justify-between p-4 border rounded-2xl transition-all ${
                       idRequest
                         ? 'border-white/10 bg-white/5 hover:bg-white/10 hover:border-blue-400/50 cursor-pointer'
-                        : 'border-white/5 bg-white/3 opacity-50'
+                        : 'border-white/5 bg-white/5 opacity-50'
                     }`}>
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-indigo-500/20 border border-indigo-400/20 rounded-xl flex items-center justify-center flex-shrink-0">

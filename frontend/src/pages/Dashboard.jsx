@@ -205,7 +205,7 @@ export default function Dashboard() {
         </div>
 
         {/* ── Stats Cards ── */}
-        <div className="grid grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {STATS_CONFIG.map((s) => (
             <div key={s.key}
               className="relative overflow-hidden rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 p-4 cursor-default group"

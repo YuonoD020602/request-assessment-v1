@@ -28,7 +28,7 @@ const TimelineStep = ({ num, icon, label, active, done, last, children }) => (
       }`}>
         {done ? <span className="text-base">{icon}</span> : <span className="text-xs">{num}</span>}
       </div>
-      {!last && <div className={`w-0.5 flex-1 mt-1 min-h-[24px] rounded-full ${done ? 'bg-gradient-to-b from-blue-400 to-indigo-400' : 'bg-gray-150'}`} style={{ background: done ? undefined : '#e9ecef' }} />}
+      {!last && <div className={`w-0.5 flex-1 mt-1 min-h-[24px] rounded-full ${done ? 'bg-gradient-to-b from-blue-400 to-indigo-400' : 'bg-gray-200'}`} style={{ background: done ? undefined : '#e9ecef' }} />}
     </div>
     {/* Right: content */}
     <div className={`flex-1 pb-5 ${last ? '' : ''}`}>
@@ -71,7 +71,7 @@ export function CekStatus() {
     try {
       await api.post(`/api/slots/${slotId}/book`, { id_request: result.id_request });
       setBookingDone(true);
-      handleCekById(result.id_request);
+      handleCekById(result.id_request, { preserveBooking: true });
     } catch (err) {
       setError(err.response?.data?.error || 'Gagal memilih slot. Coba lagi.');
     } finally {
@@ -79,12 +79,12 @@ export function CekStatus() {
     }
   };
 
-  const handleCekById = async (id) => {
+  const handleCekById = async (id, { preserveBooking = false } = {}) => {
     if (!id) return;
     setLoading(true);
     setError('');
     setResult(null);
-    setBookingDone(false);
+    if (!preserveBooking) setBookingDone(false);
     try {
       const res = await api.get(`/api/requests/status/${id}`);
       const data = res.data.data;
@@ -355,8 +355,19 @@ export function CekStatus() {
               </div>
             )}
 
+            {/* ── Banner sukses booking (di luar kartu picker agar tetap tampil setelah refresh) ── */}
+            {bookingDone && (
+              <div className="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl shadow-sm">
+                <div className="w-8 h-8 bg-emerald-100 rounded-xl flex items-center justify-center">✅</div>
+                <div>
+                  <p className="text-sm font-bold text-emerald-700">Jadwal presentasi berhasil dipilih!</p>
+                  <p className="text-xs text-emerald-600 mt-0.5">Email konfirmasi beserta undangan kalender telah dikirim ke Anda.</p>
+                </div>
+              </div>
+            )}
+
             {/* ── Pilih Slot Presentasi ── */}
-            {result.tanggal_ac && !result.tanggal_presentasi && (
+            {result.tanggal_ac && !result.tanggal_presentasi && result.status !== 'Selesai' && (
               <div className="rounded-3xl overflow-hidden shadow-lg border border-indigo-100">
                 <div className="relative overflow-hidden bg-gradient-to-r from-indigo-700 to-blue-700 px-6 py-5">
                   <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px)', backgroundSize: '18px 18px' }} />
@@ -366,15 +377,6 @@ export function CekStatus() {
                   </div>
                 </div>
                 <div className="bg-white p-5">
-                  {bookingDone && (
-                    <div className="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl mb-4 shadow-sm">
-                      <div className="w-8 h-8 bg-emerald-100 rounded-xl flex items-center justify-center">✅</div>
-                      <div>
-                        <p className="text-sm font-bold text-emerald-700">Jadwal berhasil dipilih!</p>
-                        <p className="text-xs text-emerald-600 mt-0.5">Email konfirmasi akan dikirim ke Anda.</p>
-                      </div>
-                    </div>
-                  )}
                   {slots.length === 0 ? (
                     <div className="text-center py-10">
                       <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl">📭</div>

@@ -720,22 +720,17 @@ const kirimNotifikasiPilihSlot = async ({ namaHC, emailHC, idRequest, namaPesert
 // FASE 6: Kirim Laporan PDF
 // ============================================================
 const kirimLaporan = async ({ namaTo, emailTo, idRequest, namaPeserta, pdfBuffer, namaPDF }) => {
-  await resend.emails.send({
-    from: `${FROM_NAME} <${FROM_EMAIL}>`,
-    reply_to: REPLY_TO_EMAIL,
+  await sendEmail({
     to: emailTo,
     subject: `[RACD AIHO] Laporan Assessment Center – ${namaPeserta} – ${idRequest}`,
+    attachments: [{ filename: namaPDF, content: pdfBuffer }],
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; font-size: 14px; color: #333; line-height: 1.6;">
         <p>Kepada Yth. Bapak/Ibu ${namaTo}</p>
         <p>Terlampir laporan hasil <strong>Assessment Center</strong> untuk <strong>${namaPeserta}</strong> (${idRequest}).</p>
         <p>Hormat kami,<br/><strong>PIC Asesmen RACD AIHO</strong><br/>PT Astra International</p>
       </div>
-    ` + KONTAK_ADMIN_HTML,
-    attachments: [{ filename: namaPDF, content: pdfBuffer }],
-    headers: {
-      'X-Entity-Ref-ID': `racd-aiho-${Date.now()}`
-    }
+    `
   });
   await logEmail(idRequest, emailTo, 'Laporan PDF');
 };

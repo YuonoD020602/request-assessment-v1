@@ -43,12 +43,22 @@ const getTimPelaksana = (config) => {
   return [...getAssessors(config), ...getAdmins(config), ...getRoleplayers(config)];
 };
 
-const runDailyReminders = async () => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
 
-  const h3 = new Date(today); h3.setDate(h3.getDate() + 3);
-  const h1 = new Date(today); h1.setDate(h1.getDate() + 1);
+// Kirim aman: kegagalan satu email tidak menghentikan reminder lainnya
+const kirimAman = async (fn, args, ctx) => {
+  try { await fn(args); } catch (e) { console.error(`[CRON] Gagal kirim (${ctx}):`, e.message); }
+};
+
+const runDailyReminders = async () => {
+  // Semua tanggal dihitung berbasis WIB secara eksplisit — JANGAN campur
+  // Date lokal server + toISOString (UTC), karena menggeser tanggal 1 hari
+  // saat server berjalan di timezone UTC (Railway/Render default).
+  const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' }); // YYYY-MM-DD WIB
+  const [ty, tm, td] = todayStr.split('-').map(Number);
+  const today = new Date(Date.UTC(ty, tm - 1, td));
+
+  const h3 = new Date(today); h3.setUTCDate(h3.getUTCDate() + 3);
+  const h1 = new Date(today); h1.setUTCDate(h1.getUTCDate() + 1);
 
   const fmt = (d) => d.toISOString().split('T')[0];
 
@@ -65,10 +75,10 @@ const runDailyReminders = async () => {
 
     for (const req of dokBelum || []) {
       const { data: cfg } = await supabase.from('konfigurasi').select('key, value');
-      const config = Object.fromEntries(cfg.map(c => [c.key, c.value]));
+      const config = Object.fromEntries((cfg || []).map(c => [c.key, c.value]));
 
       for (const hc of getSemuaHC(req)) {
-        await kirimReminderDokumen({
+        await kirimAman(kirimReminderDokumen, {
           namaHC: hc.nama,
           emailHC: hc.email,
           idRequest: req.id_request,
@@ -87,16 +97,17 @@ const runDailyReminders = async () => {
       .from('requests')
       .select('*')
       .eq('tanggal_psikotes', fmt(h1))
-      .not('tanggal_psikotes', 'is', null);
+      .not('tanggal_psikotes', 'is', null)
+      .not('status', 'in', '("Rejected","Selesai","Pending - Menunggu Review")');
 
     for (const req of psikotes || []) {
       // Ke Administrator
       const { data: cfg } = await supabase.from('konfigurasi').select('key, value');
-      const config = Object.fromEntries(cfg.map(c => [c.key, c.value]));
+      const config = Object.fromEntries((cfg || []).map(c => [c.key, c.value]));
 
       const admins = getAdmins(config);
       for (const admin of admins) {
-        await kirimJadwalPsikotes({
+        await kirimAman(kirimJadwalPsikotes, {
           namaTo: admin.nama, emailTo: admin.email,
           idRequest: req.id_request, namaPeserta: req.nama_peserta,
           tanggal: req.tanggal_psikotes, jam: req.jam_psikotes,
@@ -106,7 +117,7 @@ const runDailyReminders = async () => {
 
       // Ke semua PIC HC
       for (const hc of getSemuaHC(req)) {
-        await kirimJadwalPsikotes({
+        await kirimAman(kirimJadwalPsikotes, {
           namaTo: hc.nama, emailTo: hc.email,
           idRequest: req.id_request, namaPeserta: req.nama_peserta,
           tanggal: req.tanggal_psikotes, jam: req.jam_psikotes,
@@ -116,7 +127,7 @@ const runDailyReminders = async () => {
 
       // Ke email peserta jika ada
       if (req.email_peserta) {
-        await kirimJadwalPsikotes({
+        await kirimAman(kirimJadwalPsikotes, {
           namaTo: req.nama_peserta,
           emailTo: req.email_peserta,
           idRequest: req.id_request,
@@ -142,11 +153,11 @@ const runDailyReminders = async () => {
 
     for (const req of acH1 || []) {
       const { data: cfg } = await supabase.from('konfigurasi').select('key, value');
-      const config = Object.fromEntries(cfg.map(c => [c.key, c.value]));
+      const config = Object.fromEntries((cfg || []).map(c => [c.key, c.value]));
 
       // H-1 ke HC (template peserta — untuk diteruskan)
       for (const hc of getSemuaHC(req)) {
-        await kirimReminderACPeserta({
+        await kirimAman(kirimReminderACPeserta, {
           namaHC: hc.nama, emailHC: hc.email,
           idRequest: req.id_request, namaPeserta: req.nama_peserta,
           tanggalAC: req.tanggal_ac, ruanganAC: req.ruangan_ac || null,
@@ -157,7 +168,7 @@ const runDailyReminders = async () => {
       // H-1 ke Assessor
       for (const a of getAssessors(config)) {
         if (a.email) {
-          await kirimReminderACAssessor({
+          await kirimAman(kirimReminderACAssessor, {
             namaTo: a.nama, emailTo: a.email,
             idRequest: req.id_request, namaPeserta: req.nama_peserta,
             tanggalAC: req.tanggal_ac, jamAC: req.jam_ac,
@@ -169,7 +180,7 @@ const runDailyReminders = async () => {
       // H-1 ke Roleplayer (dengan tabel penugasan)
       for (const r of getRoleplayers(config)) {
         if (r.email) {
-          await kirimReminderACRoleplayer({
+          await kirimAman(kirimReminderACRoleplayer, {
             namaTo: r.nama, emailTo: r.email,
             idRequest: req.id_request, namaPeserta: req.nama_peserta,
             tanggalAC: req.tanggal_ac, jamAC: req.jam_ac,
@@ -181,7 +192,7 @@ const runDailyReminders = async () => {
       // H-1 ke Admin AC
       for (const a of getAdmins(config)) {
         if (a.email) {
-          await kirimReminderAC({
+          await kirimAman(kirimReminderAC, {
             namaTo: a.nama, emailTo: a.email,
             idRequest: req.id_request, namaPeserta: req.nama_peserta,
             tanggalAC: req.tanggal_ac, lokasiAC: req.lokasi_ac,
@@ -205,12 +216,12 @@ const runDailyReminders = async () => {
 
     for (const req of acHariH || []) {
       const { data: cfg } = await supabase.from('konfigurasi').select('key, value');
-      const config = Object.fromEntries(cfg.map(c => [c.key, c.value]));
+      const config = Object.fromEntries((cfg || []).map(c => [c.key, c.value]));
 
       // Hari H ke Assessor (tabel penugasan)
       for (const a of getAssessors(config)) {
         if (a.email) {
-          await kirimReminderACAssessor({
+          await kirimAman(kirimReminderACAssessor, {
             namaTo: a.nama, emailTo: a.email,
             idRequest: req.id_request, namaPeserta: req.nama_peserta,
             tanggalAC: req.tanggal_ac, jamAC: req.jam_ac,
@@ -222,7 +233,7 @@ const runDailyReminders = async () => {
       // Hari H ke Roleplayer (tabel penugasan)
       for (const r of getRoleplayers(config)) {
         if (r.email) {
-          await kirimReminderACRoleplayer({
+          await kirimAman(kirimReminderACRoleplayer, {
             namaTo: r.nama, emailTo: r.email,
             idRequest: req.id_request, namaPeserta: req.nama_peserta,
             tanggalAC: req.tanggal_ac, jamAC: req.jam_ac,
@@ -234,7 +245,7 @@ const runDailyReminders = async () => {
       // Hari H ke Admin AC
       for (const a of getAdmins(config)) {
         if (a.email) {
-          await kirimReminderAC({
+          await kirimAman(kirimReminderAC, {
             namaTo: a.nama, emailTo: a.email,
             idRequest: req.id_request, namaPeserta: req.nama_peserta,
             tanggalAC: req.tanggal_ac, lokasiAC: req.lokasi_ac,

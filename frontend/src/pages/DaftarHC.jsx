@@ -288,7 +288,7 @@ export function DaftarHC() {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3">
-              <div className="w-8 h-8 border-3 border-blue-100 border-t-blue-600 rounded-full animate-spin" />
+              <div className="w-8 h-8 border-2 border-blue-100 border-t-blue-600 rounded-full animate-spin" />
               <p className="text-gray-400 text-sm">Memuat data...</p>
             </div>
           ) : hcList.length === 0 ? (
@@ -300,6 +300,7 @@ export function DaftarHC() {
               <p className="text-sm text-gray-400">Klik "Tambah HC" untuk menambahkan</p>
             </div>
           ) : (
+            <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gradient-to-r from-gray-50 to-slate-50 border-b border-gray-100">
@@ -334,6 +335,7 @@ export function DaftarHC() {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       </div>

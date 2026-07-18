@@ -21,7 +21,7 @@ const FL = ({ label, required, hint, children }) => (
 );
 
 const SectionDivider = ({ label }) => (
-  <div className="col-span-2 flex items-center gap-3 py-1">
+  <div className="md:col-span-2 flex items-center gap-3 py-1">
     <div className="flex-1 border-t border-dashed border-gray-200" />
     <span className="text-xs font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap px-1">{label}</span>
     <div className="flex-1 border-t border-dashed border-gray-200" />
@@ -294,7 +294,7 @@ export default function FormPengajuan() {
                   </div>
 
                   <div className="p-6 grid grid-cols-2 gap-4">
-                    <div className="col-span-2">
+                    <div className="md:col-span-2">
                       <FL label="Nama Peserta" required>
                         <input name="nama_peserta" className="form-input" required
                           value={peserta.nama_peserta} onChange={e => handlePesertaChange(idx, e)}
@@ -348,7 +348,7 @@ export default function FormPengajuan() {
                     </FL>
 
                     <SectionDivider label="Detail Assessment" />
-                    <div className="col-span-2">
+                    <div className="md:col-span-2">
                       <FL label="Jenis Assessment" required>
                         <select name="jenis_assessment" className="form-input" required
                           value={peserta.jenis_assessment} onChange={e => handlePesertaChange(idx, e)}>
@@ -358,14 +358,14 @@ export default function FormPengajuan() {
                         </select>
                       </FL>
                     </div>
-                    <div className="col-span-2">
+                    <div className="md:col-span-2">
                       <FL label="Tujuan Assessment">
                         <textarea name="tujuan_ac" className="form-input resize-none" rows={3}
                           placeholder="Jelaskan tujuan mengikuti Assessment Center..."
                           value={peserta.tujuan_ac} onChange={e => handlePesertaChange(idx, e)} />
                       </FL>
                     </div>
-                    <div className="col-span-2">
+                    <div className="md:col-span-2">
                       <FL label="Terakhir Mengikuti Assessment">
                         <input name="terakhir_assessment" className="form-input"
                           placeholder="mis. Belum pernah / 2 tahun lalu"
@@ -374,7 +374,7 @@ export default function FormPengajuan() {
                     </div>
 
                     {/* Upload PDF */}
-                    <div className="col-span-2">
+                    <div className="md:col-span-2">
                       <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
                         Upload Form Pengajuan (PDF)<span className="text-red-500 ml-0.5 normal-case font-normal">*</span>
                       </p>
