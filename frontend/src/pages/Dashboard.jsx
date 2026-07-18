@@ -192,13 +192,13 @@ export default function Dashboard() {
               <p className="text-blue-200 text-xs font-semibold uppercase tracking-widest mb-1">RACD AIHO · PT Astra International</p>
               <h1 className="text-3xl font-extrabold text-white tracking-tight">Dashboard</h1>
               <p className="text-blue-100 text-sm mt-1.5">
-                Selamat datang kembali, <span className="font-bold text-white">{user?.nama}</span> 👋
+                Selamat datang kembali, <span className="font-bold text-white">{user?.nama}</span>
               </p>
             </div>
             {user?.role === 'pic_asesmen' && (
               <a href="/form-pengajuan" target="_blank"
                 className="flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white text-sm font-semibold px-5 py-3 rounded-xl border border-white/25 transition-all shadow-lg hover:shadow-white/10">
-                🔗 Link Form Pengajuan
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M13.828 10.172a4 4 0 010 5.656l-4 4a4 4 0 01-5.656-5.656l1.1-1.1m8.556-2.9l1.1-1.1a4 4 0 10-5.656-5.656l-4 4a4 4 0 000 5.656"/></svg> Link Form Pengajuan
               </a>
             )}
           </div>
@@ -208,13 +208,11 @@ export default function Dashboard() {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {STATS_CONFIG.map((s) => (
             <div key={s.key}
-              className="relative overflow-hidden rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 p-4 cursor-default group"
-              onClick={() => s.key !== 'total' && setFilterStatus(
-                s.key === 'pending' ? 'Pending - Menunggu Review' :
-                s.key === 'approved' ? 'Approved' :
-                s.key === 'selesai' ? 'Selesai' :
-                s.key === 'ditolak' ? 'Rejected' : ''
-              )}>
+              className={`relative overflow-hidden rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 p-4 group ${['pending','approved','selesai','ditolak'].includes(s.key) ? 'cursor-pointer' : 'cursor-default'}`}
+              onClick={() => {
+                const map = { pending: 'Pending - Menunggu Review', approved: 'Approved', selesai: 'Selesai', ditolak: 'Rejected' };
+                if (map[s.key]) setFilterStatus(map[s.key]);
+              }}>
               {/* top color stripe */}
               <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${s.from} ${s.to}`} />
               {/* icon top-right */}
@@ -254,7 +252,7 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center justify-between mt-2">
               <p className="text-xs text-gray-400">
-                {kapasitasPct >= 100 ? '⚠️ Kapasitas penuh' : `${kuotaMaks - kapasitasAktif} slot tersisa`}
+                {kapasitasPct >= 100 ? 'Kapasitas penuh' : `${kuotaMaks - kapasitasAktif} slot tersisa`}
               </p>
               <p className="text-xs text-gray-400">Kuota maksimal dapat diubah di Konfigurasi</p>
             </div>
@@ -311,12 +309,12 @@ export default function Dashboard() {
                 {hasFilter && (
                   <button onClick={resetFilter}
                     className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors font-medium">
-                    ✕ Reset
+                    Reset Filter
                   </button>
                 )}
                 <button onClick={() => exportCSV(filtered, filterPeriode)}
                   className="flex items-center gap-1.5 px-4 py-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 font-semibold transition-colors shadow-sm">
-                  ↓ Export CSV
+                  Export CSV
                 </button>
               </div>
             </div>
@@ -330,7 +328,7 @@ export default function Dashboard() {
             </p>
             {hasFilter && (
               <span className="text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full font-semibold">
-                ⚡ Filter aktif
+                Filter aktif
               </span>
             )}
           </div>
@@ -366,7 +364,7 @@ export default function Dashboard() {
                   {filtered.map((r, idx) => (
                     <tr key={r.id}
                       className={`border-b border-gray-50 hover:bg-blue-50/30 transition-colors border-l-2 ${STATUS_ROW_ACCENT[r.status] || 'border-l-transparent'}`}>
-                      <td className="py-4 px-4 text-gray-300 text-xs font-semibold">{idx + 1}</td>
+                      <td className="py-4 px-4 text-gray-400 text-xs font-semibold">{idx + 1}</td>
                       <td className="py-4 px-4">
                         <span className="font-mono text-xs text-blue-700 font-bold bg-blue-50 border border-blue-100 px-2.5 py-1 rounded-lg whitespace-nowrap">{r.id_request}</span>
                       </td>
@@ -386,7 +384,7 @@ export default function Dashboard() {
                       <td className="py-4 px-4 text-xs whitespace-nowrap">
                         {r.tanggal_ac
                           ? <span className="font-semibold text-gray-700 bg-gray-50 border border-gray-200 px-2 py-0.5 rounded">{r.tanggal_ac}</span>
-                          : <span className="text-gray-200">—</span>}
+                          : <span className="text-gray-400">—</span>}
                       </td>
                       <td className="py-4 px-4 text-gray-400 text-xs whitespace-nowrap">
                         {new Date(r.created_at).toLocaleDateString('id-ID')}

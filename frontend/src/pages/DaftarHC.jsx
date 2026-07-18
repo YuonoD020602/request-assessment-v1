@@ -112,7 +112,7 @@ export function DaftarHC() {
               <button onClick={() => setShowJadwalForm(!showJadwalForm)} disabled={sending || hcList.length === 0}
                 className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white text-sm font-semibold px-4 py-2.5 rounded-xl border border-white/20 transition-all disabled:opacity-50">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                {sending ? 'Mengirim...' : 'Kirim Email Pembukaan'}
+                {showJadwalForm ? 'Tutup Form Pembukaan' : 'Buka Form Email Pembukaan'}
               </button>
               <button onClick={() => setShowForm(!showForm)}
                 className="flex items-center gap-2 bg-white text-blue-700 text-sm font-bold px-4 py-2.5 rounded-xl shadow hover:shadow-md transition-all">
@@ -171,7 +171,7 @@ export function DaftarHC() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
                   {jadwalSaved ? 'Tersimpan!' : 'Simpan'}
                 </button>
-                <button onClick={() => { const empty = { pendaftaran: '', getting_requirement: '', pengisian_form: '', online_test: '', pelaksanaan_ac: '', pemaparan: '' }; setJadwalBatch(empty); localStorage.removeItem(JADWAL_KEY); }} className="text-sm text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-5 py-2.5 rounded-xl font-medium transition-colors">
+                <button onClick={() => { if (!window.confirm('Hapus semua isian jadwal rencana? Data yang tersimpan di browser juga akan dihapus.')) return; const empty = { pendaftaran: '', getting_requirement: '', pengisian_form: '', online_test: '', pelaksanaan_ac: '', pemaparan: '' }; setJadwalBatch(empty); localStorage.removeItem(JADWAL_KEY); }} className="text-sm text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-5 py-2.5 rounded-xl font-medium transition-colors">
                   Reset/Hapus Data
                 </button>
               </div>

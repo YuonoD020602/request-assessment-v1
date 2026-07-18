@@ -177,18 +177,27 @@ export default function DetailRequest() {
     <Layout>
       <div className="space-y-6">
         <div className="flex items-center gap-4">
-          <button onClick={() => navigate('/dashboard')} className="text-gray-400 hover:text-gray-600">←</button>
+          <button onClick={() => navigate('/dashboard')} aria-label="Kembali ke Dashboard"
+            className="w-9 h-9 flex items-center justify-center rounded-xl bg-white border border-gray-200 text-gray-500 hover:text-blue-600 hover:border-blue-300 shadow-sm transition-all flex-shrink-0">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+          </button>
           <div>
             <h1 className="text-2xl font-bold text-gray-900 font-mono">{request.id_request}</h1>
             <p className="text-gray-500 text-sm">{request.nama_peserta} – {request.nama_perusahaan}</p>
           </div>
-          <span className="ml-auto text-xs font-medium px-3 py-1 rounded-full bg-blue-100 text-blue-700">{request.status}</span>
+          <span className={`ml-auto text-xs font-bold px-3.5 py-1.5 rounded-full ring-1 whitespace-nowrap ${
+            request.status === 'Rejected' ? 'bg-red-50 text-red-700 ring-red-200' :
+            request.status === 'Selesai' ? 'bg-blue-50 text-blue-700 ring-blue-200' :
+            request.status === 'Pending - Menunggu Review' ? 'bg-gray-100 text-gray-600 ring-gray-200' :
+            request.status === 'Approved' ? 'bg-emerald-50 text-emerald-700 ring-emerald-200' :
+            'bg-indigo-50 text-indigo-700 ring-indigo-200'
+          }`}>{request.status}</span>
         </div>
 
-        <div className="flex gap-2 border-b border-gray-200">
+        <div className="flex gap-1 border-b border-gray-200 overflow-x-auto">
           {tabs.map(t => (
             <button key={t.id} onClick={() => setActiveTab(t.id)}
-              className={`pb-3 px-4 text-sm font-medium border-b-2 transition-colors ${
+              className={`pb-3 px-4 text-sm font-semibold border-b-2 whitespace-nowrap transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 rounded-t-lg ${
                 activeTab === t.id ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}>{t.label}</button>
           ))}
@@ -223,7 +232,7 @@ export default function DetailRequest() {
                   <div className="flex gap-2">
                     <span className="text-gray-500 w-28">Dok. Pengajuan</span>
                     <a href={request.dokumen_peserta_url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline font-medium">
-                      📄 Download PDF
+                      Download PDF
                     </a>
                   </div>
                 )}
@@ -325,7 +334,7 @@ export default function DetailRequest() {
               <p className="text-xs text-gray-400 mb-4">Mengikuti kesepakatan MOM (Fase 3). Tombol di bawah mengirim email jadwal resmi ke Peserta &amp; User/Atasan.</p>
               {!request.mom_gr ? (
                 <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-500">
-                  🔒 Kirim MOM di Fase 3 terlebih dahulu — jadwal psikotes ditetapkan saat MOM.
+                  Terkunci — kirim MOM di Fase 3 terlebih dahulu — jadwal psikotes ditetapkan saat MOM.
                 </div>
               ) : (
                 <form onSubmit={submitPsikotes} className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -416,7 +425,7 @@ export default function DetailRequest() {
                     onClick={kirimReminderManual}
                     disabled={submitting}
                     className="btn-primary w-full flex items-center justify-center gap-2">
-                    {submitting ? '⏳ Mengirim...' : '📧 Kirim Reminder Sekarang'}
+                    {submitting ? 'Mengirim...' : 'Kirim Reminder AC Sekarang (HC + Tim)'}
                   </button>
                 </div>
               )}
@@ -431,7 +440,7 @@ export default function DetailRequest() {
               <h3 className="font-semibold text-gray-900 mb-4">Jadwal Presentasi Hasil AC</h3>
               {request.tanggal_presentasi ? (
                 <div className="p-4 bg-green-50 border border-green-200 rounded-xl mb-3">
-                  <p className="text-sm font-semibold text-green-800 mb-2">✅ HC telah memilih slot presentasi</p>
+                  <p className="text-sm font-semibold text-green-800 mb-2">HC telah memilih slot presentasi ✓</p>
                   <div className="space-y-1 text-sm">
                     <p><span className="text-gray-500">Tanggal:</span> <strong>{request.tanggal_presentasi}</strong></p>
                     <p><span className="text-gray-500">Pukul:</span> <strong>{request.jam_presentasi} WIB</strong></p>
@@ -441,14 +450,14 @@ export default function DetailRequest() {
               ) : (
                 <div className="space-y-3 mb-3">
                   <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-xl text-sm text-yellow-700">
-                    <p className="font-medium mb-1">⏳ HC belum memilih slot presentasi</p>
+                    <p className="font-medium mb-1">HC belum memilih slot presentasi</p>
                     <p className="text-xs text-yellow-600">Kirim notifikasi ke HC agar mereka memilih jadwal melalui halaman Cek Status.</p>
                   </div>
                   <button
                     onClick={kirimNotifPilihSlot}
                     disabled={submitting}
                     className="btn-primary w-full flex items-center justify-center gap-2">
-                    {submitting ? '⏳ Mengirim...' : '📧 Kirim / Ingatkan Booking Jadwal ke HC'}
+                    {submitting ? 'Mengirim...' : 'Kirim / Ingatkan Booking Jadwal ke HC'}
                   </button>
                   <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-500">
                     <p className="font-medium mb-1">Atau bagikan link langsung:</p>

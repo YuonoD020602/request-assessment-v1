@@ -156,26 +156,35 @@ export default function FormPengajuan() {
           <p className="text-gray-400 text-sm mt-1">RACD AIHO – PT Astra International</p>
         </div>
 
-        {/* ── Step Indicator ── */}
-        <div className="flex items-center mb-8 px-2">
-          {steps.map((step, i) => (
-            <div key={step} className="flex items-center flex-1 last:flex-none">
-              <div className="flex flex-col items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all ${
-                  i < 2
-                    ? 'bg-gradient-to-br from-blue-600 to-indigo-600 border-transparent text-white shadow-md'
-                    : 'bg-white border-gray-200 text-gray-400'
-                }`}>
-                  {i < 2 ? (i === 0 ? 'A' : 'B') : '✓'}
+        {/* ── Step Indicator (mengikuti progres isian nyata) ── */}
+        {(() => {
+          const stepDone = [
+            !!namaPerusahaan && hcList.some(h => h.nama && h.email),
+            pesertaList.every(pp => pp.nama_peserta && pp.jenis_assessment && pp.dokumen_pdf),
+            false,
+          ];
+          return (
+            <div className="flex items-center mb-8 px-2">
+              {steps.map((step, i) => (
+                <div key={step} className="flex items-center flex-1 last:flex-none">
+                  <div className="flex flex-col items-center">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all ${
+                      stepDone[i]
+                        ? 'bg-gradient-to-br from-blue-600 to-indigo-600 border-transparent text-white shadow-md'
+                        : 'bg-white border-gray-200 text-gray-400'
+                    }`}>
+                      {stepDone[i] ? '✓' : (i === 0 ? 'A' : i === 1 ? 'B' : '→')}
+                    </div>
+                    <p className={`text-xs mt-1 font-semibold whitespace-nowrap ${stepDone[i] ? 'text-blue-700' : 'text-gray-400'}`}>{step}</p>
+                  </div>
+                  {i < steps.length - 1 && (
+                    <div className={`flex-1 h-0.5 mx-2 mb-5 rounded ${stepDone[i] ? 'bg-gradient-to-r from-blue-500 to-indigo-500' : 'bg-gray-200'}`} />
+                  )}
                 </div>
-                <p className={`text-xs mt-1 font-semibold whitespace-nowrap ${i < 2 ? 'text-blue-700' : 'text-gray-400'}`}>{step}</p>
-              </div>
-              {i < steps.length - 1 && (
-                <div className={`flex-1 h-0.5 mx-2 mb-5 rounded ${i < 1 ? 'bg-gradient-to-r from-blue-500 to-indigo-500' : 'bg-gray-200'}`} />
-              )}
+              ))}
             </div>
-          ))}
-        </div>
+          );
+        })()}
 
         <form onSubmit={handleSubmit} className="space-y-6">
 

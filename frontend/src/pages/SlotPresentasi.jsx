@@ -48,7 +48,7 @@ export default function SlotPresentasi() {
   };
 
   const handleBebaskan = async (slot) => {
-    if (!window.confirm(`Bebaskan slot ini dari ${slot.id_request}? Status request akan kembali ke "AC Dijadwalkan" dan slot menjadi Tersedia kembali.`)) return;
+    if (!window.confirm(`Bebaskan slot ini dari ${slot.id_request}? Slot kembali Tersedia. Jadwal presentasi request akan dikosongkan (request yang sudah Selesai tidak berubah).`)) return;
     try {
       await api.put(`/api/slots/${slot.id}/release`);
       toast.success('Slot dibebaskan');

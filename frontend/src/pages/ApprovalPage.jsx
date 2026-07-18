@@ -87,7 +87,7 @@ export default function ApprovalPage() {
           <div className="space-y-2 text-sm">
             {[
               ['Perusahaan', r?.nama_perusahaan],
-              ['PIC HC', r?.pic_hc],
+              ['PIC HC', [r?.pic_hc, ...((r?.hc_tambahan || []).map(h => h.nama))].filter(Boolean).join(', ')],
               ['Peserta', r?.nama_peserta],
               ['Posisi Saat Ini', r?.posisi_current],
               ['Posisi Target', r?.posisi_target],
