@@ -3,6 +3,8 @@ const supabase = require('../supabase');
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL = 'noreply@lyraac.site';
+const FROM_NAME = process.env.FROM_NAME || 'Yuono Dwi Raharjo - RACD AIHO';
+const REPLY_TO_EMAIL = process.env.REPLY_TO_EMAIL || 'yuono.raharjo@ai.astra.co.id';
 
 const logEmail = async (id_request, tujuan, fungsi) => {
   try {
@@ -85,8 +87,8 @@ const generateICS = ({ uid, summary, description, location, dateStr, timeStr, en
 
 const sendEmail = async ({ to, subject, html, attachments = [] }) => {
   const { error } = await resend.emails.send({
-    from: `RACD AIHO Assessment Center <${FROM_EMAIL}>`,
-    reply_to: FROM_EMAIL,
+    from: `${FROM_NAME} <${FROM_EMAIL}>`,
+    reply_to: REPLY_TO_EMAIL,
     to,
     subject,
     html,
@@ -712,8 +714,8 @@ const kirimNotifikasiPilihSlot = async ({ namaHC, emailHC, idRequest, namaPesert
 // ============================================================
 const kirimLaporan = async ({ namaTo, emailTo, idRequest, namaPeserta, pdfBuffer, namaPDF }) => {
   await resend.emails.send({
-    from: `RACD AIHO Assessment Center <${FROM_EMAIL}>`,
-    reply_to: FROM_EMAIL,
+    from: `${FROM_NAME} <${FROM_EMAIL}>`,
+    reply_to: REPLY_TO_EMAIL,
     to: emailTo,
     subject: `[RACD AIHO] Laporan Assessment Center – ${namaPeserta} – ${idRequest}`,
     html: `

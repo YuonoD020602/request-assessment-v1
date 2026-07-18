@@ -459,7 +459,8 @@ fase5Router.post('/kirim-reminder-booking', authMiddleware, picOnly, async (req,
   const { Resend } = require('resend');
   const resend = new Resend(process.env.RESEND_API_KEY);
   await resend.emails.send({
-    from: 'RACD AIHO Assessment Center <noreply@lyraac.site>',
+    from: `${process.env.FROM_NAME || 'Yuono Dwi Raharjo - RACD AIHO'} <noreply@lyraac.site>`,
+    reply_to: process.env.REPLY_TO_EMAIL || 'yuono.raharjo@ai.astra.co.id',
     to: request.email_pic_hc,
     subject: `[RACD AIHO] Reminder: Booking Jadwal Presentasi – ${id_request}`,
     html: `
