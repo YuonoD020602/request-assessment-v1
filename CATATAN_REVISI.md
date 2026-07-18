@@ -63,6 +63,7 @@
 | 52 | Gabung 2 tombol Fase 6 jadi satu "Kirim/Ingatkan Booking Jadwal" (hapus route reminder-booking) | ✅ Selesai | Batch 16 |
 | 53 | Kontak admin (yuono.raharjo@ai.astra.co.id) di penutup semua email + footer semua halaman + titik error publik | ✅ Selesai | Batch 16 |
 | 54 | FormDokumen & CekStatus: hapus sisa ketergantungan jam_ac; grid form responsif mobile | ✅ Selesai | Batch 16 |
+| 55 | Multi PIC HC & multi User/Atasan per pengajuan (form dinamis + semua email ke semua kontak + cek status by-email mencakup HC tambahan) | ✅ Selesai | Batch 16 |
 | 24 | Export PDF laporan per periode | 📋 Backlog | - |
 
 ---
@@ -801,6 +802,27 @@ Tombol "Kirim Notifikasi Pilih Jadwal" dan "Kirim Reminder Booking Jadwal" (dua 
 - Grid form `grid-cols-2` → `grid-cols-1 md:grid-cols-2` (Konfigurasi, DaftarHC, DetailRequest)
 - `.gitignore`: `node_modules/` & `frontend/dist/`
 **File:** `FormDokumen.jsx`, `CekStatus.jsx`, dll.
+
+#### 55. Multi PIC HC & Multi User/Atasan
+
+**Kebutuhan:** Satu pengajuan bisa melibatkan lebih dari satu PIC HC (dan lebih dari satu User/Atasan).
+
+**Implementasi:**
+- **Form Pengajuan Seksi A dinamis**: tombol "+ Tambah PIC HC" dan "+ Tambah User" — HC pertama wajib (kontak utama), sisanya opsional
+- **DB**: kolom lama (`pic_hc`, `email_pic_hc`, `user_atasan`, `email_user`) tetap menyimpan kontak utama; kontak tambahan di kolom JSONB baru `hc_tambahan` & `user_tambahan` — **data lama 100% kompatibel tanpa migrasi data**
+- **Helper terpusat** `getSemuaHC(request)` / `getSemuaUser(request)` di `utils/penerima.js`
+- **Semua email yang selama ini ke HC/User kini terkirim ke SEMUA kontak**: approved/rejected, undangan GR, MOM, reminder dokumen (manual + cron H-3), jadwal & reminder psikotes, jadwal AC, reminder AC (manual + cron H-1), notif booking jadwal, konfirmasi booking, undangan presentasi, laporan PDF
+- **Cek Status by Email**: pencarian cocok dengan email HC utama ATAU HC tambahan (JSONB containment)
+- **Email approver**: menampilkan semua nama PIC HC
+- **Detail Request**: menampilkan daftar lengkap PIC HC & User/Atasan
+
+**SQL migration (dijalankan di Supabase SQL Editor):**
+```sql
+ALTER TABLE requests ADD COLUMN IF NOT EXISTS hc_tambahan JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE requests ADD COLUMN IF NOT EXISTS user_tambahan JSONB DEFAULT '[]'::jsonb;
+```
+
+**File:** `FormPengajuan.jsx`, `DetailRequest.jsx`, `requests.js`, `approval.js`, `fase_routes.js`, `slots.js`, `cronService.js`, `utils/penerima.js` (baru)
 
 ---
 
