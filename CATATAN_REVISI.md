@@ -64,6 +64,11 @@
 | 53 | Kontak admin (yuono.raharjo@ai.astra.co.id) di penutup semua email + footer semua halaman + titik error publik | ✅ Selesai | Batch 16 |
 | 54 | FormDokumen & CekStatus: hapus sisa ketergantungan jam_ac; grid form responsif mobile | ✅ Selesai | Batch 16 |
 | 55 | Multi PIC HC & multi User/Atasan per pengajuan (form dinamis + semua email ke semua kontak + cek status by-email mencakup HC tambahan) | ✅ Selesai | Batch 16 |
+| 56 | Fix kritis cron: tanggal reminder berbasis WIB (sebelumnya bergeser 1 hari di server UTC) | ✅ Selesai | Batch 17 |
+| 57 | Fix kritis: STATUS_ORDER salah + Rejected bisa ditimpa; guard bolehProsesFase di semua route fase (termasuk /dokumen publik) | ✅ Selesai | Batch 17 |
+| 58 | Fix major: token approval atomik, assessor jadwal-ac dapat tabel penugasan, kirimLaporan tidak menelan error, filter status cron psikotes, isolasi kegagalan email cron, guard config null, PDF multi-HC, retry ID tabrakan | ✅ Selesai | Batch 17 |
+| 59 | Fix frontend: /pilih-slot membaca ?id= dari email, banner sukses booking CekStatus tampil, slot picker skip status Selesai | ✅ Selesai | Batch 17 |
+| 60 | UI overhaul tahap 1: design system index.css, Layout sidebar responsif + drawer mobile + aksesibilitas, Login/SetupPassword premium, perbaikan kelas CSS invalid, tabel overflow, grid responsif | ✅ Selesai | Batch 17 |
 | 24 | Export PDF laporan per periode | 📋 Backlog | - |
 
 ---
