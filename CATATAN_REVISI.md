@@ -1,6 +1,6 @@
 # CATATAN REVISI — Request Assessment V1
 **Project:** RACD AIHO – PT Astra International  
-**Terakhir diperbarui:** 18 Juli 2026 (Batch 16)
+**Terakhir diperbarui:** 18 Juli 2026 (Batch 17)
 
 ---
 
@@ -69,6 +69,7 @@
 | 58 | Fix major: token approval atomik, assessor jadwal-ac dapat tabel penugasan, kirimLaporan tidak menelan error, filter status cron psikotes, isolasi kegagalan email cron, guard config null, PDF multi-HC, retry ID tabrakan | ✅ Selesai | Batch 17 |
 | 59 | Fix frontend: /pilih-slot membaca ?id= dari email, banner sukses booking CekStatus tampil, slot picker skip status Selesai | ✅ Selesai | Batch 17 |
 | 60 | UI overhaul tahap 1: design system index.css, Layout sidebar responsif + drawer mobile + aksesibilitas, Login/SetupPassword premium, perbaikan kelas CSS invalid, tabel overflow, grid responsif | ✅ Selesai | Batch 17 |
+| 61 | UI tahap 2: Dashboard (stat klik jujur, kontras), DetailRequest (badge status berwarna, tab mobile), DaftarHC (label jujur + konfirmasi reset), FormPengajuan (step indicator dinamis), ApprovalPage (semua PIC HC) | ✅ Selesai | Batch 17 |
 | 24 | Export PDF laporan per periode | 📋 Backlog | - |
 
 ---
@@ -828,6 +829,48 @@ ALTER TABLE requests ADD COLUMN IF NOT EXISTS user_tambahan JSONB DEFAULT '[]'::
 ```
 
 **File:** `FormPengajuan.jsx`, `DetailRequest.jsx`, `requests.js`, `approval.js`, `fase_routes.js`, `slots.js`, `cronService.js`, `utils/penerima.js` (baru)
+
+---
+
+### ✅ 56–61. Audit Besar & UI Overhaul (Batch 17)
+**Tanggal:** 18 Juli 2026 — hasil audit menyeluruh 3 arah (backend, frontend, UI/UX): 40 temuan bug + 50 temuan UI.
+
+#### 56. [KRITIS] Tanggal Reminder Cron Bergeser 1 Hari
+`fmt = toISOString` (UTC) dicampur Date lokal — di server UTC, reminder "H-1" menembak kegiatan hari ini dan "Hari-H" menembak kegiatan kemarin. Kini seluruh tanggal dihitung eksplisit berbasis WIB (`toLocaleDateString en-CA Asia/Jakarta`).
+**File:** `cronService.js`
+
+#### 57. [KRITIS] Status Rejected Bisa Ditimpa Maju
+STATUS_ORDER berisi `'Submitted'` yang tidak pernah dipakai (status awal sebenarnya `'Pending - Menunggu Review'`), sehingga `indexOf` -1 → guard bolong: request Rejected/belum-approve bisa dinaikkan oleh semua route fase — termasuk `POST /api/fase4/dokumen` yang **publik**. Fix: STATUS_ORDER dibetulkan, `Rejected` final, status tak dikenal tidak diubah, dan helper `bolehProsesFase()` dipasang di **semua** route fase (tolak Rejected & belum-approve).
+**File:** `fase_routes.js`
+
+#### 58. [MAJOR] 8 Perbaikan Backend
+1. **Token approval atomik** — dua approver klik bersamaan tidak lagi dua-duanya diproses
+2. **Assessor akhirnya menerima tabel penugasan** dari `/jadwal-ac` (parameter salah sejak awal — selalu "Penugasan tim belum diatur")
+3. **kirimLaporan lewat sendEmail** — kegagalan Resend tidak lagi ditelan (sebelumnya status tetap "Selesai" walau email gagal)
+4. **Cron psikotes H-1 memfilter status** (Rejected/Selesai tidak dikirimi)
+5. **Isolasi kegagalan email cron** (`kirimAman`) — satu alamat rusak tidak menghentikan seluruh reminder harian
+6. **Guard `(cfgData || [])`** di semua pembacaan konfigurasi — cegah request menggantung
+7. **PDF approver menampilkan semua PIC HC & User** (multi-kontak)
+8. **Retry ID request** saat dua submit bersamaan tabrakan
+**File:** `approval.js`, `fase_routes.js`, `emailService.js`, `cronService.js`, `requests.js`, `pdfService.js`
+
+#### 59. [MAJOR] Perbaikan Frontend
+- `/pilih-slot?id=REQ-xxx` dari email kini **otomatis terisi** (sebelumnya diabaikan — HC harus ketik manual)
+- Banner "booking berhasil" di CekStatus kini benar-benar tampil (sebelumnya langsung ter-reset)
+- Slot picker CekStatus dikecualikan untuk status Selesai
+**File:** `PilihSlot.jsx`, `CekStatus.jsx`
+
+#### 60–61. UI Overhaul
+- **Design system terpusat** di `index.css`: `.btn-primary/.btn-secondary/.btn-danger-soft/.card/.badge/.form-input` — seluruh halaman seragam
+- **Layout**: sidebar responsif dengan **drawer mobile + tombol ☰**, focus ring, skip-to-content
+- **Login & SetupPassword**: tampilan premium + validasi password real-time
+- **Dashboard**: kartu stat hanya bisa diklik bila jadi shortcut filter nyata; emoji → SVG; kontras diperbaiki
+- **DetailRequest**: badge status berwarna sesuai status, tab bar scrollable mobile, tombol kembali ber-ikon
+- **DaftarHC**: label tombol jujur ("Buka Form Email Pembukaan") + konfirmasi sebelum Reset/Hapus Data
+- **FormPengajuan**: step indicator dinamis mengikuti progres isian
+- **ApprovalPage**: menampilkan semua nama PIC HC
+- Perbaikan kelas CSS invalid (`border-3`, `bg-white/3`, `bg-gray-150`), tabel `overflow-x-auto`, grid responsif mobile
+**File:** `index.css`, `Layout.jsx`, dan 10 halaman
 
 ---
 
