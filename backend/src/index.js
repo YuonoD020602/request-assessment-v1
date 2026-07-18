@@ -56,11 +56,52 @@ app.use('/api/fase6', fase6Routes);
 app.use('/api/slots', slotRoutes);
 
 // ============================================================
-// CRON JOB - Jalankan setiap hari pukul 06.00 WIB
+// CRON JOB - Reminder harian (internal + trigger eksternal)
 // ============================================================
-cron.schedule('0 6 * * *', async () => {
-  console.log('[CRON] Menjalankan reminder harian...');
-  await runDailyReminders();
+// Guard: cegah reminder jalan dua kali di hari yang sama
+// (misal cron internal & cron-job.org sama-sama menembak jam 06.00)
+let lastReminderRunDate = null;
+let reminderRunning = false;
+
+const triggerDailyReminders = async (source) => {
+  const todayWIB = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+  if (reminderRunning) {
+    console.log(`[CRON] Skip (${source}): reminder sedang berjalan`);
+    return;
+  }
+  if (lastReminderRunDate === todayWIB) {
+    console.log(`[CRON] Skip (${source}): reminder sudah dijalankan hari ini`);
+    return;
+  }
+  reminderRunning = true;
+  lastReminderRunDate = todayWIB;
+  console.log(`[CRON] Menjalankan reminder harian (trigger: ${source})...`);
+  try {
+    await runDailyReminders();
+  } finally {
+    reminderRunning = false;
+  }
+};
+
+// Endpoint ringan untuk keep-alive ping (cron-job.org / UptimeRobot)
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Endpoint trigger cron dari luar (cron-job.org) — dilindungi CRON_SECRET.
+// Dibutuhkan di hosting yang menidurkan server saat idle (mis. Render free),
+// karena node-cron internal tidak jalan saat server tidur.
+app.get('/api/cron/run-daily', (req, res) => {
+  if (!process.env.CRON_SECRET || req.query.key !== process.env.CRON_SECRET) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  // Balas segera agar pemanggil tidak kena timeout; proses lanjut di background
+  res.json({ success: true, message: 'Reminder harian dipicu' });
+  triggerDailyReminders('eksternal').catch(err => console.error('[CRON] Error:', err.message));
+});
+
+cron.schedule('0 6 * * *', () => {
+  triggerDailyReminders('internal').catch(err => console.error('[CRON] Error:', err.message));
 }, {
   timezone: 'Asia/Jakarta'
 });
