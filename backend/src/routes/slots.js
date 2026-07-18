@@ -37,14 +37,18 @@ router.delete('/:id', authMiddleware, picOnly, async (req, res) => {
   const { data: slot } = await supabase.from('slot_presentasi').select('*').eq('id', id).single();
   if (!slot) return res.status(404).json({ error: 'Slot tidak ditemukan' });
 
-  // Jika terpesan, bersihkan data presentasi dari request terkait
+  // Jika terpesan, bersihkan data presentasi dari request terkait.
+  // Request yang sudah Selesai tidak disentuh — jadwal presentasinya jadi arsip.
   if (slot.status === 'Terpesan' && slot.id_request) {
-    await supabase.from('requests').update({
-      tanggal_presentasi: null,
-      jam_presentasi: null,
-      lokasi_presentasi: null,
-      status: 'AC Dijadwalkan'
-    }).eq('id_request', slot.id_request);
+    const { data: reqData } = await supabase.from('requests').select('status').eq('id_request', slot.id_request).single();
+    if (reqData && reqData.status !== 'Selesai') {
+      await supabase.from('requests').update({
+        tanggal_presentasi: null,
+        jam_presentasi: null,
+        lokasi_presentasi: null,
+        status: 'AC Dijadwalkan'
+      }).eq('id_request', slot.id_request);
+    }
   }
 
   await supabase.from('slot_presentasi').delete().eq('id', id);
@@ -58,14 +62,18 @@ router.put('/:id/release', authMiddleware, picOnly, async (req, res) => {
   if (!slot) return res.status(404).json({ error: 'Slot tidak ditemukan' });
   if (slot.status !== 'Terpesan') return res.status(400).json({ error: 'Slot bukan Terpesan' });
 
-  // Bersihkan data presentasi dari request terkait
+  // Bersihkan data presentasi dari request terkait.
+  // Request yang sudah Selesai tidak disentuh — jadwal presentasinya jadi arsip.
   if (slot.id_request) {
-    await supabase.from('requests').update({
-      tanggal_presentasi: null,
-      jam_presentasi: null,
-      lokasi_presentasi: null,
-      status: 'AC Dijadwalkan'
-    }).eq('id_request', slot.id_request);
+    const { data: reqData } = await supabase.from('requests').select('status').eq('id_request', slot.id_request).single();
+    if (reqData && reqData.status !== 'Selesai') {
+      await supabase.from('requests').update({
+        tanggal_presentasi: null,
+        jam_presentasi: null,
+        lokasi_presentasi: null,
+        status: 'AC Dijadwalkan'
+      }).eq('id_request', slot.id_request);
+    }
   }
 
   await supabase.from('slot_presentasi').update({ status: 'Tersedia', id_request: null }).eq('id', id);
@@ -81,6 +89,17 @@ router.post('/:id/book', async (req, res) => {
   // Cek request valid dulu
   const { data: request } = await supabase.from('requests').select('*').eq('id_request', id_request).single();
   if (!request) return res.status(404).json({ error: 'ID Request tidak ditemukan' });
+
+  // Booking hanya boleh setelah AC dijadwalkan
+  if (!request.tanggal_ac) {
+    return res.status(400).json({ error: 'Jadwal Assessment Center belum ditetapkan untuk request ini. Booking presentasi baru bisa dilakukan setelah jadwal AC ada.' });
+  }
+  if (request.status === 'Rejected' || request.status === 'Selesai') {
+    return res.status(400).json({ error: `Request berstatus ${request.status} — tidak dapat booking slot presentasi.` });
+  }
+  if (request.tanggal_presentasi) {
+    return res.status(400).json({ error: 'Request ini sudah memiliki jadwal presentasi. Hubungi PIC Asesmen jika ingin mengubah jadwal.' });
+  }
 
   // Atomic update: hanya berhasil jika slot masih Tersedia
   const { data: updatedSlots, error: slotError } = await supabase

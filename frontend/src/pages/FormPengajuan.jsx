@@ -373,6 +373,10 @@ export default function FormPengajuan() {
             <p className="text-center text-xs text-gray-400">
               🔒 Data Anda diproses secara konfidensial oleh Tim RACD AIHO
             </p>
+            <p className="text-center text-xs text-gray-400">
+              Ada pertanyaan? Hubungi PIC Asesmen —{' '}
+              <a href="mailto:yuono.raharjo@ai.astra.co.id" className="text-blue-600 hover:underline font-medium">yuono.raharjo@ai.astra.co.id</a>
+            </p>
           </div>
         </form>
       </div>

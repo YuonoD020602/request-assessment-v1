@@ -134,13 +134,20 @@ fase3Router.post('/input-mom', authMiddleware, picOnly, async (req, res) => {
   const { data: request } = await supabase.from('requests').select('*').eq('id_request', id_request).single();
   if (!request) return res.status(404).json({ error: 'Request tidak ditemukan' });
 
+  // Jadwal psikotes wajib ada: dari input ini atau sudah tersimpan sebelumnya
+  if (!(tanggal_psikotes || request.tanggal_psikotes) || !(jam_psikotes || request.jam_psikotes)) {
+    return res.status(400).json({ error: 'Tanggal dan jam psikotes wajib diisi — jadwal ini diumumkan di email MOM' });
+  }
+
+  // Field kosong TIDAK menimpa data yang sudah tersimpan (jadwal bisa saja
+  // sudah dikirim ke peserta — kirim ulang MOM tidak boleh menghapusnya)
   await supabase.from('requests').update({
     mom_gr,
-    kompetensi_alc: kompetensi_alc || null,
-    tanggal_psikotes: tanggal_psikotes || null,
-    jam_psikotes: jam_psikotes || null,
-    tanggal_ac: tanggal_ac || null,
-    lokasi_ac: lokasi_ac || null,
+    ...(kompetensi_alc ? { kompetensi_alc } : {}),
+    ...(tanggal_psikotes ? { tanggal_psikotes } : {}),
+    ...(jam_psikotes ? { jam_psikotes } : {}),
+    ...(tanggal_ac ? { tanggal_ac } : {}),
+    ...(lokasi_ac ? { lokasi_ac } : {}),
     ...(statusLebihMaju(request.status, 'GR Selesai - Menunggu Dokumen') ? {} : { status: 'GR Selesai - Menunggu Dokumen' })
   }).eq('id_request', id_request);
 
@@ -272,7 +279,10 @@ fase4Router.post('/psikotes', authMiddleware, picOnly, async (req, res) => {
   const { data: cfgData } = await supabase.from('konfigurasi').select('key, value');
   const config = Object.fromEntries(cfgData.map(c => [c.key, c.value]));
 
-  const isRevisi = !!(request.tanggal_psikotes);
+  // Revisi hanya jika jadwal BERUBAH dari yang tersimpan (jadwal awal berasal
+  // dari MOM Fase 3, jadi kirim resmi pertama dari Fase 4 bukan revisi)
+  const isRevisi = !!(request.tanggal_psikotes) &&
+    (request.tanggal_psikotes !== tanggal_psikotes || (request.jam_psikotes || '') !== jam_psikotes);
   const statusUpdatePsikotes = statusLebihMaju(request.status, 'Psikotes Dijadwalkan') ? {} : { status: 'Psikotes Dijadwalkan' };
   const { error: updateErr } = await supabase.from('requests').update({ tanggal_psikotes, jam_psikotes, ...statusUpdatePsikotes }).eq('id_request', id_request);
   if (updateErr) {
@@ -443,45 +453,7 @@ fase4Router.post('/kirim-reminder-manual', authMiddleware, picOnly, async (req, 
 // ============================================================
 const fase5Router = express.Router();
 
-fase5Router.post('/kirim-reminder-booking', authMiddleware, picOnly, async (req, res) => {
-  const { id_request } = req.body;
-  if (!id_request) return res.status(400).json({ error: 'ID Request wajib diisi' });
-
-  const { data: request } = await supabase.from('requests').select('*').eq('id_request', id_request).single();
-  if (!request) return res.status(404).json({ error: 'Request tidak ditemukan' });
-
-  const { data: cfgData } = await supabase.from('konfigurasi').select('key, value');
-  const config = Object.fromEntries((cfgData || []).map(c => [c.key, c.value]));
-
-  const linkPilihSlot = `${process.env.FRONTEND_URL}/pilih-slot?id=${id_request}`;
-  const linkCekStatus = `${process.env.FRONTEND_URL}/cek-status?id=${id_request}`;
-
-  const { Resend } = require('resend');
-  const resend = new Resend(process.env.RESEND_API_KEY);
-  await resend.emails.send({
-    from: `${process.env.FROM_NAME || 'Yuono Dwi Raharjo - RACD AIHO'} <noreply@lyraac.site>`,
-    reply_to: process.env.REPLY_TO_EMAIL || 'yuono.raharjo@ai.astra.co.id',
-    to: request.email_pic_hc,
-    subject: `[RACD AIHO] Reminder: Booking Jadwal Presentasi – ${id_request}`,
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; font-size: 14px; color: #333; line-height: 1.6;">
-        <p>Kepada Yth.<br/>Bapak/Ibu ${request.pic_hc}</p>
-        <p>Sehubungan dengan telah selesainya Assessment Center untuk <strong>${request.nama_peserta}</strong> (${id_request}), kami mengingatkan Anda untuk segera <strong>melakukan booking jadwal Presentasi Hasil AC</strong>.</p>
-        <div style="margin: 20px 0; padding: 16px; background: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 4px;">
-          <p style="margin: 0 0 8px 0; font-weight: bold;">Klik tombol berikut untuk booking jadwal:</p>
-          <a href="${linkPilihSlot}" style="display: inline-block; background: #1d4ed8; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Booking Jadwal Presentasi &rarr;</a>
-        </div>
-        <p style="margin-top: 16px; font-size: 13px; color: #555;">Pantau status request Anda:<br/>
-        <a href="${linkCekStatus}" style="color: #2563eb;">${linkCekStatus}</a></p>
-        <p>Terima kasih</p>
-        <p>Hormat kami,<br/><strong>PIC Asesmen RACD AIHO</strong><br/>PT Astra International</p>
-      </div>
-    `
-  });
-
-  await supabase.from('log_aktivitas').insert({ id_request, aktivitas: 'Reminder Booking Jadwal Terkirim', detail: `Email reminder booking presentasi dikirim ke ${request.email_pic_hc}` });
-  res.json({ success: true });
-});
+// (Route kirim-reminder-booking dihapus — digabung ke fase6 /notif-pilih-slot)
 
 // ============================================================
 // FASE 6 ROUTER

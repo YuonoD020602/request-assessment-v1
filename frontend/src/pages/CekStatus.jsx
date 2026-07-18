@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../utils/api';
+import FooterContact from '../components/FooterContact';
 
 const STATUS_META = {
   'Approved':                      { color: 'text-emerald-700 bg-emerald-50 border-emerald-200', dot: 'bg-emerald-400', header: 'from-emerald-600 to-teal-600' },
@@ -88,7 +89,7 @@ export function CekStatus() {
       const res = await api.get(`/api/requests/status/${id}`);
       const data = res.data.data;
       setResult(data);
-      if (!data.tanggal_presentasi && data.tanggal_ac && data.jam_ac) {
+      if (!data.tanggal_presentasi && data.tanggal_ac) {
         fetchSlots();
       }
     } catch {
@@ -224,6 +225,10 @@ export function CekStatus() {
             <div>
               <p className="text-red-700 text-sm font-semibold">Tidak ditemukan</p>
               <p className="text-red-500 text-xs mt-0.5">{error}</p>
+              <p className="text-red-400 text-xs mt-1.5">
+                Butuh bantuan? Hubungi PIC Asesmen —{' '}
+                <a href="mailto:yuono.raharjo@ai.astra.co.id" className="underline font-medium">yuono.raharjo@ai.astra.co.id</a>
+              </p>
             </div>
           </div>
         )}
@@ -511,6 +516,7 @@ export function CekStatus() {
             ← Ajukan Request Baru
           </a>
         </div>
+        <FooterContact />
       </div>
     </div>
   );

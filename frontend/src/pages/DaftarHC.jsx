@@ -141,7 +141,7 @@ export function DaftarHC() {
               </button>
             </div>
             <div className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[
                   { key: 'pendaftaran', label: 'Pendaftaran Potential Review & Profiling' },
                   { key: 'getting_requirement', label: 'Pelaksanaan Getting Requirement' },

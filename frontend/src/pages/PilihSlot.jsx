@@ -205,8 +205,9 @@ export default function PilihSlot() {
           </div>
         </div>
 
-        <p className="text-center text-xs text-white/20 pb-4">
-          Butuh bantuan? Hubungi PIC Asesmen RACD AIHO
+        <p className="text-center text-xs text-white/30 pb-4">
+          Butuh bantuan? Hubungi PIC Asesmen RACD AIHO —{' '}
+          <a href="mailto:yuono.raharjo@ai.astra.co.id" className="text-blue-300/70 hover:text-blue-200 underline">yuono.raharjo@ai.astra.co.id</a>
         </p>
       </div>
     </div>

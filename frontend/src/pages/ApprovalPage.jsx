@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../utils/api';
 import toast from 'react-hot-toast';
+import FooterContact from '../components/FooterContact';
 
 export default function ApprovalPage() {
   const [params] = useSearchParams();
@@ -46,6 +47,8 @@ export default function ApprovalPage() {
         <div className="text-5xl mb-4">⚠️</div>
         <h2 className="text-xl font-bold text-gray-900 mb-2">Link Tidak Valid</h2>
         <p className="text-gray-500">{error}</p>
+        <p className="text-xs text-gray-400 mt-4">Token approval berlaku 7 hari dan hangus setelah digunakan.</p>
+        <FooterContact />
       </div>
     </div>
   );
@@ -115,6 +118,7 @@ export default function ApprovalPage() {
           } disabled:opacity-50`}>
           {submitting ? 'Memproses...' : action === 'approve' ? '✓ Setujui Request Ini' : '✗ Tolak Request Ini'}
         </button>
+        <FooterContact />
       </div>
     </div>
   );

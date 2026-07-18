@@ -9,6 +9,26 @@ const { generatePDFPengajuan } = require('../services/pdfService');
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
+// Normalkan status agar tidak pernah tampil mundur dari data aktual
+const STATUS_ORDER = [
+  'Submitted', 'Approved', 'Menunggu GR',
+  'GR Selesai - Menunggu Dokumen', 'Dokumen Diterima',
+  'Psikotes Dijadwalkan', 'AC Dijadwalkan',
+  'Menunggu Presentasi', 'Selesai'
+];
+const hitungStatusEfektif = (data) => {
+  let effective = data.status;
+  const naikkanKe = (target) => {
+    if (STATUS_ORDER.indexOf(effective) < STATUS_ORDER.indexOf(target)) effective = target;
+  };
+  if (STATUS_ORDER.indexOf(effective) === -1) return effective; // Pending/Rejected dll: biarkan
+  if (data.status_dokumen === 'Dokumen Diterima') naikkanKe('Dokumen Diterima');
+  if (data.tanggal_psikotes) naikkanKe('Psikotes Dijadwalkan');
+  if (data.tanggal_ac) naikkanKe('AC Dijadwalkan');
+  if (data.tanggal_presentasi) naikkanKe('Menunggu Presentasi');
+  return effective;
+};
+
 const generateIdRequests = async (jumlah) => {
   const now = new Date();
   const prefix = `REQ-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -173,12 +193,12 @@ router.get('/status/by-email/:email', async (req, res) => {
   const email = decodeURIComponent(req.params.email);
   const { data, error } = await supabase
     .from('requests')
-    .select('id_request, nama_peserta, jenis_assessment, status, created_at, tanggal_psikotes, jam_psikotes, tanggal_ac, jam_ac, lokasi_ac, status_dokumen')
+    .select('id_request, nama_peserta, jenis_assessment, status, created_at, tanggal_psikotes, jam_psikotes, tanggal_ac, jam_ac, lokasi_ac, status_dokumen, tanggal_presentasi')
     .eq('email_pic_hc', email)
     .order('created_at', { ascending: false });
   if (error) return res.status(500).json({ error: 'Gagal mengambil data' });
   if (!data || data.length === 0) return res.status(404).json({ error: 'Tidak ada request ditemukan untuk email ini' });
-  res.json({ data });
+  res.json({ data: data.map(d => ({ ...d, status: hitungStatusEfektif(d) })) });
 });
 
 // GET /api/requests/status/:idRequest - Cek status publik (untuk HC)
@@ -200,32 +220,10 @@ router.get('/status/:idRequest', async (req, res) => {
 
   if (error || !data) return res.status(404).json({ error: 'ID Request tidak ditemukan' });
 
-  // Normalkan status agar tidak mundur dari data aktual
-  const STATUS_ORDER = [
-    'Submitted', 'Approved', 'Menunggu GR',
-    'GR Selesai - Menunggu Dokumen', 'Dokumen Diterima',
-    'Psikotes Dijadwalkan', 'AC Dijadwalkan',
-    'Menunggu Presentasi', 'Selesai'
-  ];
-  let effectiveStatus = data.status;
-  const statusIdx = STATUS_ORDER.indexOf(effectiveStatus);
-  if (data.status_dokumen === 'Dokumen Diterima' && statusIdx < STATUS_ORDER.indexOf('Dokumen Diterima')) {
-    effectiveStatus = 'Dokumen Diterima';
-  }
-  if (data.tanggal_psikotes && statusIdx < STATUS_ORDER.indexOf('Psikotes Dijadwalkan') && STATUS_ORDER.indexOf(effectiveStatus) < STATUS_ORDER.indexOf('Psikotes Dijadwalkan')) {
-    effectiveStatus = 'Psikotes Dijadwalkan';
-  }
-  if (data.tanggal_ac && statusIdx < STATUS_ORDER.indexOf('AC Dijadwalkan') && STATUS_ORDER.indexOf(effectiveStatus) < STATUS_ORDER.indexOf('AC Dijadwalkan')) {
-    effectiveStatus = 'AC Dijadwalkan';
-  }
-  if (data.tanggal_presentasi && statusIdx < STATUS_ORDER.indexOf('Menunggu Presentasi') && STATUS_ORDER.indexOf(effectiveStatus) < STATUS_ORDER.indexOf('Menunggu Presentasi')) {
-    effectiveStatus = 'Menunggu Presentasi';
-  }
-
   res.json({
     data: {
       ...data,
-      status: effectiveStatus,
+      status: hitungStatusEfektif(data),
       url_zip_dokumen: config.file_zip_dokumen_url || null,
       url_form_dokumen: `${process.env.FRONTEND_URL}/form-dokumen?id=${data.id_request}`
     }

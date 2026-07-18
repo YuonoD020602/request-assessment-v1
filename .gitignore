@@ -1,3 +1,6 @@
 .claude/
 Panduan_*.md
 Panduan_*.docx
+
+node_modules/
+frontend/dist/

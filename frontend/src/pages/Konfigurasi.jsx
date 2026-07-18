@@ -209,7 +209,7 @@ export default function Konfigurasi() {
               </div>
             </div>
             <div className="p-6">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {group.keys.map(item => (
                   <div key={item.key} className={item.full ? 'col-span-2' : ''}>
                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">{item.label}</label>

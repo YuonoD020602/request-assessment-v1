@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../utils/api';
+import FooterContact from '../components/FooterContact';
 
 export function FormDokumen() {
   const [searchParams] = useSearchParams();
@@ -132,11 +133,11 @@ export function FormDokumen() {
                     )}
                   </div>
 
-                  <div className={`p-3 rounded-lg border ${jadwal.tanggal_ac && jadwal.jam_ac ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
+                  <div className={`p-3 rounded-lg border ${jadwal.tanggal_ac ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
                     <p className="text-xs font-semibold text-gray-500 mb-1">🏢 JADWAL ASSESSMENT CENTER</p>
-                    {jadwal.tanggal_ac && jadwal.jam_ac ? (
+                    {jadwal.tanggal_ac ? (
                       <div className="space-y-1 text-sm">
-                        <p className="font-medium text-gray-900">📅 {jadwal.tanggal_ac} pukul {jadwal.jam_ac} WIB</p>
+                        <p className="font-medium text-gray-900">📅 {jadwal.tanggal_ac} pukul {jadwal.jam_ac || '08.00 – 15.00'} WIB</p>
                         {jadwal.lokasi_ac && (
                           <p className="text-gray-600 text-xs">📍 {jadwal.lokasi_ac}</p>
                         )}
@@ -156,6 +157,7 @@ export function FormDokumen() {
             </div>
           </div>
         )}
+        <FooterContact />
       </div>
     </div>
   );

@@ -58,6 +58,10 @@ export default function SetupPassword() {
             {loading ? 'Menyimpan...' : 'Set Password'}
           </button>
         </form>
+        <p className="mt-6 pt-4 border-t border-gray-100 text-center text-xs text-gray-400">
+          Ada pertanyaan? Hubungi PIC Asesmen —{' '}
+          <a href="mailto:yuono.raharjo@ai.astra.co.id" className="text-blue-600 hover:underline font-medium">yuono.raharjo@ai.astra.co.id</a>
+        </p>
       </div>
     </div>
   );

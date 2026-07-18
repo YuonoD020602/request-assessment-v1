@@ -6,6 +6,13 @@ const FROM_EMAIL = 'noreply@lyraac.site';
 const FROM_NAME = process.env.FROM_NAME || 'Yuono Dwi Raharjo - RACD AIHO';
 const REPLY_TO_EMAIL = process.env.REPLY_TO_EMAIL || 'yuono.raharjo@ai.astra.co.id';
 
+// Blok kontak admin — otomatis ditambahkan di akhir SEMUA email sistem
+const KONTAK_ADMIN_HTML = `
+  <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 16px auto 0; font-size: 12px; color: #888; border-top: 1px solid #e5e7eb; padding-top: 12px; line-height: 1.5;">
+    Apabila terdapat pertanyaan, Bapak/Ibu dapat menghubungi PIC Asesmen RACD AIHO melalui
+    <a href="mailto:${REPLY_TO_EMAIL}" style="color: #2563eb; text-decoration: none;">${REPLY_TO_EMAIL}</a>.
+  </div>`;
+
 const logEmail = async (id_request, tujuan, fungsi) => {
   try {
     await supabase.from('log_aktivitas').insert({
@@ -91,7 +98,7 @@ const sendEmail = async ({ to, subject, html, attachments = [] }) => {
     reply_to: REPLY_TO_EMAIL,
     to,
     subject,
-    html,
+    html: html + KONTAK_ADMIN_HTML,
     attachments,
     headers: {
       'X-Entity-Ref-ID': `racd-aiho-${Date.now()}`
@@ -724,7 +731,7 @@ const kirimLaporan = async ({ namaTo, emailTo, idRequest, namaPeserta, pdfBuffer
         <p>Terlampir laporan hasil <strong>Assessment Center</strong> untuk <strong>${namaPeserta}</strong> (${idRequest}).</p>
         <p>Hormat kami,<br/><strong>PIC Asesmen RACD AIHO</strong><br/>PT Astra International</p>
       </div>
-    `,
+    ` + KONTAK_ADMIN_HTML,
     attachments: [{ filename: namaPDF, content: pdfBuffer }],
     headers: {
       'X-Entity-Ref-ID': `racd-aiho-${Date.now()}`

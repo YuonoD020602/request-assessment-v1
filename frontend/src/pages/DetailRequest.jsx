@@ -17,6 +17,7 @@ export default function DetailRequest() {
   const [grForm, setGrForm] = useState({ tanggal_gr: '', jam_gr: '', lokasi_gr: '' });
   const [momForm, setMomForm] = useState({ mom_gr: '', kompetensi_alc: '', tanggal_psikotes: '', jam_psikotes: '', tanggal_ac: '', lokasi_ac: '' });
   const [jadwalAcForm, setJadwalAcForm] = useState({ ruangan_ac: '' });
+  const [psikotesForm, setPsikotesForm] = useState({ tanggal_psikotes: '', jam_psikotes: '' });
   const [penugasanTim, setPenugasanTim] = useState([{ roleplayer: '', assessor: '', ruangan: '' }]);
   const [formsReady, setFormsReady] = useState(false);
   const [fileLaporan, setFileLaporan] = useState(null);
@@ -50,6 +51,8 @@ export default function DetailRequest() {
       if (r.tanggal_gr) setGrForm({ tanggal_gr: r.tanggal_gr, jam_gr: r.jam_gr || '', lokasi_gr: r.lokasi_gr || '' });
       if (r.mom_gr) setMomForm({ mom_gr: r.mom_gr, kompetensi_alc: r.kompetensi_alc || '', tanggal_psikotes: r.tanggal_psikotes || '', jam_psikotes: r.jam_psikotes || '', tanggal_ac: r.tanggal_ac || '', lokasi_ac: r.lokasi_ac || '' });
       if (r.ruangan_ac) setJadwalAcForm({ ruangan_ac: r.ruangan_ac || '' });
+      // Jadwal psikotes mengikuti kesepakatan MOM (Fase 3)
+      setPsikotesForm({ tanggal_psikotes: r.tanggal_psikotes || '', jam_psikotes: r.jam_psikotes || '' });
       if (r.penugasan_tim && Array.isArray(r.penugasan_tim) && r.penugasan_tim.length > 0) setPenugasanTim(r.penugasan_tim);
       setFormsReady(true);
     } catch { toast.error('Request tidak ditemukan'); navigate('/dashboard'); }
@@ -85,6 +88,15 @@ export default function DetailRequest() {
     finally { setSubmitting(false); }
   };
 
+  const submitPsikotes = async (e) => {
+    e.preventDefault(); setSubmitting(true);
+    try {
+      await api.post('/api/fase4/psikotes', { id_request: idRequest, ...psikotesForm });
+      toast.success('Jadwal psikotes berhasil dikirim ke Peserta & User!'); refresh();
+    } catch (err) { toast.error(err.response?.data?.error || 'Gagal'); }
+    finally { setSubmitting(false); }
+  };
+
   const kirimReminderDokumen = async () => {
     setSubmitting(true);
     try {
@@ -99,15 +111,6 @@ export default function DetailRequest() {
     try {
       await api.post('/api/fase4/kirim-reminder-manual', { id_request: idRequest });
       toast.success('Reminder berhasil dikirim ke HC!'); refresh();
-    } catch (err) { toast.error(err.response?.data?.error || 'Gagal'); }
-    finally { setSubmitting(false); }
-  };
-
-  const kirimReminderBookingJadwal = async () => {
-    setSubmitting(true);
-    try {
-      await api.post('/api/fase5/kirim-reminder-booking', { id_request: idRequest });
-      toast.success('Reminder booking jadwal berhasil dikirim!'); refresh();
     } catch (err) { toast.error(err.response?.data?.error || 'Gagal'); }
     finally { setSubmitting(false); }
   };
@@ -193,7 +196,7 @@ export default function DetailRequest() {
 
         {/* Tab: Info */}
         {activeTab === 'info' && (
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="card">
               <h3 className="font-semibold text-gray-900 mb-4">Data HC</h3>
               <div className="space-y-2 text-sm">
@@ -234,7 +237,7 @@ export default function DetailRequest() {
                   ✓ Jadwal GR sudah dikirim: {request.tanggal_gr} {request.jam_gr} – {request.lokasi_gr}
                 </div>
               )}
-              <form onSubmit={submitGR} className="grid grid-cols-2 gap-4">
+              <form onSubmit={submitGR} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div><label className="form-label">Tanggal GR *</label><input type="date" className="form-input" required value={grForm.tanggal_gr} onChange={e => setGrForm({...grForm, tanggal_gr: e.target.value})} /></div>
                 <div><label className="form-label">Jam GR *</label><input type="time" className="form-input" required value={grForm.jam_gr} onChange={e => setGrForm({...grForm, jam_gr: e.target.value})} /></div>
                 <div className="col-span-2"><label className="form-label">Lokasi / Link Meet *</label><input className="form-input" required value={grForm.lokasi_gr} onChange={e => setGrForm({...grForm, lokasi_gr: e.target.value})} /></div>
@@ -256,17 +259,18 @@ export default function DetailRequest() {
                   <input className="form-input" placeholder="contoh: Planning & Organizing, Communication, Leadership"
                     value={momForm.kompetensi_alc}
                     onChange={e => setMomForm({...momForm, kompetensi_alc: e.target.value})} /></div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div><label className="form-label">Tanggal Psikotes</label>
-                    <input type="date" className="form-input"
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div><label className="form-label">Tanggal Psikotes *</label>
+                    <input type="date" className="form-input" required
                       value={momForm.tanggal_psikotes}
                       onChange={e => setMomForm({...momForm, tanggal_psikotes: e.target.value})} /></div>
-                  <div><label className="form-label">Jam Psikotes</label>
-                    <input className="form-input" placeholder="contoh: 08.00–10.00"
+                  <div><label className="form-label">Jam Psikotes *</label>
+                    <input className="form-input" required placeholder="contoh: 08.00–10.00"
                       value={momForm.jam_psikotes}
                       onChange={e => setMomForm({...momForm, jam_psikotes: e.target.value})} /></div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <p className="text-xs text-gray-400 -mt-2">Jadwal psikotes ditetapkan di sini (diumumkan dalam email MOM). Fase 4 akan mengikuti jadwal ini saat mengirim email resmi ke peserta.</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div><label className="form-label">Tanggal AC</label>
                     <input type="date" className="form-input"
                       value={momForm.tanggal_ac}
@@ -312,6 +316,34 @@ export default function DetailRequest() {
             </div>
 
             <div className="card">
+              <h3 className="font-semibold text-gray-900 mb-1">Jadwal Psikotes</h3>
+              <p className="text-xs text-gray-400 mb-4">Mengikuti kesepakatan MOM (Fase 3). Tombol di bawah mengirim email jadwal resmi ke Peserta &amp; User/Atasan.</p>
+              {!request.mom_gr ? (
+                <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-500">
+                  🔒 Kirim MOM di Fase 3 terlebih dahulu — jadwal psikotes ditetapkan saat MOM.
+                </div>
+              ) : (
+                <form onSubmit={submitPsikotes} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div><label className="form-label">Tanggal Psikotes *</label>
+                    <input type="date" className="form-input" required
+                      value={psikotesForm.tanggal_psikotes}
+                      onChange={e => setPsikotesForm({...psikotesForm, tanggal_psikotes: e.target.value})} /></div>
+                  <div><label className="form-label">Jam Psikotes *</label>
+                    <input className="form-input" required placeholder="contoh: 08.00–10.00"
+                      value={psikotesForm.jam_psikotes}
+                      onChange={e => setPsikotesForm({...psikotesForm, jam_psikotes: e.target.value})} /></div>
+                  <div className="md:col-span-2">
+                    <button type="submit" className="btn-primary" disabled={submitting}>
+                      {submitting ? '...' : (request.tanggal_psikotes && (psikotesForm.tanggal_psikotes !== request.tanggal_psikotes || psikotesForm.jam_psikotes !== request.jam_psikotes))
+                        ? 'Update & Kirim Ulang Jadwal Psikotes'
+                        : 'Kirim Jadwal Psikotes ke Peserta & User'}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+
+            <div className="card">
               <h3 className="font-semibold text-gray-900 mb-4">Penugasan Tim & Ruangan AC</h3>
               {request.tanggal_ac && (
                 <div className="mb-4 p-3 bg-green-50 rounded-lg text-sm text-green-700">
@@ -325,7 +357,7 @@ export default function DetailRequest() {
                   <span className="text-indigo-500 ml-1">(akan dikirim ke Tim Pelaksana via email)</span>
                 </div>
               )}
-              <form onSubmit={submitJadwalAC} className="grid grid-cols-2 gap-4">
+              <form onSubmit={submitJadwalAC} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="col-span-2"><label className="form-label">Ruangan AC</label><input className="form-input" placeholder="contoh: Ruang Meeting Lantai 3 – Astra International" value={jadwalAcForm.ruangan_ac} onChange={e => setJadwalAcForm({...jadwalAcForm, ruangan_ac: e.target.value})} /></div>
 
                 {/* Penugasan Tim */}
@@ -411,29 +443,24 @@ export default function DetailRequest() {
                     onClick={kirimNotifPilihSlot}
                     disabled={submitting}
                     className="btn-primary w-full flex items-center justify-center gap-2">
-                    {submitting ? '⏳ Mengirim...' : '📧 Kirim Notifikasi Pilih Jadwal ke HC'}
+                    {submitting ? '⏳ Mengirim...' : '📧 Kirim / Ingatkan Booking Jadwal ke HC'}
                   </button>
                   <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-500">
                     <p className="font-medium mb-1">Atau bagikan link langsung:</p>
                     <div className="flex items-center gap-2">
                       <code className="flex-1 bg-white border border-gray-200 rounded px-2 py-1 font-mono select-all truncate">
-                        {window.location.origin}/cek-status?id={idRequest}
+                        {window.location.origin}/pilih-slot?id={idRequest}
                       </code>
                       <button
-                        onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/cek-status?id=${idRequest}`); toast.success('Link disalin!'); }}
+                        onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/pilih-slot?id=${idRequest}`); toast.success('Link disalin!'); }}
                         className="px-2 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded text-xs whitespace-nowrap">
                         Salin
                       </button>
                     </div>
                   </div>
+                  <p className="text-xs text-gray-400">Tombol yang sama bisa dipakai lagi kapan saja sebagai pengingat jika HC belum juga memilih slot.</p>
                 </div>
               )}
-              <button
-                onClick={kirimReminderBookingJadwal}
-                disabled={submitting}
-                className="w-full py-2 px-4 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2">
-                {submitting ? '⏳ Mengirim...' : '🔔 Kirim Reminder Booking Jadwal'}
-              </button>
             </div>
 
             <div className="card">
