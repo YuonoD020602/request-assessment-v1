@@ -200,9 +200,14 @@ export default function DetailRequest() {
             <div className="card">
               <h3 className="font-semibold text-gray-900 mb-4">Data HC</h3>
               <div className="space-y-2 text-sm">
-                {[['Perusahaan', request.nama_perusahaan], ['PIC HC', request.pic_hc], ['Email HC', request.email_pic_hc],
-                  ['User/Atasan', request.user_atasan], ['Email User', request.email_user]].map(([k,v]) => (
-                  <div key={k} className="flex gap-2"><span className="text-gray-500 w-28">{k}</span><span className="font-medium">{v || '-'}</span></div>
+                {[
+                  ['Perusahaan', request.nama_perusahaan],
+                  ['PIC HC 1', `${request.pic_hc || '-'} (${request.email_pic_hc || '-'})`],
+                  ...(request.hc_tambahan || []).map((h, i) => [`PIC HC ${i + 2}`, `${h.nama || '-'} (${h.email || '-'})`]),
+                  ['User/Atasan 1', request.user_atasan ? `${request.user_atasan} (${request.email_user || '-'})` : '-'],
+                  ...(request.user_tambahan || []).map((u, i) => [`User/Atasan ${i + 2}`, `${u.nama || '-'} (${u.email || '-'})`]),
+                ].map(([k,v]) => (
+                  <div key={k} className="flex gap-2"><span className="text-gray-500 w-28 flex-shrink-0">{k}</span><span className="font-medium break-all">{v || '-'}</span></div>
                 ))}
               </div>
             </div>

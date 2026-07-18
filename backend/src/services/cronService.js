@@ -1,4 +1,5 @@
 const supabase = require('../supabase');
+const { getSemuaHC } = require('../utils/penerima');
 const {
   kirimReminderDokumen,
   kirimReminderAC,
@@ -66,13 +67,15 @@ const runDailyReminders = async () => {
       const { data: cfg } = await supabase.from('konfigurasi').select('key, value');
       const config = Object.fromEntries(cfg.map(c => [c.key, c.value]));
 
-      await kirimReminderDokumen({
-        namaHC: req.pic_hc,
-        emailHC: req.email_pic_hc,
-        idRequest: req.id_request,
-        namaPeserta: req.nama_peserta,
-        urlFormDokumen: `${process.env.FRONTEND_URL}/form-dokumen?id=${req.id_request}`
-      });
+      for (const hc of getSemuaHC(req)) {
+        await kirimReminderDokumen({
+          namaHC: hc.nama,
+          emailHC: hc.email,
+          idRequest: req.id_request,
+          namaPeserta: req.nama_peserta,
+          urlFormDokumen: `${process.env.FRONTEND_URL}/form-dokumen?id=${req.id_request}`
+        });
+      }
 
       console.log(`[CRON] Reminder dokumen H-3 dikirim ke ${req.email_pic_hc} untuk ${req.id_request}`);
     }
@@ -101,13 +104,15 @@ const runDailyReminders = async () => {
         });
       }
 
-      // Ke pic_hc
-      await kirimJadwalPsikotes({
-        namaTo: req.pic_hc, emailTo: req.email_pic_hc,
-        idRequest: req.id_request, namaPeserta: req.nama_peserta,
-        tanggal: req.tanggal_psikotes, jam: req.jam_psikotes,
-        isReminder: true
-      });
+      // Ke semua PIC HC
+      for (const hc of getSemuaHC(req)) {
+        await kirimJadwalPsikotes({
+          namaTo: hc.nama, emailTo: hc.email,
+          idRequest: req.id_request, namaPeserta: req.nama_peserta,
+          tanggal: req.tanggal_psikotes, jam: req.jam_psikotes,
+          isReminder: true
+        });
+      }
 
       // Ke email peserta jika ada
       if (req.email_peserta) {
@@ -140,12 +145,14 @@ const runDailyReminders = async () => {
       const config = Object.fromEntries(cfg.map(c => [c.key, c.value]));
 
       // H-1 ke HC (template peserta — untuk diteruskan)
-      await kirimReminderACPeserta({
-        namaHC: req.pic_hc, emailHC: req.email_pic_hc,
-        idRequest: req.id_request, namaPeserta: req.nama_peserta,
-        tanggalAC: req.tanggal_ac, ruanganAC: req.ruangan_ac || null,
-        lokasiAC: req.lokasi_ac
-      });
+      for (const hc of getSemuaHC(req)) {
+        await kirimReminderACPeserta({
+          namaHC: hc.nama, emailHC: hc.email,
+          idRequest: req.id_request, namaPeserta: req.nama_peserta,
+          tanggalAC: req.tanggal_ac, ruanganAC: req.ruangan_ac || null,
+          lokasiAC: req.lokasi_ac
+        });
+      }
 
       // H-1 ke Assessor
       for (const a of getAssessors(config)) {

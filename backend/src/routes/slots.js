@@ -2,6 +2,7 @@ const express = require('express');
 const supabase = require('../supabase');
 const { authMiddleware, picOnly } = require('../middleware/auth');
 const { kirimUndanganPresentasi } = require('../services/emailService');
+const { getSemuaHC, getSemuaUser } = require('../utils/penerima');
 
 const router = express.Router();
 const delay = (ms) => new Promise(r => setTimeout(r, ms));
@@ -132,9 +133,9 @@ router.post('/:id/book', async (req, res) => {
 
   // Kirim email konfirmasi ke HC dan User/Atasan
   const penerima = [
-    { nama: request.pic_hc, email: request.email_pic_hc },
-    request.email_user ? { nama: request.user_atasan, email: request.email_user } : null
-  ].filter(Boolean);
+    ...getSemuaHC(request),
+    ...getSemuaUser(request)
+  ];
 
   for (const p of penerima) {
     await kirimUndanganPresentasi({

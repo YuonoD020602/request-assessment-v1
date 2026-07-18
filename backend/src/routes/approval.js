@@ -5,6 +5,9 @@ const {
   kirimEmailRejectedHC
 } = require('../services/emailService');
 
+const { getSemuaHC } = require('../utils/penerima');
+const delay = (ms) => new Promise(r => setTimeout(r, ms));
+
 const router = express.Router();
 
 // ============================================================
@@ -77,13 +80,16 @@ router.post('/approve', async (req, res) => {
   const config = Object.fromEntries(cfgData.map(c => [c.key, c.value]));
 
   // Kirim email ke HC
-  await kirimEmailApprovedHC({
-    namaHC: request.pic_hc,
-    emailHC: request.email_pic_hc,
-    idRequest: request.id_request,
-    urlZip: config.file_zip_dokumen_url,
-    urlFormDokumen: `${process.env.FRONTEND_URL}/form-dokumen?id=${request.id_request}`
-  });
+  for (const hc of getSemuaHC(request)) {
+    await kirimEmailApprovedHC({
+      namaHC: hc.nama,
+      emailHC: hc.email,
+      idRequest: request.id_request,
+      urlZip: config.file_zip_dokumen_url,
+      urlFormDokumen: `${process.env.FRONTEND_URL}/form-dokumen?id=${request.id_request}`
+    });
+    await delay(300);
+  }
 
   // Log
   await supabase.from('log_aktivitas').insert({
@@ -127,12 +133,15 @@ router.post('/reject', async (req, res) => {
   // Kirim email ke HC
   const { data: request } = await supabase.from('requests').select('*').eq('id_request', tokenData.id_request).single();
 
-  await kirimEmailRejectedHC({
-    namaHC: request.pic_hc,
-    emailHC: request.email_pic_hc,
-    idRequest: request.id_request,
-    catatanReject: catatan
-  });
+  for (const hc of getSemuaHC(request)) {
+    await kirimEmailRejectedHC({
+      namaHC: hc.nama,
+      emailHC: hc.email,
+      idRequest: request.id_request,
+      catatanReject: catatan
+    });
+    await delay(300);
+  }
 
   await supabase.from('log_aktivitas').insert({
     id_request: tokenData.id_request,

@@ -31,15 +31,19 @@ const SectionDivider = ({ label }) => (
 const steps = ['Data HC', 'Data Peserta', 'Kirim'];
 
 export default function FormPengajuan() {
-  const [dataHC, setDataHC] = useState({
-    nama_perusahaan: '', pic_hc: '', email_pic_hc: '',
-    user_atasan: '', email_user: ''
-  });
+  const [namaPerusahaan, setNamaPerusahaan] = useState('');
+  const [hcList, setHcList] = useState([{ nama: '', email: '' }]);
+  const [userList, setUserList] = useState([{ nama: '', email: '' }]);
   const [pesertaList, setPesertaList] = useState([pesertaKosong()]);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(null);
 
-  const handleHCChange = (e) => setDataHC({ ...dataHC, [e.target.name]: e.target.value });
+  const ubahHC = (idx, field, value) => {
+    const u = [...hcList]; u[idx][field] = value; setHcList(u);
+  };
+  const ubahUser = (idx, field, value) => {
+    const u = [...userList]; u[idx][field] = value; setUserList(u);
+  };
 
   const handlePesertaChange = (idx, e) => {
     const updated = [...pesertaList];
@@ -67,10 +71,20 @@ export default function FormPengajuan() {
         return toast.error(`Peserta ${i + 1}: Dokumen PDF wajib diupload`);
       }
     }
+    const hcValid = hcList.filter(h => h.nama && h.email);
+    if (hcValid.length === 0) return toast.error('Minimal 1 PIC HC (nama & email) wajib diisi');
+    for (let i = 0; i < hcList.length; i++) {
+      const h = hcList[i];
+      if ((h.nama || h.email) && (!h.nama || !h.email)) {
+        return toast.error(`PIC HC ${i + 1}: nama dan email harus diisi lengkap`);
+      }
+    }
     setLoading(true);
     try {
       const formData = new FormData();
-      Object.entries(dataHC).forEach(([k, v]) => formData.append(k, v));
+      formData.append('nama_perusahaan', namaPerusahaan);
+      formData.append('hc_list', JSON.stringify(hcList.filter(h => h.nama && h.email)));
+      formData.append('user_list', JSON.stringify(userList.filter(u => u.nama || u.email)));
       const pesertaData = pesertaList.map(({ dokumen_pdf, ...rest }) => rest);
       formData.append('peserta', JSON.stringify(pesertaData));
       pesertaList.forEach((p, idx) => {
@@ -179,24 +193,63 @@ export default function FormPengajuan() {
                 </div>
               </div>
             </div>
-            <div className="p-6 grid grid-cols-2 gap-4">
-              <div className="col-span-2">
-                <FL label="Nama Perusahaan" required>
-                  <input name="nama_perusahaan" className="form-input" required onChange={handleHCChange} placeholder="PT. Contoh Indonesia" />
-                </FL>
+            <div className="p-6 space-y-5">
+              <FL label="Nama Perusahaan" required>
+                <input className="form-input" required value={namaPerusahaan}
+                  onChange={e => setNamaPerusahaan(e.target.value)} placeholder="PT. Contoh Indonesia" />
+              </FL>
+
+              {/* PIC HC — bisa lebih dari satu */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-semibold text-gray-700">PIC HC <span className="text-red-500">*</span> <span className="text-xs font-normal text-gray-400">(bisa lebih dari satu)</span></p>
+                  <button type="button" onClick={() => setHcList([...hcList, { nama: '', email: '' }])}
+                    className="text-xs font-semibold text-blue-600 border border-blue-200 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors">
+                    + Tambah PIC HC
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {hcList.map((h, idx) => (
+                    <div key={idx} className="flex items-center gap-2 p-3 bg-gray-50 rounded-xl">
+                      <span className="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center flex-shrink-0">{idx + 1}</span>
+                      <input className="form-input flex-1 text-sm" placeholder="Nama lengkap PIC" required={idx === 0}
+                        value={h.nama} onChange={e => ubahHC(idx, 'nama', e.target.value)} />
+                      <input type="email" className="form-input flex-1 text-sm" placeholder="pic@perusahaan.com" required={idx === 0}
+                        value={h.email} onChange={e => ubahHC(idx, 'email', e.target.value)} />
+                      <button type="button" disabled={hcList.length === 1}
+                        onClick={() => setHcList(hcList.filter((_, i) => i !== idx))}
+                        className="w-7 h-7 flex items-center justify-center text-red-300 hover:text-white hover:bg-red-500 rounded-lg transition-all flex-shrink-0 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-red-300">✕</button>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-400 mt-1.5">PIC HC pertama menjadi kontak utama. Semua PIC HC menerima seluruh notifikasi email.</p>
               </div>
-              <FL label="Nama PIC HC" required>
-                <input name="pic_hc" className="form-input" required onChange={handleHCChange} placeholder="Nama lengkap PIC" />
-              </FL>
-              <FL label="Email PIC HC" required>
-                <input name="email_pic_hc" type="email" className="form-input" required onChange={handleHCChange} placeholder="pic@perusahaan.com" />
-              </FL>
-              <FL label="Nama User / Atasan" required>
-                <input name="user_atasan" className="form-input" required onChange={handleHCChange} placeholder="Nama atasan peserta" />
-              </FL>
-              <FL label="Email User / Atasan">
-                <input name="email_user" type="email" className="form-input" onChange={handleHCChange} placeholder="atasan@perusahaan.com" />
-              </FL>
+
+              {/* User / Atasan — bisa lebih dari satu */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-semibold text-gray-700">User / Atasan <span className="text-xs font-normal text-gray-400">(bisa lebih dari satu)</span></p>
+                  <button type="button" onClick={() => setUserList([...userList, { nama: '', email: '' }])}
+                    className="text-xs font-semibold text-blue-600 border border-blue-200 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors">
+                    + Tambah User
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {userList.map((u, idx) => (
+                    <div key={idx} className="flex items-center gap-2 p-3 bg-gray-50 rounded-xl">
+                      <span className="w-6 h-6 rounded-lg bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center flex-shrink-0">{idx + 1}</span>
+                      <input className="form-input flex-1 text-sm" placeholder="Nama atasan peserta"
+                        value={u.nama} onChange={e => ubahUser(idx, 'nama', e.target.value)} />
+                      <input type="email" className="form-input flex-1 text-sm" placeholder="atasan@perusahaan.com"
+                        value={u.email} onChange={e => ubahUser(idx, 'email', e.target.value)} />
+                      <button type="button" disabled={userList.length === 1}
+                        onClick={() => setUserList(userList.filter((_, i) => i !== idx))}
+                        className="w-7 h-7 flex items-center justify-center text-red-300 hover:text-white hover:bg-red-500 rounded-lg transition-all flex-shrink-0 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-red-300">✕</button>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-400 mt-1.5">Opsional — User/Atasan menerima notifikasi jadwal psikotes, AC, dan undangan presentasi.</p>
+              </div>
             </div>
           </div>
 

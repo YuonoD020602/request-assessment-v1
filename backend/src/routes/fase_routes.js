@@ -10,6 +10,7 @@ const {
   kirimReminderACPeserta, kirimReminderDokumen
 } = require('../services/emailService');
 
+const { getSemuaHC, getSemuaUser } = require('../utils/penerima');
 const delay = (ms) => new Promise(r => setTimeout(r, ms));
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
@@ -108,8 +109,8 @@ fase3Router.post('/jadwal-gr', authMiddleware, picOnly, async (req, res) => {
   const config = Object.fromEntries((cfgData || []).map(c => [c.key, c.value]));
 
   const penerima = [
-    { nama: request.pic_hc, email: request.email_pic_hc },
-    request.email_user ? { nama: request.user_atasan, email: request.email_user } : null
+    ...getSemuaHC(request),
+    ...getSemuaUser(request)
   ].filter(Boolean);
 
   for (const p of penerima) {
@@ -154,20 +155,22 @@ fase3Router.post('/input-mom', authMiddleware, picOnly, async (req, res) => {
   const { data: cfgData } = await supabase.from('konfigurasi').select('key, value');
   const config = Object.fromEntries(cfgData.map(c => [c.key, c.value]));
 
-  await kirimEmailMOM({
-    namaTo: request.pic_hc, emailTo: request.email_pic_hc,
-    idRequest: id_request, namaPeserta: request.nama_peserta,
-    momText: mom_gr, namaPerusahaan: request.nama_perusahaan,
-    kompetensiALC: kompetensi_alc || request.kompetensi_alc || null,
-    tanggalOnlineTest: tanggal_psikotes || request.tanggal_psikotes || null,
-    jamOnlineTest: jam_psikotes || request.jam_psikotes || null,
-    tanggalAC: tanggal_ac || request.tanggal_ac || config.tanggal_pelaksanaan_ac || null,
-    lokasiAC: lokasi_ac || request.lokasi_ac || null,
-    linkFormStar: config.link_form_star || null,
-    linkFormDataKaryawan: config.link_form_data_karyawan || null,
-    isTimPelaksana: false
-  });
-  await delay(400);
+  for (const hcu of [...getSemuaHC(request), ...getSemuaUser(request)]) {
+    await kirimEmailMOM({
+      namaTo: hcu.nama, emailTo: hcu.email,
+      idRequest: id_request, namaPeserta: request.nama_peserta,
+      momText: mom_gr, namaPerusahaan: request.nama_perusahaan,
+      kompetensiALC: kompetensi_alc || request.kompetensi_alc || null,
+      tanggalOnlineTest: tanggal_psikotes || request.tanggal_psikotes || null,
+      jamOnlineTest: jam_psikotes || request.jam_psikotes || null,
+      tanggalAC: tanggal_ac || request.tanggal_ac || config.tanggal_pelaksanaan_ac || null,
+      lokasiAC: lokasi_ac || request.lokasi_ac || null,
+      linkFormStar: config.link_form_star || null,
+      linkFormDataKaryawan: config.link_form_data_karyawan || null,
+      isTimPelaksana: false
+    });
+    await delay(400);
+  }
 
   const assessors = getAssessors(config);
   const roleplayers = getRoleplayers(config);
@@ -206,17 +209,20 @@ fase3Router.post('/kirim-reminder-dokumen', authMiddleware, picOnly, async (req,
   const { data: cfgData } = await supabase.from('konfigurasi').select('key, value');
   const config = Object.fromEntries(cfgData.map(c => [c.key, c.value]));
 
-  await kirimReminderDokumen({
-    namaHC: request.pic_hc,
-    emailHC: request.email_pic_hc,
-    idRequest: id_request,
-    namaPeserta: request.nama_peserta,
-    namaPerusahaan: request.nama_perusahaan,
-    tanggalAC: request.tanggal_ac || null,
-    urlFormDokumen: `${process.env.FRONTEND_URL}/form-dokumen?id=${id_request}`,
-    linkFormDataKaryawan: config.link_form_data_karyawan || null,
-    linkFormStar: config.link_form_star || null,
-  });
+  for (const hc of getSemuaHC(request)) {
+    await kirimReminderDokumen({
+      namaHC: hc.nama,
+      emailHC: hc.email,
+      idRequest: id_request,
+      namaPeserta: request.nama_peserta,
+      namaPerusahaan: request.nama_perusahaan,
+      tanggalAC: request.tanggal_ac || null,
+      urlFormDokumen: `${process.env.FRONTEND_URL}/form-dokumen?id=${id_request}`,
+      linkFormDataKaryawan: config.link_form_data_karyawan || null,
+      linkFormStar: config.link_form_star || null,
+    });
+    await delay(300);
+  }
 
   await supabase.from('log_aktivitas').insert({ id_request, aktivitas: 'Reminder Dokumen Dikirim', detail: `Reminder dikirim ke ${request.email_pic_hc}` });
   res.json({ success: true, message: 'Reminder dokumen berhasil dikirim ke HC' });
@@ -295,8 +301,8 @@ fase4Router.post('/psikotes', authMiddleware, picOnly, async (req, res) => {
   // Kirim ke HC, User/Atasan, dan semua Admin AC
   const admins = getAdmins(config);
   const penerima = [
-    { nama: request.pic_hc, email: request.email_pic_hc },
-    request.email_user ? { nama: request.user_atasan, email: request.email_user } : null,
+    ...getSemuaHC(request),
+    ...getSemuaUser(request),
     ...admins
   ].filter(Boolean);
 
@@ -343,8 +349,8 @@ fase4Router.post('/jadwal-ac', authMiddleware, picOnly, async (req, res) => {
 
   // Kirim ke HC dan User/Atasan
   const penerimaHC = [
-    { nama: request.pic_hc, email: request.email_pic_hc },
-    request.email_user ? { nama: request.user_atasan, email: request.email_user } : null
+    ...getSemuaHC(request),
+    ...getSemuaUser(request)
   ].filter(Boolean);
   for (const p of penerimaHC) {
     await kirimReminderAC({
@@ -407,15 +413,18 @@ fase4Router.post('/kirim-reminder-manual', authMiddleware, picOnly, async (req, 
   const { data: cfgData } = await supabase.from('konfigurasi').select('key, value');
   const config = Object.fromEntries((cfgData || []).map(c => [c.key, c.value]));
 
-  await kirimReminderACPeserta({
-    namaHC: request.pic_hc,
-    emailHC: request.email_pic_hc,
-    idRequest: id_request,
-    namaPeserta: request.nama_peserta,
-    tanggalAC: request.tanggal_ac,
-    ruanganAC: request.ruangan_ac || null,
-    lokasiAC: request.lokasi_ac || null
-  });
+  for (const hc of getSemuaHC(request)) {
+    await kirimReminderACPeserta({
+      namaHC: hc.nama,
+      emailHC: hc.email,
+      idRequest: id_request,
+      namaPeserta: request.nama_peserta,
+      tanggalAC: request.tanggal_ac,
+      ruanganAC: request.ruangan_ac || null,
+      lokasiAC: request.lokasi_ac || null
+    });
+    await delay(300);
+  }
 
   const assessors = getAssessors(config);
   const roleplayers = getRoleplayers(config);
@@ -478,8 +487,8 @@ fase6Router.post('/jadwal-presentasi', authMiddleware, picOnly, async (req, res)
   const configP = Object.fromEntries((cfgDataP || []).map(c => [c.key, c.value]));
 
   const penerimaP = [
-    { nama: request.pic_hc, email: request.email_pic_hc },
-    request.email_user ? { nama: request.user_atasan, email: request.email_user } : null,
+    ...getSemuaHC(request),
+    ...getSemuaUser(request),
     ...getAssessors(configP)
   ].filter(Boolean);
 
@@ -505,13 +514,16 @@ fase6Router.post('/notif-pilih-slot', authMiddleware, picOnly, async (req, res) 
   if (!request) return res.status(404).json({ error: 'Request tidak ditemukan' });
 
   const linkPilihSlot = `${process.env.FRONTEND_URL}/pilih-slot?id=${id_request}`;
-  await kirimNotifikasiPilihSlot({
-    namaHC: request.pic_hc,
-    emailHC: request.email_pic_hc,
-    idRequest: id_request,
-    namaPeserta: request.nama_peserta,
-    linkPilihSlot
-  });
+  for (const hc of getSemuaHC(request)) {
+    await kirimNotifikasiPilihSlot({
+      namaHC: hc.nama,
+      emailHC: hc.email,
+      idRequest: id_request,
+      namaPeserta: request.nama_peserta,
+      linkPilihSlot
+    });
+    await delay(300);
+  }
 
   await supabase.from('log_aktivitas').insert({ id_request, aktivitas: 'Notifikasi Pilih Slot Dikirim', detail: `Email notifikasi pilih slot presentasi dikirim ke ${request.email_pic_hc}` });
   res.json({ success: true, message: 'Notifikasi berhasil dikirim ke HC' });
@@ -541,8 +553,8 @@ fase6Router.post('/kirim-laporan', authMiddleware, picOnly, upload.single('pdf')
   const path_laporan = publicUrl;
 
   const penerima = [
-    { nama: request.pic_hc, email: request.email_pic_hc },
-    request.email_user ? { nama: request.user_atasan, email: request.email_user } : null
+    ...getSemuaHC(request),
+    ...getSemuaUser(request)
   ].filter(Boolean);
 
   for (const p of penerima) {

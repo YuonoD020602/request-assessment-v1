@@ -44,7 +44,7 @@ const generateIdRequests = async (jumlah) => {
 
 // POST /api/requests/submit
 router.post('/submit', upload.any(), async (req, res) => {
-  const { nama_perusahaan, pic_hc, email_pic_hc, user_atasan, email_user } = req.body;
+  const { nama_perusahaan } = req.body;
   let peserta;
   try {
     peserta = typeof req.body.peserta === 'string' ? JSON.parse(req.body.peserta) : req.body.peserta;
@@ -52,8 +52,37 @@ router.post('/submit', upload.any(), async (req, res) => {
     return res.status(400).json({ error: 'Data peserta tidak valid' });
   }
 
+  // Multi PIC HC & multi User/Atasan: elemen pertama = utama (kolom lama),
+  // sisanya disimpan di JSONB hc_tambahan / user_tambahan
+  let hcList, userList;
+  try {
+    hcList = typeof req.body.hc_list === 'string' ? JSON.parse(req.body.hc_list) : (req.body.hc_list || []);
+    userList = typeof req.body.user_list === 'string' ? JSON.parse(req.body.user_list) : (req.body.user_list || []);
+  } catch {
+    return res.status(400).json({ error: 'Data HC/User tidak valid' });
+  }
+  // Kompatibilitas mundur: dukung payload lama (field tunggal)
+  if ((!hcList || hcList.length === 0) && req.body.pic_hc) {
+    hcList = [{ nama: req.body.pic_hc, email: req.body.email_pic_hc }];
+  }
+  if ((!userList || userList.length === 0) && req.body.user_atasan) {
+    userList = [{ nama: req.body.user_atasan, email: req.body.email_user }];
+  }
+  hcList = (hcList || []).filter(h => h && (h.nama || h.email));
+  userList = (userList || []).filter(u => u && (u.nama || u.email));
+
+  const pic_hc = hcList[0]?.nama;
+  const email_pic_hc = hcList[0]?.email;
+  const user_atasan = userList[0]?.nama || null;
+  const email_user = userList[0]?.email || null;
+  const hc_tambahan = hcList.slice(1);
+  const user_tambahan = userList.slice(1);
+
   if (!nama_perusahaan || !pic_hc || !email_pic_hc) {
     return res.status(400).json({ error: 'Field wajib HC belum lengkap' });
+  }
+  for (const h of hcList) {
+    if (!h.nama || !h.email) return res.status(400).json({ error: 'Setiap PIC HC harus punya nama dan email' });
   }
 
   if (!peserta || !Array.isArray(peserta) || peserta.length === 0) {
@@ -91,7 +120,8 @@ router.post('/submit', upload.any(), async (req, res) => {
     { nama: config.approver_2_nama, email: config.approver_2_email }
   ].filter(a => a.email);
 
-  const dataHC = { nama_perusahaan, pic_hc, email_pic_hc, user_atasan, email_user };
+  const dataHC = { nama_perusahaan, pic_hc, email_pic_hc, user_atasan, email_user, hc_tambahan, user_tambahan };
+  const semuaNamaHC = hcList.map(h => h.nama).join(', ');
 
   const resultIds = [];
   const statusList = [];
@@ -137,7 +167,7 @@ router.post('/submit', upload.any(), async (req, res) => {
     const namaDokumenPeserta = `Form_Pengajuan_${namaClean}_${idRequest}.pdf`;
 
     const dataPeserta = {
-      nama_perusahaan, pic_hc,
+      nama_perusahaan, pic_hc: semuaNamaHC,
       nama_peserta: p.nama_peserta,
       posisi_current: p.posisi_current,
       posisi_target: p.posisi_target,
@@ -191,10 +221,11 @@ router.get('/', authMiddleware, picOnly, async (req, res) => {
 // GET /api/requests/status/by-email/:email - Cek semua request by email HC (publik)
 router.get('/status/by-email/:email', async (req, res) => {
   const email = decodeURIComponent(req.params.email);
+  // Cocokkan email HC utama ATAU salah satu HC tambahan (JSONB containment)
   const { data, error } = await supabase
     .from('requests')
     .select('id_request, nama_peserta, jenis_assessment, status, created_at, tanggal_psikotes, jam_psikotes, tanggal_ac, jam_ac, lokasi_ac, status_dokumen, tanggal_presentasi')
-    .eq('email_pic_hc', email)
+    .or(`email_pic_hc.eq.${email},hc_tambahan.cs.${JSON.stringify([{ email }])}`)
     .order('created_at', { ascending: false });
   if (error) return res.status(500).json({ error: 'Gagal mengambil data' });
   if (!data || data.length === 0) return res.status(404).json({ error: 'Tidak ada request ditemukan untuk email ini' });
