@@ -159,6 +159,7 @@ router.post('/submit', upload.any(), async (req, res) => {
 
     // Retry sekali bila ID tabrakan (dua submit bersamaan menghasilkan ID sama)
     if (error) {
+      console.error(`[SUBMIT] Insert pertama gagal untuk ${p.nama_peserta} (${idRequest}):`, error);
       const [idBaru] = await generateIdRequests(1);
       idRequest = idBaru;
       const { error: error2 } = await supabase.from('requests').insert({
@@ -174,7 +175,8 @@ router.post('/submit', upload.any(), async (req, res) => {
         dokumen_peserta_url: dokumenPesertaUrl
       });
       if (error2) {
-        return res.status(500).json({ error: `Gagal menyimpan pengajuan untuk ${p.nama_peserta}` });
+        console.error(`[SUBMIT] Insert kedua (retry) juga gagal untuk ${p.nama_peserta} (${idRequest}):`, error2);
+        return res.status(500).json({ error: `Gagal menyimpan pengajuan untuk ${p.nama_peserta}: ${error2.message || error2.code || 'unknown error'}` });
       }
     }
 
