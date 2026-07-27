@@ -1,6 +1,6 @@
 # CATATAN REVISI — Request Assessment V1
 **Project:** RACD AIHO – PT Astra International  
-**Terakhir diperbarui:** 18 Juli 2026 (Batch 17)
+**Terakhir diperbarui:** 27 Juli 2026 (Batch 18)
 
 ---
 
@@ -70,6 +70,9 @@
 | 59 | Fix frontend: /pilih-slot membaca ?id= dari email, banner sukses booking CekStatus tampil, slot picker skip status Selesai | ✅ Selesai | Batch 17 |
 | 60 | UI overhaul tahap 1: design system index.css, Layout sidebar responsif + drawer mobile + aksesibilitas, Login/SetupPassword premium, perbaikan kelas CSS invalid, tabel overflow, grid responsif | ✅ Selesai | Batch 17 |
 | 61 | UI tahap 2: Dashboard (stat klik jujur, kontras), DetailRequest (badge status berwarna, tab mobile), DaftarHC (label jujur + konfirmasi reset), FormPengajuan (step indicator dinamis), ApprovalPage (semua PIC HC) | ✅ Selesai | Batch 17 |
+| 62 | Fix data: kolom `user_atasan` dilonggarkan jadi nullable (sesuai desain User/Atasan opsional sejak Batch 16) | ✅ Selesai | Batch 18 |
+| 63 | Fix konfigurasi Supabase Storage: bucket `dokumen-peserta` & `laporan-pdf` diaktifkan sebagai Public bucket | ✅ Selesai | Batch 18 |
+| 64 | Debug: error asli saat submit pengajuan gagal kini tercatat di log server + tampil lebih jelas ke pengguna | ✅ Selesai | Batch 18 |
 | 24 | Export PDF laporan per periode | 📋 Backlog | - |
 
 ---
@@ -874,6 +877,32 @@ STATUS_ORDER berisi `'Submitted'` yang tidak pernah dipakai (status awal sebenar
 
 ---
 
+### ✅ 62–64. Fix Submit Pengajuan Gagal Setelah Rilis Multi-HC (Batch 18)
+**Tanggal:** 27 Juli 2026
+
+**Gejala:** Setelah fitur multi PIC HC & User/Atasan (Batch 16) dirilis, submit Form Pengajuan dengan User/Atasan dikosongkan selalu gagal dengan pesan generik "Gagal menyimpan pengajuan untuk [nama]".
+
+#### 62. Kolom `user_atasan` Masih NOT NULL di Database
+**Akar masalah:** Tabel `requests` dibuat sebelum fitur multi-kontak ada, dengan `user_atasan text not null`. Desain Batch 16 sengaja menjadikan User/Atasan **opsional** — saat dikosongkan, backend mengirim `null`, yang ditolak database. Karena percobaan pertama maupun retry ID sama-sama mengirim `null`, keduanya gagal (bukan soal ID bentrok).
+**Solusi:**
+```sql
+ALTER TABLE public.requests ALTER COLUMN user_atasan DROP NOT NULL;
+```
+Dijalankan langsung di Supabase SQL Editor — tidak menyentuh data yang sudah ada.
+
+#### 63. Bucket Storage Belum Public
+**Gejala terpisah:** Setelah submit berhasil, link "Download PDF" di Detail Request menampilkan `{"statusCode":"404","error":"Bucket not found"}`.
+**Akar masalah:** Bucket `dokumen-peserta` (dan berpotensi sama untuk `laporan-pdf`) belum diaktifkan sebagai **Public bucket** di Supabase Storage. Endpoint `getPublicUrl()` yang dipakai kode hanya menghasilkan link yang benar-benar bisa diakses jika bucket berstatus public — upload tetap sukses (tidak error) walau bucket private, sehingga baru ketahuan saat link diklik.
+**Solusi:** Supabase Dashboard → Storage → `dokumen-peserta` → Edit bucket → aktifkan **Public bucket**. Diterapkan juga ke `laporan-pdf` (dipakai pola identik untuk laporan hasil AC di Fase 6) agar tidak mengalami masalah sama saat kirim laporan.
+
+#### 64. Error Submit Kini Terlacak
+**Sebelumnya:** pesan error generik `"Gagal menyimpan pengajuan untuk {nama}"` tanpa detail — menyulitkan diagnosis dari layar saja.
+**Solusi:** `console.error` ditambahkan di kedua percobaan insert (asli + retry) agar Railway logs mencatat error asli dari Supabase; pesan ke pengguna juga menyertakan `error.message`/`error.code` singkat untuk mempercepat diagnosis ke depannya.
+
+**File:** `backend/src/routes/requests.js`, Supabase (schema + Storage settings, di luar kode)
+
+---
+
 ### 📋 24. Export PDF Laporan per Periode
 **Deskripsi:** Export data request per periode menjadi PDF laporan yang rapi (header logo, tabel, summary).  
 **Status:** Backlog  
@@ -889,9 +918,10 @@ STATUS_ORDER berisi `'Submitted'` yang tidak pernah dipakai (status awal sebenar
 - **Tabel `slot_presentasi`:** Dibuat manual via SQL Editor (Batch 5)
 - **Tabel `token_approval`:** Kolom `expired_at` wajib diisi saat insert (7 hari dari sekarang)
 - **Constraint `jenis_assessment`:** Sudah diupdate, hanya "Potential Review" dan "Profiling" ✅
+- **Kolom `user_atasan`:** Nullable sejak Batch 18 (User/Atasan bersifat opsional, sesuai desain multi-kontak Batch 16)
 - **Kolom `link_platform_psikotes`:** Masih ada di DB (data lama aman), tidak dipakai lagi
-- **Supabase Storage:** Bucket `laporan-pdf` (public), path format: `{id_request}/laporan_{timestamp}.pdf`
-- **Supabase Storage:** Bucket `dokumen-peserta` (public), path format: `{id_request}/Form_Pengajuan_{Nama}_{id_request}.pdf`
+- **Supabase Storage:** Bucket `laporan-pdf` — **wajib Public bucket** (diverifikasi ulang Batch 18), path format: `{id_request}/laporan_{timestamp}.pdf`
+- **Supabase Storage:** Bucket `dokumen-peserta` — **wajib Public bucket** (diverifikasi ulang Batch 18), path format: `{id_request}/Form_Pengajuan_{Nama}_{id_request}.pdf`
 - **Storage Policy:** Row-level security policy dibuat via SQL Editor untuk allow upload dari service role (kedua bucket)
 - **Kolom `dokumen_peserta_url`:** Ditambahkan ke tabel `requests` (type: text, nullable)
 
