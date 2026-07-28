@@ -1,6 +1,6 @@
 # CATATAN REVISI — Request Assessment V1
 **Project:** RACD AIHO – PT Astra International  
-**Terakhir diperbarui:** 27 Juli 2026 (Batch 18)
+**Terakhir diperbarui:** 27 Juli 2026 (Batch 19)
 
 ---
 
@@ -73,6 +73,10 @@
 | 62 | Fix data: kolom `user_atasan` dilonggarkan jadi nullable (sesuai desain User/Atasan opsional sejak Batch 16) | ✅ Selesai | Batch 18 |
 | 63 | Fix konfigurasi Supabase Storage: bucket `dokumen-peserta` & `laporan-pdf` diaktifkan sebagai Public bucket | ✅ Selesai | Batch 18 |
 | 64 | Debug: error asli saat submit pengajuan gagal kini tercatat di log server + tampil lebih jelas ke pengguna | ✅ Selesai | Batch 18 |
+| 65 | Email MOM kini hanya ke PIC HC + User/Atasan + Administrator AC (Assessor & Roleplayer dikecualikan) | ✅ Selesai | Batch 19 |
+| 66 | Hapus kolom "Pelaksanaan Psikotes" redundan di tabel email MOM (duplikat dengan kolom Online Test) | ✅ Selesai | Batch 19 |
+| 67 | Fitur baru: CC/BCC Email Monitoring custom dari halaman Konfigurasi, berlaku ke semua email semua fase | ✅ Selesai | Batch 19 |
+| 68 | Koreksi dokumentasi: Panduan lama keliru menyebut undangan GR terkirim ke Assessor/Roleplayer (kode aktual hanya ke HC & User sejak awal) | ✅ Selesai | Batch 19 |
 | 24 | Export PDF laporan per periode | 📋 Backlog | - |
 
 ---
@@ -900,6 +904,32 @@ Dijalankan langsung di Supabase SQL Editor — tidak menyentuh data yang sudah a
 **Solusi:** `console.error` ditambahkan di kedua percobaan insert (asli + retry) agar Railway logs mencatat error asli dari Supabase; pesan ke pengguna juga menyertakan `error.message`/`error.code` singkat untuk mempercepat diagnosis ke depannya.
 
 **File:** `backend/src/routes/requests.js`, Supabase (schema + Storage settings, di luar kode)
+
+---
+
+### ✅ 65–68. Penyesuaian Penerima Email MOM, Fitur CC/BCC, Koreksi Dokumentasi (Batch 19)
+**Tanggal:** 27 Juli 2026
+
+#### 65. Email MOM: Hanya PIC HC & Administrator AC
+**Perubahan:** Sebelumnya email MOM (setelah GR) dikirim ke PIC HC+User, Assessor, Roleplayer, dan Administrator AC. Sesuai revisi, MOM sekarang **hanya** ke PIC HC+User dan Administrator AC — Assessor & Roleplayer dikecualikan sepenuhnya dari email MOM. Mereka tetap menerima notifikasi lain di fase berikutnya (jadwal AC dengan tabel penugasan, reminder pelaksanaan AC).
+**File:** `backend/src/routes/fase_routes.js`
+
+#### 66. Kolom "Pelaksanaan Psikotes" Dihapus dari Email MOM
+**Akar masalah:** Kolom ini selalu tampil "-" karena parameter `tanggalPsikotes`/`jamPsikotes` di `kirimEmailMOM` tidak pernah diisi pemanggilnya — data jadwal psikotes yang benar sudah ditampilkan di kolom "Pelaksanaan Online Tes Astra Ignite & Astra Spark" (sumber data sama). Kolom redundan ini dihapus dari tabel email.
+**File:** `backend/src/services/emailService.js`
+
+#### 67. Fitur Baru: CC/BCC Email Monitoring
+**Kebutuhan:** PIC ingin memantau apakah email benar-benar terkirim ke HC/tim, dengan alamat yang bisa diubah sendiri kapan saja tanpa redeploy.
+**Implementasi:**
+- 2 field baru di Konfigurasi: **Email CC** (terlihat penerima) dan **Email BCC** (tersembunyi) — boleh lebih dari satu alamat dipisah koma, boleh dikosongkan
+- Tersimpan di tabel `konfigurasi` (key-value, tidak perlu migrasi DB)
+- Diterapkan di **satu titik terpusat** (`sendEmail()` helper) sehingga otomatis berlaku ke **semua 17 jenis email di semua fase** tanpa perlu ubah kode di tiap tempat
+- Di-cache 60 detik di backend untuk menghindari query berulang saat mengirim banyak email sekaligus (blast, reminder ke banyak penerima)
+**File:** `backend/src/services/emailService.js`, `frontend/src/pages/Konfigurasi.jsx`
+
+#### 68. Koreksi Dokumentasi: Undangan GR
+**Temuan saat audit dokumen:** Panduan versi-versi sebelumnya (sejak awal, bukan regresi baru) keliru menyebutkan undangan GR (Fase 3) dikirim ke Assessor & Roleplayer selain HC & User. Setelah dicek ke kode, ternyata undangan GR **memang dari awal hanya** dikirim ke PIC HC & User/Atasan — Assessor/Roleplayer tidak pernah menjadi penerima. Panduan diperbaiki menyesuaikan kode (tidak ada perubahan perilaku sistem, murni koreksi dokumentasi). Sekalian ditambahkan baris "Notifikasi Dokumen Diterima" ke tabel Email Sistem yang ternyata belum pernah tercatat di Panduan manapun sebelumnya.
+**File:** dokumentasi saja, tidak ada perubahan kode
 
 ---
 
