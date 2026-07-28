@@ -299,7 +299,7 @@ const kirimEmailUndanganGR = async ({ namaTo, emailTo, idRequest, tanggalGR, jam
 // ============================================================
 // FASE 3: Email MOM GR ke PIC HC
 // ============================================================
-const kirimEmailMOM = async ({ namaTo, emailTo, idRequest, namaPeserta, momText, namaPerusahaan, kompetensiALC, tanggalOnlineTest, jamOnlineTest, tanggalPsikotes, jamPsikotes, tanggalAC, lokasiAC, linkFormStar, linkFormDataKaryawan, isTimPelaksana = false, linkKeperluan = null, roleTimPelaksana = null }) => {
+const kirimEmailMOM = async ({ namaTo, emailTo, idRequest, namaPeserta, momText, namaPerusahaan, kompetensiALC, tanggalOnlineTest, jamOnlineTest, tanggalAC, lokasiAC, linkFormStar, linkFormDataKaryawan, isTimPelaksana = false, linkKeperluan = null, roleTimPelaksana = null }) => {
   const linkCekStatus = `${process.env.FRONTEND_URL}/cek-status?id=${idRequest}`;
   if (isTimPelaksana) {
     const isAdmin = roleTimPelaksana === 'admin';
@@ -339,9 +339,6 @@ const kirimEmailMOM = async ({ namaTo, emailTo, idRequest, namaPeserta, momText,
   const onlineTestInfo = tanggalOnlineTest
     ? `${formatTanggal(tanggalOnlineTest)}<br/>${jamOnlineTest || '-'} WIB`
     : '-';
-  const psikotesInfo = tanggalPsikotes
-    ? `${formatTanggal(tanggalPsikotes)}<br/>${jamPsikotes || '-'} WIB`
-    : '-';
   const acTanggalInfo = tanggalAC ? formatTanggal(tanggalAC) : '-';
 
   await sendEmail({
@@ -357,7 +354,6 @@ const kirimEmailMOM = async ({ namaTo, emailTo, idRequest, namaPeserta, momText,
             <th style="${TH_STYLE}" rowspan="2">Nama Peserta</th>
             <th style="${TH_STYLE}" rowspan="2">Kompetensi ALC yang akan diukur</th>
             <th style="${TH_STYLE}" rowspan="2">Pelaksanaan Online Tes Astra Ignite &amp; Astra Spark</th>
-            <th style="${TH_STYLE}" rowspan="2">Pelaksanaan Psikotes</th>
             <th style="${TH_STYLE}" colspan="3">Pelaksanaan Assessment Center</th>
           </tr>
           <tr>
@@ -369,7 +365,6 @@ const kirimEmailMOM = async ({ namaTo, emailTo, idRequest, namaPeserta, momText,
             <td style="${TD_CENTER}">${namaPeserta}</td>
             <td style="${TD_CENTER}">${kompetensiALC || '-'}</td>
             <td style="${TD_CENTER}">${onlineTestInfo}</td>
-            <td style="${TD_CENTER}">${psikotesInfo}</td>
             <td style="${TD_CENTER}">${acTanggalInfo}</td>
             <td style="${TD_CENTER}">08.00 &ndash; 15.00 WIB<br/><span style="font-size:11px;">(peserta diminta hadir 15 menit sebelum kegiatan berlangsung)</span></td>
             <td style="${TD_CENTER}">${lokasiAC || 'Astra International Head Office – Gedung AMDI A, Sunter'}<br/><span style="font-size:11px;">(ruangan akan diinformasikan H-1)</span></td>
