@@ -92,11 +92,32 @@ const generateICS = ({ uid, summary, description, location, dateStr, timeStr, en
   ].join('\r\n');
 };
 
+// Cache ringan (60 detik) untuk email_cc/email_bcc dari tabel konfigurasi —
+// mencegah query berulang saat mengirim banyak email sekaligus dalam satu loop
+let ccBccCache = { value: null, expiresAt: 0 };
+const parseAlamat = (raw) => (raw || '').split(',').map(s => s.trim()).filter(Boolean);
+
+const getCcBcc = async () => {
+  if (ccBccCache.value && Date.now() < ccBccCache.expiresAt) return ccBccCache.value;
+  try {
+    const { data } = await supabase.from('konfigurasi').select('key, value').in('key', ['email_cc', 'email_bcc']);
+    const config = Object.fromEntries((data || []).map(c => [c.key, c.value]));
+    const result = { cc: parseAlamat(config.email_cc), bcc: parseAlamat(config.email_bcc) };
+    ccBccCache = { value: result, expiresAt: Date.now() + 60000 };
+    return result;
+  } catch (_) {
+    return { cc: [], bcc: [] };
+  }
+};
+
 const sendEmail = async ({ to, subject, html, attachments = [] }) => {
+  const { cc, bcc } = await getCcBcc();
   const { error } = await resend.emails.send({
     from: `${FROM_NAME} <${FROM_EMAIL}>`,
     reply_to: REPLY_TO_EMAIL,
     to,
+    ...(cc.length ? { cc } : {}),
+    ...(bcc.length ? { bcc } : {}),
     subject,
     html: html + KONTAK_ADMIN_HTML,
     attachments,

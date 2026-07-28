@@ -46,6 +46,18 @@ const CONFIG_GROUPS_STATIC = [
       { key: 'link_form_star', label: 'Link Form STAR (dikirim ke HC & Peserta via MoM)', type: 'url', full: true },
       { key: 'link_form_data_karyawan', label: 'Link Form Data Karyawan (dikirim ke HC & Peserta via MoM)', type: 'url', full: true },
     ]
+  },
+  {
+    title: 'Email Monitoring (CC/BCC)',
+    desc: 'Tembusan otomatis untuk semua email sistem — kosongkan jika tidak diperlukan',
+    accent: 'from-amber-500 to-orange-600',
+    iconBg: 'bg-amber-50',
+    iconCls: 'text-amber-500',
+    svg: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>,
+    keys: [
+      { key: 'email_cc', label: 'Email CC (terlihat penerima, pisahkan dengan koma jika lebih dari satu)', type: 'text', full: true },
+      { key: 'email_bcc', label: 'Email BCC (tersembunyi dari penerima, pisahkan dengan koma jika lebih dari satu)', type: 'text', full: true },
+    ]
   }
 ];
 
