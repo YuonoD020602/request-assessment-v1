@@ -186,19 +186,10 @@ fase3Router.post('/input-mom', authMiddleware, picOnly, async (req, res) => {
     await delay(400);
   }
 
-  const assessors = getAssessors(config);
-  const roleplayers = getRoleplayers(config);
+  // MOM hanya dikirim ke PIC HC dan Administrator AC — Assessor & Roleplayer
+  // TIDAK menerima email MOM (mereka tetap dapat notifikasi terpisah lain,
+  // mis. undangan GR, jadwal AC, dan reminder pelaksanaan AC)
   const admins = getAdmins(config);
-
-  for (const t of [...assessors, ...roleplayers]) {
-    await kirimEmailMOM({
-      namaTo: t.nama, emailTo: t.email,
-      idRequest: id_request, namaPeserta: request.nama_peserta,
-      momText: mom_gr, isTimPelaksana: true, roleTimPelaksana: 'assessor',
-      linkKeperluan: config.link_keperluan_asesmen || null
-    });
-    await delay(400);
-  }
 
   for (const t of admins) {
     await kirimEmailMOM({
@@ -209,7 +200,7 @@ fase3Router.post('/input-mom', authMiddleware, picOnly, async (req, res) => {
     await delay(400);
   }
 
-  await supabase.from('log_aktivitas').insert({ id_request, aktivitas: 'MOM GR Dikirim', detail: 'MOM dikirim ke HC dan Tim Pelaksana' });
+  await supabase.from('log_aktivitas').insert({ id_request, aktivitas: 'MOM GR Dikirim', detail: 'MOM dikirim ke HC dan Administrator AC' });
   res.json({ success: true, message: 'MOM berhasil dikirim' });
 });
 
