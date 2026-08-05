@@ -1,6 +1,6 @@
 # CATATAN REVISI — Request Assessment V1
 **Project:** RACD AIHO – PT Astra International  
-**Terakhir diperbarui:** 27 Juli 2026 (Batch 19)
+**Terakhir diperbarui:** 5 Agustus 2026 (Batch 20)
 
 ---
 
@@ -77,6 +77,7 @@
 | 66 | Hapus kolom "Pelaksanaan Psikotes" redundan di tabel email MOM (duplikat dengan kolom Online Test) | ✅ Selesai | Batch 19 |
 | 67 | Fitur baru: CC/BCC Email Monitoring custom dari halaman Konfigurasi, berlaku ke semua email semua fase | ✅ Selesai | Batch 19 |
 | 68 | Koreksi dokumentasi: Panduan lama keliru menyebut undangan GR terkirim ke Assessor/Roleplayer (kode aktual hanya ke HC & User sejak awal) | ✅ Selesai | Batch 19 |
+| 69 | Tampilan Data Peserta di Detail Request diperlengkap (7 field baru) & dipercantik (grouping section, badge, layout full-width) | ✅ Selesai | Batch 20 |
 | 24 | Export PDF laporan per periode | 📋 Backlog | - |
 
 ---
@@ -930,6 +931,29 @@ Dijalankan langsung di Supabase SQL Editor — tidak menyentuh data yang sudah a
 #### 68. Koreksi Dokumentasi: Undangan GR
 **Temuan saat audit dokumen:** Panduan versi-versi sebelumnya (sejak awal, bukan regresi baru) keliru menyebutkan undangan GR (Fase 3) dikirim ke Assessor & Roleplayer selain HC & User. Setelah dicek ke kode, ternyata undangan GR **memang dari awal hanya** dikirim ke PIC HC & User/Atasan — Assessor/Roleplayer tidak pernah menjadi penerima. Panduan diperbaiki menyesuaikan kode (tidak ada perubahan perilaku sistem, murni koreksi dokumentasi). Sekalian ditambahkan baris "Notifikasi Dokumen Diterima" ke tabel Email Sistem yang ternyata belum pernah tercatat di Panduan manapun sebelumnya.
 **File:** dokumentasi saja, tidak ada perubahan kode
+
+---
+
+### ✅ 69. Tampilan Data Peserta Diperlengkap & Dipercantik (Batch 20)
+**Tanggal:** 5 Agustus 2026
+
+**Kebutuhan:** Kartu "Data Peserta" di tab Info (Detail Request) hanya menampilkan sebagian kecil data (Nama, Posisi, Target, Dept/Div, Jenis AC, Tujuan AC) — PIC harus membuka PDF ringkasan terpisah untuk melihat info lengkap seperti email peserta, golongan, jumlah bawahan/peers, dsb.
+
+**Solusi — tanpa perlu fitur download PDF ringkasan terpisah:**
+- Kartu diperluas jadi **full-width** (sebelumnya sempit berdampingan dengan kartu Data HC dalam grid 2 kolom)
+- Konten dikelompokkan per section — **Identitas → Posisi & Golongan → Unit & Struktur → Detail Assessment** — mengikuti pola visual yang sama dengan Form Pengajuan, sehingga familiar
+- **7 field baru ditampilkan** (semua sudah tersimpan di database, sebelumnya hanya ada di PDF ringkasan yang tidak pernah disimpan):
+  - Email Peserta
+  - Golongan Saat Ini
+  - Golongan Target
+  - Jumlah Bawahan
+  - Jumlah Peers
+  - Masa Kerja
+  - Terakhir Mengikuti Assessment
+- **Jenis Assessment** kini tampil sebagai badge ungu (bukan teks polos); **Tujuan Assessment** kini blok teks tersendiri agar lebih mudah dibaca
+- Berlaku untuk **semua request** (lama maupun baru) — data sudah ada dari dulu, hanya baru ditampilkan
+
+**File:** `frontend/src/pages/DetailRequest.jsx`
 
 ---
 
