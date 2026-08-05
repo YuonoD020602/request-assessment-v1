@@ -205,10 +205,15 @@ export default function DetailRequest() {
 
         {/* Tab: Info */}
         {activeTab === 'info' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-6">
             <div className="card">
-              <h3 className="font-semibold text-gray-900 mb-4">Data HC</h3>
-              <div className="space-y-2 text-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                </span>
+                <h3 className="font-bold text-gray-900">Data HC</h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
                 {[
                   ['Perusahaan', request.nama_perusahaan],
                   ['PIC HC 1', `${request.pic_hc || '-'} (${request.email_pic_hc || '-'})`],
@@ -220,23 +225,73 @@ export default function DetailRequest() {
                 ))}
               </div>
             </div>
+
             <div className="card">
-              <h3 className="font-semibold text-gray-900 mb-4">Data Peserta</h3>
-              <div className="space-y-2 text-sm">
-                {[['Nama', request.nama_peserta], ['Posisi', request.posisi_current], ['Target', request.posisi_target],
-                  ['Dept/Div', `${request.dept || '-'} / ${request.div || '-'}`], ['Jenis AC', request.jenis_assessment],
-                  ['Tujuan AC', request.tujuan_ac]].map(([k,v]) => (
-                  <div key={k} className="flex gap-2"><span className="text-gray-500 w-28">{k}</span><span className="font-medium">{v || '-'}</span></div>
-                ))}
-                {request.dokumen_peserta_url && (
-                  <div className="flex gap-2">
-                    <span className="text-gray-500 w-28">Dok. Pengajuan</span>
-                    <a href={request.dokumen_peserta_url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline font-medium">
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-2">
+                  <span className="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                  </span>
+                  <h3 className="font-bold text-gray-900">Data Peserta</h3>
+                </div>
+                {request.jenis_assessment && (
+                  <span className="badge bg-violet-50 text-violet-700 ring-1 ring-violet-200">{request.jenis_assessment}</span>
+                )}
+              </div>
+
+              {/* Identitas */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                <div className="flex gap-2"><span className="text-gray-500 w-32 flex-shrink-0">Nama</span><span className="font-semibold text-gray-900">{request.nama_peserta || '-'}</span></div>
+                <div className="flex gap-2"><span className="text-gray-500 w-32 flex-shrink-0">Email Peserta</span><span className="font-medium break-all">{request.email_peserta || '-'}</span></div>
+              </div>
+
+              <div className="my-4 border-t border-dashed border-gray-200" />
+
+              {/* Posisi & Golongan */}
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Posisi & Golongan</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm mb-1">
+                <div className="flex gap-2"><span className="text-gray-500 w-32 flex-shrink-0">Posisi Saat Ini</span><span className="font-medium">{request.posisi_current || '-'}</span></div>
+                <div className="flex gap-2"><span className="text-gray-500 w-32 flex-shrink-0">Golongan Saat Ini</span><span className="font-medium">{request.gol_current || '-'}</span></div>
+                <div className="flex gap-2"><span className="text-gray-500 w-32 flex-shrink-0">Posisi Target</span><span className="font-medium">{request.posisi_target || '-'}</span></div>
+                <div className="flex gap-2"><span className="text-gray-500 w-32 flex-shrink-0">Golongan Target</span><span className="font-medium">{request.gol_target || '-'}</span></div>
+              </div>
+
+              <div className="my-4 border-t border-dashed border-gray-200" />
+
+              {/* Unit & Struktur */}
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Unit & Struktur</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm mb-1">
+                <div className="flex gap-2"><span className="text-gray-500 w-32 flex-shrink-0">Departemen</span><span className="font-medium">{request.dept || '-'}</span></div>
+                <div className="flex gap-2"><span className="text-gray-500 w-32 flex-shrink-0">Divisi</span><span className="font-medium">{request.div || '-'}</span></div>
+                <div className="flex gap-2"><span className="text-gray-500 w-32 flex-shrink-0">Jumlah Bawahan</span><span className="font-medium">{request.jumlah_bawahan || '-'}</span></div>
+                <div className="flex gap-2"><span className="text-gray-500 w-32 flex-shrink-0">Jumlah Peers</span><span className="font-medium">{request.jumlah_peers || '-'}</span></div>
+                <div className="flex gap-2"><span className="text-gray-500 w-32 flex-shrink-0">Masa Kerja</span><span className="font-medium">{request.masa_kerja || '-'}</span></div>
+              </div>
+
+              <div className="my-4 border-t border-dashed border-gray-200" />
+
+              {/* Detail Assessment */}
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Detail Assessment</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm mb-2">
+                <div className="flex gap-2"><span className="text-gray-500 w-32 flex-shrink-0">Terakhir Assessment</span><span className="font-medium">{request.terakhir_assessment || '-'}</span></div>
+              </div>
+              <div className="text-sm">
+                <span className="text-gray-500 block mb-1">Tujuan Assessment</span>
+                <p className="font-medium text-gray-900 bg-gray-50 rounded-xl p-3">{request.tujuan_ac || '-'}</p>
+              </div>
+
+              {request.dokumen_peserta_url && (
+                <>
+                  <div className="my-4 border-t border-dashed border-gray-200" />
+                  <div className="flex items-center gap-2 text-sm">
+                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                    <span className="text-gray-500">Dokumen Pengajuan</span>
+                    <a href={request.dokumen_peserta_url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline font-semibold">
                       Download PDF
                     </a>
                   </div>
-                )}
-              </div>
+                </>
+              )}
             </div>
           </div>
         )}
