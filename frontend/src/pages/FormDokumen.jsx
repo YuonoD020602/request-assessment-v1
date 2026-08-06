@@ -69,14 +69,17 @@ export function FormDokumen() {
               <p className="font-medium">ID Request: <span className="font-mono">{idRequest}</span></p>
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
+                💡 Link boleh dari penyimpanan cloud manapun (Google Drive, OneDrive, Dropbox, dll). Pastikan akses link diatur <strong>"Anyone with the link can view"</strong> (dapat dilihat siapa saja yang punya link), bukan Restricted/Private, agar tim RACD AIHO bisa membukanya.
+              </div>
               <div>
-                <label className="form-label">Link Google Drive – Data Karyawan *</label>
-                <input className="form-input" placeholder="https://drive.google.com/..." required
+                <label className="form-label">Link Dokumen – Data Karyawan *</label>
+                <input className="form-input" placeholder="https://drive.google.com/... atau https://onedrive.live.com/..." required
                   value={form.link_data_karyawan} onChange={e => setForm({...form, link_data_karyawan: e.target.value})} />
               </div>
               <div>
-                <label className="form-label">Link Google Drive – Form STAR *</label>
-                <input className="form-input" placeholder="https://drive.google.com/..." required
+                <label className="form-label">Link Dokumen – Form STAR *</label>
+                <input className="form-input" placeholder="https://drive.google.com/... atau https://onedrive.live.com/..." required
                   value={form.link_form_star} onChange={e => setForm({...form, link_form_star: e.target.value})} />
               </div>
               {error && <div className="p-3 bg-red-50 rounded-lg text-sm text-red-600">{error}</div>}
