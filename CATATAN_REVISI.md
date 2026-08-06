@@ -957,6 +957,23 @@ Dijalankan langsung di Supabase SQL Editor — tidak menyentuh data yang sudah a
 
 ---
 
+### ✅ 70. Perbaikan Visibilitas Dokumen & Layout Cek Status (Batch 21)
+**Tanggal:** 6 Agustus 2026
+
+**Masalah yang dilaporkan:** Di halaman publik Cek Status, status sudah menunjukkan "AC Dijadwalkan" tetapi tidak ada link untuk submit dokumen (Form Data Karyawan & Form STAR) — padahal di sisi admin (tab Fase 4) kedua dokumen tersebut masih "belum diterima". HC/User jadi kesulitan menemukan tempat pengumpulan dokumen setelah jadwal psikotes/AC ditetapkan.
+
+**Akar masalah:** Fungsi `hitungStatusEfektif()` memajukan status yang tampil ke publik (`Psikotes Dijadwalkan` → `AC Dijadwalkan` → dst.) berdasarkan keberadaan `tanggal_psikotes`/`tanggal_ac`, **tidak peduli** apakah `status_dokumen` sudah benar-benar "Dokumen Diterima". Halaman Cek Status sebelumnya menyembunyikan section upload dokumen begitu status utama maju melewati "GR Selesai - Menunggu Dokumen", padahal di lapangan HC sering baru mengumpulkan dokumen belakangan meski jadwal AC sudah keluar.
+
+**Perbaikan:**
+- Section "Dokumen yang perlu dikirimkan" sekarang digating langsung dari `status_dokumen !== 'Dokumen Diterima'`, bukan dari status keseluruhan — tetap tampil selama dokumen memang belum diterima, berapa pun jauhnya jadwal AC/psikotes sudah maju
+- Urutan section dibalik: "Dokumen yang perlu dikirimkan" tampil **sebelum** "Pilih Slot Presentasi" (lebih prioritas)
+- **4 email** yang dikirim sampai tahap MOM (Approved HC, Undangan GR, MOM, Reminder Dokumen) sekarang **semuanya** menyertakan link langsung ke halaman submit dokumen (`/form-dokumen?id=...`) — sebelumnya Undangan GR tidak ada info dokumen sama sekali, dan MOM hanya link ke template kosong tanpa link submit
+- Layout hasil Cek Status diubah jadi **2 kolom (landscape)** di layar lebar — Status & Jadwal Timeline di kiri, Dokumen & Pilih Slot Presentasi di kanan — supaya semua informasi penting terlihat sekaligus dalam satu layar tanpa perlu scroll di desktop/laptop (di HP tetap 1 kolom seperti biasa)
+
+**File:** `frontend/src/pages/CekStatus.jsx`, `backend/src/services/emailService.js`
+
+---
+
 ### 📋 24. Export PDF Laporan per Periode
 **Deskripsi:** Export data request per periode menjadi PDF laporan yang rapi (header logo, tabel, summary).  
 **Status:** Backlog  
