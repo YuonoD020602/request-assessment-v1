@@ -974,6 +974,20 @@ Dijalankan langsung di Supabase SQL Editor — tidak menyentuh data yang sudah a
 
 ---
 
+### ✅ 71. Form Upload Dokumen: Terima Link Cloud Storage Apapun (Batch 22)
+**Tanggal:** 6 Agustus 2026
+
+**Kebutuhan:** Label & placeholder form Upload Dokumen Lanjutan (`/form-dokumen`) sebelumnya menyebut "Link Google Drive" secara eksplisit, padahal HC ada yang menyimpan dokumen di OneDrive/penyimpanan cloud lain. Perlu digeneralisasi + ada pengingat soal setting akses link.
+
+**Perubahan:**
+- Label diubah jadi netral: "Link Dokumen – Data Karyawan" / "Link Dokumen – Form STAR" (bukan lagi "Link Google Drive")
+- Placeholder menampilkan contoh Google Drive maupun OneDrive
+- Ditambahkan catatan di atas form: link boleh dari provider cloud manapun, tapi wajib diatur akses **"Anyone with the link can view"** (bukan Restricted/Private) agar tim RACD AIHO bisa membukanya
+
+**File:** `frontend/src/pages/FormDokumen.jsx`
+
+---
+
 ### 📋 24. Export PDF Laporan per Periode
 **Deskripsi:** Export data request per periode menjadi PDF laporan yang rapi (header logo, tabel, summary).  
 **Status:** Backlog  
