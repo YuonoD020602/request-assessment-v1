@@ -130,6 +130,12 @@ export function CekStatus() {
   const hasPresentasi = !!result?.tanggal_presentasi;
   const showPresentasiStep = hasPresentasi || ['Menunggu Presentasi', 'Selesai'].includes(result?.status);
   const showJadwalSection = ['Approved','Menunggu GR','GR Selesai - Menunggu Dokumen','Dokumen Diterima','Psikotes Dijadwalkan','AC Dijadwalkan','Menunggu Presentasi','Selesai'].includes(result?.status);
+  const dokumenPending = !!result && result.status_dokumen !== 'Dokumen Diterima' &&
+    !['Pending - Menunggu Review', 'Approved', 'Rejected', 'Selesai'].includes(result.status);
+  const dokumenKarConfirmed = !!result?.link_data_karyawan;
+  const dokumenStarConfirmed = !!result?.link_form_star;
+  const slotPending = !!result && !!result.tanggal_ac && !result.tanggal_presentasi && result.status !== 'Selesai';
+  const scrollToId = (id) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-start px-4 pb-16"
@@ -269,6 +275,36 @@ export function CekStatus() {
         {result && (
           <div className="space-y-4">
 
+            {/* ── Sticky Action Bar: status sudah/belum langsung terlihat tanpa klik/scroll ── */}
+            {(dokumenPending || slotPending) && (
+              <div className="sticky top-2 z-20 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl shadow-gray-200/70 border border-amber-100 p-3 space-y-2">
+                {dokumenPending && (
+                  <button type="button" onClick={() => scrollToId('section-dokumen')}
+                    className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-amber-50 transition-colors text-left">
+                    <div className="w-8 h-8 bg-amber-100 rounded-xl flex items-center justify-center text-sm flex-shrink-0">📋</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-gray-800">Dokumen</p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        Form Data Karyawan {dokumenKarConfirmed ? '✅ sudah' : '⏳ belum'} · Form STAR {dokumenStarConfirmed ? '✅ sudah' : '⏳ belum'}
+                      </p>
+                    </div>
+                    <span className="text-gray-300 text-xs flex-shrink-0">↓</span>
+                  </button>
+                )}
+                {slotPending && (
+                  <button type="button" onClick={() => scrollToId('section-slot-presentasi')}
+                    className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-indigo-50 transition-colors text-left">
+                    <div className="w-8 h-8 bg-indigo-100 rounded-xl flex items-center justify-center text-sm flex-shrink-0">🎤</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-gray-800">Jadwal Presentasi</p>
+                      <p className="text-xs text-gray-500 mt-0.5">⏳ Belum dipilih</p>
+                    </div>
+                    <span className="text-gray-300 text-xs flex-shrink-0">↓</span>
+                  </button>
+                )}
+              </div>
+            )}
+
             {/* Status Hero Card */}
             <div className="rounded-3xl overflow-hidden shadow-xl shadow-gray-200/60 border border-white">
               {/* Colored top header */}
@@ -371,7 +407,7 @@ export function CekStatus() {
                 belakangan meski jadwal psikotes/AC sudah ditetapkan */}
             {result.status_dokumen !== 'Dokumen Diterima' &&
               !['Pending - Menunggu Review', 'Approved', 'Rejected', 'Selesai'].includes(result.status) && (
-              <div className="bg-white/80 backdrop-blur-sm rounded-3xl border border-white shadow-sm p-5">
+              <div id="section-dokumen" className="bg-white/80 backdrop-blur-sm rounded-3xl border border-white shadow-sm p-5 scroll-mt-4">
                 <div className="flex items-center gap-2 mb-4">
                   <div className="w-8 h-8 bg-amber-100 rounded-xl flex items-center justify-center text-sm">📋</div>
                   <p className="font-bold text-gray-800 text-sm">Dokumen yang perlu dikirimkan</p>
@@ -411,7 +447,7 @@ export function CekStatus() {
 
             {/* ── Pilih Slot Presentasi ── */}
             {result.tanggal_ac && !result.tanggal_presentasi && result.status !== 'Selesai' && (
-              <div className="rounded-3xl overflow-hidden shadow-lg border border-indigo-100">
+              <div id="section-slot-presentasi" className="rounded-3xl overflow-hidden shadow-lg border border-indigo-100 scroll-mt-4">
                 <div className="relative overflow-hidden bg-gradient-to-r from-indigo-700 to-blue-700 px-6 py-5">
                   <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px)', backgroundSize: '18px 18px' }} />
                   <div className="relative">
