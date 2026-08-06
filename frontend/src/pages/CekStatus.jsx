@@ -448,7 +448,11 @@ export function CekStatus() {
               </div>
             )}
 
-            {['Menunggu GR', 'GR Selesai - Menunggu Dokumen'].includes(result.status) && (
+            {/* Section ini muncul selama dokumen BELUM diterima — tidak peduli status AC
+                sudah maju sejauh apa, karena HC sering baru mengumpulkan dokumen
+                belakangan meski jadwal psikotes/AC sudah ditetapkan */}
+            {result.status_dokumen !== 'Dokumen Diterima' &&
+              !['Pending - Menunggu Review', 'Approved', 'Rejected', 'Selesai'].includes(result.status) && (
               <div className="bg-white/80 backdrop-blur-sm rounded-3xl border border-white shadow-sm p-5">
                 <div className="flex items-center gap-2 mb-4">
                   <div className="w-8 h-8 bg-amber-100 rounded-xl flex items-center justify-center text-sm">📋</div>

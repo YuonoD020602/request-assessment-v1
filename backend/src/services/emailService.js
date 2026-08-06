@@ -280,6 +280,7 @@ const kirimEmailRejectedHC = async ({ namaHC, emailHC, idRequest, catatanReject 
 // ============================================================
 const kirimEmailUndanganGR = async ({ namaTo, emailTo, idRequest, tanggalGR, jamGR, lokasiGR, namaPeserta, periodeAC, linkCekStatus: linkCekStatusParam }) => {
   const linkCekStatus = linkCekStatusParam || `${process.env.FRONTEND_URL}/cek-status?id=${idRequest}`;
+  const linkFormDokumen = `${process.env.FRONTEND_URL}/form-dokumen?id=${idRequest}`;
   const icsContent = generateICS({
     uid: `gr-${idRequest}`,
     summary: `Getting Requirement AC – ${namaPeserta}`,
@@ -308,6 +309,8 @@ const kirimEmailUndanganGR = async ({ namaTo, emailTo, idRequest, tanggalGR, jam
           <tr><td style="padding: 6px 12px 6px 0; font-weight: bold; white-space: nowrap;">Lokasi</td><td style="padding: 6px 0;">: ${lokasiGR}</td></tr>
         </table>
         <p style="color: #555; font-size: 13px;">File kalender (.ics) terlampir. Buka untuk menambahkan ke kalender Anda.</p>
+        <p style="margin: 16px 0; font-size: 13px; color: #555;">Sekalian mengingatkan, dokumen lanjutan (Form Data Karyawan &amp; Form STAR) dapat dikumpulkan melalui halaman berikut kapan saja setelah tersedia:<br/>
+        <a href="${linkFormDokumen}" style="color: #2563eb;">${linkFormDokumen}</a></p>
         <p style="margin-top: 16px; font-size: 13px; color: #555;">Pantau status request Anda:<br/>
         <a href="${linkCekStatus}" style="color: #2563eb;">${linkCekStatus}</a></p>
         <p>Terima kasih</p>
@@ -322,6 +325,7 @@ const kirimEmailUndanganGR = async ({ namaTo, emailTo, idRequest, tanggalGR, jam
 // ============================================================
 const kirimEmailMOM = async ({ namaTo, emailTo, idRequest, namaPeserta, momText, namaPerusahaan, kompetensiALC, tanggalOnlineTest, jamOnlineTest, tanggalAC, lokasiAC, linkFormStar, linkFormDataKaryawan, isTimPelaksana = false, linkKeperluan = null, roleTimPelaksana = null }) => {
   const linkCekStatus = `${process.env.FRONTEND_URL}/cek-status?id=${idRequest}`;
+  const linkFormDokumen = `${process.env.FRONTEND_URL}/form-dokumen?id=${idRequest}`;
   if (isTimPelaksana) {
     const isAdmin = roleTimPelaksana === 'admin';
     const pesanTugas = isAdmin
@@ -404,6 +408,12 @@ const kirimEmailMOM = async ({ namaTo, emailTo, idRequest, namaPeserta, momText,
 
         ${linkFormDataKaryawan ? `<p>Link Form Data Karyawan: <a href="${linkFormDataKaryawan}" style="color: #2563eb;">${linkFormDataKaryawan}</a></p>` : ''}
         ${linkFormStar ? `<p>Link Form STAR: <a href="${linkFormStar}" style="color: #2563eb;">${linkFormStar}</a></p>` : ''}
+
+        <div style="margin: 20px 0; padding: 14px 16px; background: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 4px;">
+          <p style="margin: 0 0 8px 0; font-weight: bold; font-size: 13px;">Setelah kedua dokumen di atas diisi, mohon dikumpulkan melalui halaman berikut:</p>
+          <a href="${linkFormDokumen}" style="display: inline-block; background: #1d4ed8; color: white; padding: 10px 22px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 13px;">Kumpulkan Dokumen &rarr;</a>
+          <p style="margin: 8px 0 0 0; color: #666; font-size: 12px;">Atau salin: ${linkFormDokumen}</p>
+        </div>
 
         <p>Demikian informasi ini saya sampaikan.</p>
         <p style="margin-top: 16px; font-size: 13px; color: #555;">Pantau status request Anda:<br/>
