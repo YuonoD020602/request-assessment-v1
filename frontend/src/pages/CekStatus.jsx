@@ -130,12 +130,6 @@ export function CekStatus() {
   const hasPresentasi = !!result?.tanggal_presentasi;
   const showPresentasiStep = hasPresentasi || ['Menunggu Presentasi', 'Selesai'].includes(result?.status);
   const showJadwalSection = ['Approved','Menunggu GR','GR Selesai - Menunggu Dokumen','Dokumen Diterima','Psikotes Dijadwalkan','AC Dijadwalkan','Menunggu Presentasi','Selesai'].includes(result?.status);
-  const dokumenPending = !!result && result.status_dokumen !== 'Dokumen Diterima' &&
-    !['Pending - Menunggu Review', 'Approved', 'Rejected', 'Selesai'].includes(result.status);
-  const dokumenKarConfirmed = !!result?.link_data_karyawan;
-  const dokumenStarConfirmed = !!result?.link_form_star;
-  const slotPending = !!result && !!result.tanggal_ac && !result.tanggal_presentasi && result.status !== 'Selesai';
-  const scrollToId = (id) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-start px-4 pb-16"
@@ -156,8 +150,9 @@ export function CekStatus() {
         <p className="text-gray-400 text-sm mt-2">Pantau perkembangan pengajuan Assessment Center Anda secara real-time</p>
       </div>
 
-      <div className="w-full max-w-lg space-y-4">
+      <div className="w-full max-w-6xl space-y-4">
 
+      <div className="max-w-lg mx-auto w-full space-y-4">
         {/* ── Mode Toggle ── */}
         <div className="flex p-1.5 bg-white/80 backdrop-blur-sm rounded-2xl border border-white shadow-lg shadow-gray-100">
           {[
@@ -270,41 +265,13 @@ export function CekStatus() {
             </div>
           </div>
         )}
+      </div>
 
         {/* ── Result Detail ── */}
         {result && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+
           <div className="space-y-4">
-
-            {/* ── Sticky Action Bar: status sudah/belum langsung terlihat tanpa klik/scroll ── */}
-            {(dokumenPending || slotPending) && (
-              <div className="sticky top-2 z-20 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl shadow-gray-200/70 border border-amber-100 p-3 space-y-2">
-                {dokumenPending && (
-                  <button type="button" onClick={() => scrollToId('section-dokumen')}
-                    className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-amber-50 transition-colors text-left">
-                    <div className="w-8 h-8 bg-amber-100 rounded-xl flex items-center justify-center text-sm flex-shrink-0">📋</div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-gray-800">Dokumen</p>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        Form Data Karyawan {dokumenKarConfirmed ? '✅ sudah' : '⏳ belum'} · Form STAR {dokumenStarConfirmed ? '✅ sudah' : '⏳ belum'}
-                      </p>
-                    </div>
-                    <span className="text-gray-300 text-xs flex-shrink-0">↓</span>
-                  </button>
-                )}
-                {slotPending && (
-                  <button type="button" onClick={() => scrollToId('section-slot-presentasi')}
-                    className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-indigo-50 transition-colors text-left">
-                    <div className="w-8 h-8 bg-indigo-100 rounded-xl flex items-center justify-center text-sm flex-shrink-0">🎤</div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-gray-800">Jadwal Presentasi</p>
-                      <p className="text-xs text-gray-500 mt-0.5">⏳ Belum dipilih</p>
-                    </div>
-                    <span className="text-gray-300 text-xs flex-shrink-0">↓</span>
-                  </button>
-                )}
-              </div>
-            )}
-
             {/* Status Hero Card */}
             <div className="rounded-3xl overflow-hidden shadow-xl shadow-gray-200/60 border border-white">
               {/* Colored top header */}
@@ -390,7 +357,9 @@ export function CekStatus() {
                 </div>
               </div>
             )}
+          </div>
 
+          <div className="space-y-4">
             {/* ── Banner sukses booking (di luar kartu picker agar tetap tampil setelah refresh) ── */}
             {bookingDone && (
               <div className="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl shadow-sm">
@@ -551,14 +520,17 @@ export function CekStatus() {
               </div>
             )}
           </div>
+          </div>
         )}
 
-        <div className="text-center pt-2 pb-4">
-          <a href="/form-pengajuan" className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800 font-semibold hover:underline transition-colors">
-            ← Ajukan Request Baru
-          </a>
+        <div className="max-w-lg mx-auto w-full">
+          <div className="text-center pt-2 pb-4">
+            <a href="/form-pengajuan" className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800 font-semibold hover:underline transition-colors">
+              ← Ajukan Request Baru
+            </a>
+          </div>
+          <FooterContact />
         </div>
-        <FooterContact />
       </div>
     </div>
   );
