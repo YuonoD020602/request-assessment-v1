@@ -111,6 +111,8 @@ const runDailyReminders = async () => {
           namaTo: admin.nama, emailTo: admin.email,
           idRequest: req.id_request, namaPeserta: req.nama_peserta,
           tanggal: req.tanggal_psikotes, jam: req.jam_psikotes,
+          linkMeeting: req.link_meeting_psikotes || null,
+          namaPicOnlineTest: config.nama_pic_online_test || null,
           isReminder: true
         });
       }
@@ -121,6 +123,8 @@ const runDailyReminders = async () => {
           namaTo: hc.nama, emailTo: hc.email,
           idRequest: req.id_request, namaPeserta: req.nama_peserta,
           tanggal: req.tanggal_psikotes, jam: req.jam_psikotes,
+          linkMeeting: req.link_meeting_psikotes || null,
+          namaPicOnlineTest: config.nama_pic_online_test || null,
           isReminder: true
         });
       }
@@ -134,6 +138,8 @@ const runDailyReminders = async () => {
           namaPeserta: req.nama_peserta,
           tanggal: req.tanggal_psikotes,
           jam: req.jam_psikotes,
+          linkMeeting: req.link_meeting_psikotes || null,
+          namaPicOnlineTest: config.nama_pic_online_test || null,
           isReminder: true
         });
       }

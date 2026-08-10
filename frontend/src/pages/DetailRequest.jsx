@@ -17,7 +17,7 @@ export default function DetailRequest() {
   const [grForm, setGrForm] = useState({ tanggal_gr: '', jam_gr: '', lokasi_gr: '' });
   const [momForm, setMomForm] = useState({ mom_gr: '', kompetensi_alc: '', tanggal_psikotes: '', jam_psikotes: '', tanggal_ac: '', lokasi_ac: '' });
   const [jadwalAcForm, setJadwalAcForm] = useState({ ruangan_ac: '' });
-  const [psikotesForm, setPsikotesForm] = useState({ tanggal_psikotes: '', jam_psikotes: '' });
+  const [psikotesForm, setPsikotesForm] = useState({ tanggal_psikotes: '', jam_psikotes: '', link_meeting_psikotes: '' });
   const [penugasanTim, setPenugasanTim] = useState([{ roleplayer: '', assessor: '', ruangan: '' }]);
   const [formsReady, setFormsReady] = useState(false);
   const [fileLaporan, setFileLaporan] = useState(null);
@@ -52,7 +52,7 @@ export default function DetailRequest() {
       if (r.mom_gr) setMomForm({ mom_gr: r.mom_gr, kompetensi_alc: r.kompetensi_alc || '', tanggal_psikotes: r.tanggal_psikotes || '', jam_psikotes: r.jam_psikotes || '', tanggal_ac: r.tanggal_ac || '', lokasi_ac: r.lokasi_ac || '' });
       if (r.ruangan_ac) setJadwalAcForm({ ruangan_ac: r.ruangan_ac || '' });
       // Jadwal psikotes mengikuti kesepakatan MOM (Fase 3)
-      setPsikotesForm({ tanggal_psikotes: r.tanggal_psikotes || '', jam_psikotes: r.jam_psikotes || '' });
+      setPsikotesForm({ tanggal_psikotes: r.tanggal_psikotes || '', jam_psikotes: r.jam_psikotes || '', link_meeting_psikotes: r.link_meeting_psikotes || '' });
       if (r.penugasan_tim && Array.isArray(r.penugasan_tim) && r.penugasan_tim.length > 0) setPenugasanTim(r.penugasan_tim);
       setFormsReady(true);
     } catch { toast.error('Request tidak ditemukan'); navigate('/dashboard'); }
@@ -401,6 +401,12 @@ export default function DetailRequest() {
                     <input className="form-input" required placeholder="contoh: 08.00–10.00"
                       value={psikotesForm.jam_psikotes}
                       onChange={e => setPsikotesForm({...psikotesForm, jam_psikotes: e.target.value})} /></div>
+                  <div className="md:col-span-2">
+                    <label className="form-label">Link Meeting (MS Teams/Zoom) — opsional</label>
+                    <input className="form-input" placeholder="https://teams.microsoft.com/... (kosongkan jika belum ada)"
+                      value={psikotesForm.link_meeting_psikotes}
+                      onChange={e => setPsikotesForm({...psikotesForm, link_meeting_psikotes: e.target.value})} />
+                  </div>
                   <div className="md:col-span-2">
                     <button type="submit" className="btn-primary" disabled={submitting}>
                       {submitting ? '...' : (request.tanggal_psikotes && (psikotesForm.tanggal_psikotes !== request.tanggal_psikotes || psikotesForm.jam_psikotes !== request.jam_psikotes))

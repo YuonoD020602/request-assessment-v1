@@ -484,7 +484,7 @@ const kirimNotifikasiDokumenDiterima = async ({ namaTo, emailTo, idRequest, nama
 // ============================================================
 // FASE 4: Jadwal Psikotes (+ .ics kalender)
 // ============================================================
-const kirimJadwalPsikotes = async ({ namaTo, emailTo, idRequest, namaPeserta, tanggal, jam, isReminder = false, isRevisi = false }) => {
+const kirimJadwalPsikotes = async ({ namaTo, emailTo, idRequest, namaPeserta, tanggal, jam, linkMeeting = null, namaPicOnlineTest = null, isReminder = false, isRevisi = false }) => {
   const attachments = [];
   if (!isReminder) {
     const icsContent = generateICS({
@@ -498,6 +498,11 @@ const kirimJadwalPsikotes = async ({ namaTo, emailTo, idRequest, namaPeserta, ta
     if (icsContent) attachments.push({ filename: `Psikotes_${idRequest}.ics`, content: Buffer.from(icsContent) });
   }
 
+  const picText = namaPicOnlineTest ? `PIC Online Test PT Astra International Tbk. (${namaPicOnlineTest})` : 'PIC Online Test PT Astra International Tbk.';
+  const tempatCell = linkMeeting
+    ? `Online (<a href="${linkMeeting}" style="color:#2563eb;">Join Meeting</a>)`
+    : 'Online (link meeting akan diinfokan menyusul)';
+
   const prefix = isRevisi ? '[REVISI] ' : isReminder ? 'Reminder Besok: ' : '';
   await sendEmail({
     to: emailTo,
@@ -507,13 +512,41 @@ const kirimJadwalPsikotes = async ({ namaTo, emailTo, idRequest, namaPeserta, ta
       <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; font-size: 14px; color: #333; line-height: 1.6;">
         <p>Kepada Yth. Bapak/Ibu ${namaTo}</p>
         ${isRevisi ? '<div style="background:#fff3cd;border-left:4px solid #f59e0b;padding:10px;margin-bottom:12px;"><strong>Jadwal psikotes telah diperbarui. Harap abaikan jadwal sebelumnya.</strong></div>' : ''}
-        <p>${isReminder ? 'Reminder' : isRevisi ? 'Update jadwal' : 'Jadwal'} Psikotes untuk <strong>${namaPeserta}</strong>:</p>
+        <p>Bersama dengan email ini kami informasikan bahwa Anda ${isReminder ? '<strong>diingatkan kembali (H-1)</strong> untuk mengikuti' : 'diundang untuk mengikuti'} <strong>online test</strong> sebagai bagian dari proses Assessment Center untuk <strong>${namaPeserta}</strong>, dengan jadwal sebagai berikut:</p>
         <table style="${TABLE_STYLE}">
-          <tr><td style="${TD_STYLE}"><strong>Tanggal</strong></td><td style="${TD_STYLE}">${formatTanggal(tanggal)}</td></tr>
+          <tr><td style="${TD_STYLE}"><strong>Hari/Tanggal</strong></td><td style="${TD_STYLE}">${formatTanggal(tanggal)}</td></tr>
+          <tr><td style="${TD_STYLE}"><strong>Tempat</strong></td><td style="${TD_STYLE}">${tempatCell}</td></tr>
           <tr><td style="${TD_STYLE}"><strong>Pukul</strong></td><td style="${TD_STYLE}">${jam} WIB</td></tr>
-          <tr><td style="${TD_STYLE}"><strong>Platform</strong></td><td style="${TD_STYLE}">Cek email dari astra.recruitment@ai.astra.co.id</td></tr>
         </table>
+
+        <p style="margin-top:16px;">Berikut beberapa persiapan yang perlu diperhatikan sebelum mengikuti online test:</p>
+        <ol style="padding-left: 20px;">
+          <li style="margin-bottom:10px;">Pengerjaan online test akan <strong>dimulai secara bersamaan pada tanggal ${formatTanggal(tanggal)}</strong>. Kami sangat menyarankan agar tim HC dan peserta berada di ruangan yang sama selama pelaksanaan kegiatan, untuk mengantisipasi kendala teknis pada laptop peserta yang mungkin memerlukan dukungan langsung dari tim HC. Adapun susunan kegiatan Online Test adalah sebagai berikut:
+            <ol type="a" style="padding-left: 20px; margin-top:6px;">
+              <li>Pembukaan oleh ${picText} melalui Ms. Teams${linkMeeting ? ` (<a href="${linkMeeting}" style="color:#2563eb;">link meeting</a>)` : ''}. Sesi ini dihadiri oleh tim HC dan Peserta Assessment Center.</li>
+              <li>Pengerjaan Online Test oleh peserta melalui sistem AIRSYS.</li>
+            </ol>
+          </li>
+          <li style="margin-bottom:10px;">Sebelum Bapak/Ibu Peserta melakukan login pada sistem online test, Anda <strong>diwajibkan</strong> untuk join pada meeting terlampir untuk mengikuti sesi pembukaan dan mendapatkan instruksi terkait pengerjaan online test.</li>
+          <li style="margin-bottom:10px;">Pengerjaan online test akan dilakukan melalui sistem. Bapak/Ibu Peserta akan mendapatkan 2 (dua) undangan email pengerjaan online tes dari <a href="mailto:astra.recruitment@ai.astra.co.id">astra.recruitment@ai.astra.co.id</a> pada tanggal ${formatTanggal(tanggal)} dengan subjek:
+            <div style="margin: 6px 0 6px 0;">
+              <div>&bull; <strong>Pengerjaan Test Kemampuan I Astra</strong></div>
+              <div>&bull; <strong>Pengerjaan Test Kemampuan II Astra</strong></div>
+            </div>
+            Email tersebut akan memuat link untuk akses system online test, username &amp; password yang akan Anda gunakan. <strong style="color:#dc2626;">Harap tidak membuka link test sebelum ada instruksi dari ${picText}.</strong>
+          </li>
+          <li style="margin-bottom:10px;">Pastikan untuk mengerjakan melalui perangkat komputer atau laptop yang memiliki layar berukuran 14 inci dan bukan melalui Smartphone/Ponsel/Tablet karena akan mengganggu kinerja Bapak/Ibu Peserta dalam pengerjaan.</li>
+          <li style="margin-bottom:10px;">Pastikan resolusi layar perangkat komputer atau laptop yang Bapak/Ibu Peserta gunakan sudah sesuai dengan rekomendasi sistem yaitu 1366x768.</li>
+          <li style="margin-bottom:10px;">Pastikan Bapak/Ibu Peserta berada di tempat yang nyaman dan tenang serta terkoneksi dengan internet yang stabil agar tidak terkendala dalam mengerjakan.</li>
+          <li style="margin-bottom:10px;">Pastikan untuk menggunakan web browser <strong>Google Chrome</strong> versi yang terbaru. Bapak/Ibu Peserta tidak disarankan menggunakan browser selain yang disebutkan.</li>
+          <li style="margin-bottom:10px;">Pastikan kamera pada komputer/laptop Bapak/Ibu Peserta dapat berfungsi dengan baik tanpa kendala apapun selama pengerjaan tes. Online tes tidak dapat dikerjakan apabila kamera <strong>tidak dinyalakan</strong>.</li>
+          <li style="margin-bottom:10px;">Pastikan Bapak/Ibu Peserta mengerjakan di saat jaringan stabil. Jaringan yang tidak stabil dapat berdampak pada tidak dapat login, tidak munculnya soal secara menyeluruh, sampai dengan gagal submit hasil.</li>
+        </ol>
+
+        <p>Adapun undangan untuk pelaksanaan Assessment Center (offline) akan dikirimkan Bapak/Ibu Peserta email terpisah oleh HC.</p>
+
         ${!isReminder ? '<p style="color:#555;font-size:13px;">File kalender (.ics) terlampir.</p>' : ''}
+        <p>Demikian informasi yang dapat kami sampaikan.</p>
         <p>Hormat kami,<br/><strong>PIC Asesmen RACD AIHO</strong></p>
       </div>
     `

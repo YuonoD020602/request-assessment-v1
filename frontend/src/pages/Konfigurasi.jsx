@@ -48,6 +48,17 @@ const CONFIG_GROUPS_STATIC = [
     ]
   },
   {
+    title: 'Online Test (Psikotes)',
+    desc: 'Detail untuk email undangan & reminder psikotes online',
+    accent: 'from-cyan-500 to-blue-600',
+    iconBg: 'bg-cyan-50',
+    iconCls: 'text-cyan-500',
+    svg: <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>,
+    keys: [
+      { key: 'nama_pic_online_test', label: 'Nama PIC Online Test (untuk teks pembukaan sesi di email)', type: 'text', full: true },
+    ]
+  },
+  {
     title: 'Email Monitoring (CC/BCC)',
     desc: 'Tembusan otomatis untuk semua email sistem — kosongkan jika tidak diperlukan',
     accent: 'from-amber-500 to-orange-600',

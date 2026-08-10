@@ -284,7 +284,7 @@ fase4Router.post('/dokumen', async (req, res) => {
 });
 
 fase4Router.post('/psikotes', authMiddleware, picOnly, async (req, res) => {
-  const { id_request, tanggal_psikotes, jam_psikotes } = req.body;
+  const { id_request, tanggal_psikotes, jam_psikotes, link_meeting_psikotes } = req.body;
   if (!id_request || !tanggal_psikotes || !jam_psikotes) {
     return res.status(400).json({ error: 'Field wajib belum lengkap' });
   }
@@ -302,9 +302,9 @@ fase4Router.post('/psikotes', authMiddleware, picOnly, async (req, res) => {
   const isRevisi = !!(request.tanggal_psikotes) &&
     (request.tanggal_psikotes !== tanggal_psikotes || (request.jam_psikotes || '') !== jam_psikotes);
   const statusUpdatePsikotes = statusLebihMaju(request.status, 'Psikotes Dijadwalkan') ? {} : { status: 'Psikotes Dijadwalkan' };
-  const { error: updateErr } = await supabase.from('requests').update({ tanggal_psikotes, jam_psikotes, ...statusUpdatePsikotes }).eq('id_request', id_request);
+  const { error: updateErr } = await supabase.from('requests').update({ tanggal_psikotes, jam_psikotes, link_meeting_psikotes: link_meeting_psikotes || null, ...statusUpdatePsikotes }).eq('id_request', id_request);
   if (updateErr) {
-    await supabase.from('requests').update({ tanggal_psikotes, jam_psikotes }).eq('id_request', id_request);
+    await supabase.from('requests').update({ tanggal_psikotes, jam_psikotes, link_meeting_psikotes: link_meeting_psikotes || null }).eq('id_request', id_request);
     if (!statusLebihMaju(request.status, 'Psikotes Dijadwalkan')) {
       await supabase.from('requests').update({ status: 'Psikotes Dijadwalkan' }).eq('id_request', id_request);
     }
@@ -323,6 +323,8 @@ fase4Router.post('/psikotes', authMiddleware, picOnly, async (req, res) => {
       namaTo: p.nama, emailTo: p.email,
       idRequest: id_request, namaPeserta: request.nama_peserta,
       tanggal: tanggal_psikotes, jam: jam_psikotes,
+      linkMeeting: link_meeting_psikotes || null,
+      namaPicOnlineTest: config.nama_pic_online_test || null,
       isReminder: false, isRevisi
     });
     await delay(400);
