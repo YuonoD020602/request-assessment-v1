@@ -988,6 +988,21 @@ Dijalankan langsung di Supabase SQL Editor — tidak menyentuh data yang sudah a
 
 ---
 
+### ✅ 72. Email Undangan & Reminder Psikotes Diperkaya + Link Meeting Opsional (Batch 23)
+**Tanggal:** 10 Agustus 2026
+
+**Kebutuhan:** Email jadwal psikotes yang dikirim sistem terlalu ringkas (hanya tanggal/jam/platform), sementara di lapangan PIC Online Test mengirim instruksi manual yang jauh lebih lengkap (jadwal sesi pembukaan, cara akses AIRSYS, requirement device/browser/kamera/jaringan, peringatan keamanan link tes). HC juga butuh cara menyertakan link meeting (MS Teams/Zoom) tanpa itu jadi wajib diisi.
+
+**Perubahan:**
+- **Isi email undangan psikotes & reminder H-1** kini menyertakan instruksi lengkap: susunan sesi pembukaan (dihadiri tim HC & peserta) → pengerjaan via sistem AIRSYS; wajib join meeting sebelum login; penjelasan 2 email terpisah dari `astra.recruitment@ai.astra.co.id` dengan subjek "Pengerjaan Test Kemampuan I/II Astra" beserta peringatan jangan buka link sebelum instruksi; 9 poin persiapan teknis (device layar ≥14 inci, resolusi 1366x768, browser Chrome terbaru, kamera wajib nyala, jaringan stabil)
+- **Field baru "Link Meeting (MS Teams/Zoom) — opsional"** di form Jadwal Psikotes (Detail Request → Fase 4). Kalau diisi, tampil sebagai link "Join Meeting" di email; kalau kosong, teks fallback "link meeting akan diinfokan menyusul" — **tidak wajib**, tidak memblokir pengiriman jadwal psikotes
+- **Field baru "Nama PIC Online Test"** di Konfigurasi (section baru "Online Test (Psikotes)") — dipakai di teks pembukaan sesi & peringatan email, tanpa hardcode nama di kode; boleh dikosongkan (fallback ke teks generik)
+- **Migrasi database:** kolom baru `link_meeting_psikotes` (text, nullable) di tabel `requests` — sudah dijalankan manual via Supabase SQL Editor
+
+**File:** `backend/src/services/emailService.js`, `backend/src/routes/fase_routes.js`, `backend/src/services/cronService.js`, `frontend/src/pages/DetailRequest.jsx`, `frontend/src/pages/Konfigurasi.jsx`
+
+---
+
 ### 📋 24. Export PDF Laporan per Periode
 **Deskripsi:** Export data request per periode menjadi PDF laporan yang rapi (header logo, tabel, summary).  
 **Status:** Backlog  
